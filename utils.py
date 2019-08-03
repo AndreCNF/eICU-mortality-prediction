@@ -3,6 +3,7 @@ import torch                                            # PyTorch to create and 
 from torch import nn, optim                             # nn for neural network layers and optim for training optimizers
 from torch.utils.data.sampler import SubsetRandomSampler
 import pandas as pd                                     # Pandas to handle the data in dataframes
+import dask.dataframe as dd                             # Dask to handle big data in dataframes
 from datetime import datetime                           # datetime to use proper date and time formats
 import os                                               # os handles directory/workspace changes
 import numpy as np                                      # NumPy to handle numeric and NaN operations
@@ -56,6 +57,8 @@ def dataframe_missing_values(df, column=None):
     if column is None:
         columns = df.columns
         percent_missing = df.isnull().sum() * 100 / len(df)
+        if 'dask' in str(type(df)):
+            percent_missing = percent_missing.compute()
         missing_value_df = pd.DataFrame({'column_name': columns,
                                          'percent_missing': percent_missing})
         missing_value_df.sort_values('percent_missing', inplace=True)
@@ -202,6 +205,48 @@ def one_hot_encoding_dataframe(df, columns, std_name=True, has_nan=False, join_r
         ohe_df.loc[:, ohe_columns] = ohe_df[ohe_columns].clip(upper=1)
 
     return ohe_df
+
+
+def enum_categorical_feature(df, feature, nan_value=0):
+    '''Enumerate all categories in a specified categorical feature, while also
+    attributing a specific number to NaN and other unknown values.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame or dask.DataFrame
+        Dataframe which the categorical feature belongs to.
+    feature : string
+        Name of the categorical feature which will be enumerated.
+    nan_value : int
+        Integer number that gets assigned to NaN and NaN-like values.
+
+    Returns
+    -------
+    enum_series : pandas.Series or dask.Series
+        Series corresponding to the analyzed feature, after
+        enumeration.
+    enum_dict : dict
+        Dictionary containing the mapping between the original categorical values
+        and the numbering obtained.
+    '''
+    # Enumerate the unique values in the categorical feature and put them in a dictionary
+    enum_dict = dict(enumerate(df[feature].unique().compute(), start=1))
+    # Invert the dictionary to have the unique categories as keys and the numbers as values
+    enum_dict = {v: k for k, v in enum_dict.items()}
+    # Move NaN to key 0
+    enum_dict[np.nan] = nan_value
+    # Search for NaN-like categories
+    for key, val in enum_dict.items():
+        if type(key) is str:
+            if 'other' in key.lower() or 'unknown' in key.lower() or 'null' in key.lower():
+                # Move NaN-like key to nan_value
+                enum_dict[key] = nan_value
+    # Create a series from the enumerations of the original feature's categories
+    if 'dask' in str(type(df)):
+        enum_series = df[feature].map(lambda x: enum_dict[x], meta=('x', int))
+    else:
+        enum_series = df[feature].map(lambda x: enum_dict[x])
+    return enum_series, enum_dict
 
 
 def is_definitely_string(x):

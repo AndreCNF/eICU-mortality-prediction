@@ -20,6 +20,7 @@ shap = {git = "https://github.com/AndreCNF/shap.git"}
 toolz = "^0.10.0"
 fsspec = "^0.4.0"
 cloudpickle = "^1.2"
+graphviz = "^0.11.1"
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
