@@ -13,9 +13,13 @@ plotly = "tqdm"
 tqdm = "^4.32"
 scikit-learn = "^0.21.3"
 datetime = "^4.3"
+shap = {git = "https://github.com/AndreCNF/shap.git"}
+# [TODO] Add the model-interpreter package through poetry, when it's public
+# model-interpreter = {git = "https://github.com/AndreCNF/model-interpreter.git"}
 
-[tool.poetry.dev-dependencies]
-
+toolz = "^0.10.0"
+fsspec = "^0.4.0"
+cloudpickle = "^1.2"
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
