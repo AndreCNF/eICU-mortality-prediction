@@ -140,29 +140,32 @@ def list_one_hot_encoded_columns(df):
     return [col for col in df.columns if is_one_hot_encoded_column(df, col)]
 
 
-def one_hot_encoding_dataframe(df, columns, std_name=True, has_nan=False, join_rows=True, join_by=['subject_id', 'ts']):
-    '''Transforms a specified column from a dataframe into a one hot encoding representation.
+def one_hot_encoding_dataframe(df, columns, std_name=True, has_nan=False,
+                               join_rows=True, join_by=['patientunitstayid', 'ts']):
+    '''Transforms a specified column from a dataframe into a one hot encoding
+    representation.
 
     Parameters
     ----------
     df : pandas.DataFrame
         Dataframe that will be used, which contains the specified column.
     columns : list of strings
-        Name of the column(s) that will be conveted to one hot encoding. Even if it's just one
-        column, please provide inside a list.
+        Name of the column(s) that will be conveted to one hot encoding. Even if
+        it's just one column, please provide inside a list.
     std_name : bool, default True
-        If set to true, changes the name of the categorical values into lower case, with words
-        separated by an underscore instead of space.
+        If set to true, changes the name of the categorical values into lower
+        case, with words separated by an underscore instead of space.
     has_nan : bool, default False
         If set to true, will first fill the missing values (NaN) with the string
         f'{column}_missing_value'.
     join_rows : bool, default True
-        If set to true, will group the rows created by the one hot encoding by summing the
-        boolean values in the rows that have the same identifiers.
+        If set to true, will group the rows created by the one hot encoding by
+        summing the boolean values in the rows that have the same identifiers.
     join_by : string or list, default ['subject_id', 'ts'])
-        Name of the column (or columns) which serves as a unique identifier of the dataframe's
-        rows, which will be used in the groupby operation if the parameter join_rows is set to
-        true. Can be a string (single column) or a list of strings (multiple columns).
+        Name of the column (or columns) which serves as a unique identifier of
+        the dataframe's rows, which will be used in the groupby operation if the
+        parameter join_rows is set to true. Can be a string (single column) or a
+        list of strings (multiple columns).
 
     Raises
     ------
@@ -172,7 +175,8 @@ def one_hot_encoding_dataframe(df, columns, std_name=True, has_nan=False, join_r
     Returns
     -------
     ohe_df : pandas.Dataframe
-        Returns a new dataframe with the specified column in a one hot encoding representation.
+        Returns a new dataframe with the specified column in a one hot encoding
+        representation.
     '''
     for col in columns:
         if has_nan:

@@ -25,6 +25,7 @@
 
 # + {"colab": {}, "colab_type": "code", "id": "G5RrWE9R_Nkl"}
 import dask.dataframe as dd                # Dask to handle big data in dataframes
+from dask.distributed import Client        # Dask scheduler
 from dask.diagnostics import ProgressBar   # Dask progress bar
 import re                                  # re to do regex searches in string data
 import os                                  # os handles directory/workspace changes
@@ -37,6 +38,10 @@ import utils                               # Contains auxiliary functions
 # Debugging packages
 import pixiedust                           # Debugging in Jupyter Notebook cells
 
+# Activate the progress bar for all dask computations
+pbar = ProgressBar()
+pbar.register()
+
 # +
 # Change to parent directory (presumably "Documents")
 os.chdir("../..")
@@ -45,9 +50,9 @@ os.chdir("../..")
 data_path = 'Datasets/Thesis/eICU/uncompressed/'
 # -
 
-# Activate the progress bar for all dask computations
-pbar = ProgressBar()
-pbar.register()
+# Set up local cluster
+client = Client()
+client
 
 # ## Initialize variables
 
@@ -97,6 +102,10 @@ patient_df.age.value_counts().head()
 # Make the age feature numeric
 patient_df.age = patient_df.age.astype(float)
 
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+patient_df.persist()
+patient_df = client.persist(patient_df)
+
 # + {"toc-hr-collapsed": false, "cell_type": "markdown"}
 # ### Discretize categorical features
 #
@@ -133,15 +142,30 @@ for i in range(len(cat_feat)):
 
 patient_df[cat_feat].head()
 
-# #### One hot encode remaining categorical features
+cat_embed_feat_enum
 
+patient_df[cat_feat].dtypes
 
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+patient_df.persist()
 
 # ### Create mortality label
 #
-# Combine info from discharge location and discharge status. Using the hospital discharge data, instead of the unit, as it has a longer perspective on the patient's status. I then save a feature called "deathOffset", which has a number if the patient is dead on hospital discharge or is NaN if the patient is still alive/unknown. Based on this, a label can be made later on, when all the tables are combined in a single dataframe, indicating if a patient dies in the following X time, according to how faraway we want to predict.
+# Combine info from discharge location and discharge status. Using the hospital discharge data, instead of the unit, as it has a longer perspective on the patient's status. I then save a feature called "deathOffset", which has a number if the patient is dead on hospital discharge or is NaN if the patient is still alive/unknown (presumed alive if unknown). Based on this, a label can be made later on, when all the tables are combined in a single dataframe, indicating if a patient dies in the following X time, according to how faraway we want to predict.
 
+patient_df.hospitaldischargestatus.value_counts().compute()
 
+patient_df.hospitaldischargelocation.value_counts().compute()
+
+patient_df['deathoffset'] = patient_df.apply(lambda df: df['hospitaldischargeoffset'] 
+                                                        if df['hospitaldischargestatus'] == 'Expired' or
+                                                        df['hospitaldischargelocation'] == 'Death' else np.nan, axis=1, 
+                                                        meta=('x', float))
+
+patient_df.head()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+patient_df.persist()
 
 # ### Create a discharge instance and the timestamp feature
 
