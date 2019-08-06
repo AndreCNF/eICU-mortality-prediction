@@ -25,6 +25,7 @@
 
 # + {"colab": {}, "colab_type": "code", "id": "G5RrWE9R_Nkl"}
 import dask.dataframe as dd                # Dask to handle big data in dataframes
+import pandas as pd                        # Pandas to load the data initially
 from dask.distributed import Client        # Dask scheduler
 from dask.diagnostics import ProgressBar   # Dask progress bar
 import re                                  # re to do regex searches in string data
@@ -38,10 +39,6 @@ import utils                               # Contains auxiliary functions
 # Debugging packages
 import pixiedust                           # Debugging in Jupyter Notebook cells
 
-# Activate the progress bar for all dask computations
-pbar = ProgressBar()
-pbar.register()
-
 # +
 # Change to parent directory (presumably "Documents")
 os.chdir("../..")
@@ -50,9 +47,20 @@ os.chdir("../..")
 data_path = 'Datasets/Thesis/eICU/uncompressed/'
 # -
 
+# Activate the progress bar for all dask computations
+pbar = ProgressBar()
+pbar.register()
+
+# +
 # Set up local cluster
-client = Client()
-client
+# client = Client("tcp://127.0.0.1:57608")
+# client
+
+# +
+# Upload the utils.py file, so that the Dask cluster has access to relevant auxiliary functions
+# client.upload_file('GitHub/eICU-mortality-prediction/NeuralNetwork.py')
+# client.upload_file('utils.py')
+# -
 
 # ## Initialize variables
 
@@ -64,8 +72,19 @@ cat_embed_feat_enum = dict()               # Dictionary of the enumerations of t
 
 # ### Read the data
 
-patient_df = dd.read_csv(f'{data_path}patient.csv')
+patient_df = pd.read_csv(f'{data_path}patient.csv')
+patient_df = dd.from_pandas(patient_df, npartitions=8)
 patient_df.head()
+
+# +
+# patient_df = dd.read_csv(f'{data_path}patient.csv')
+# patient_df.head()
+
+# +
+# patient_df = patient_df.repartition(npartitions=4)
+# -
+
+patient_df.visualize()
 
 patient_df.columns
 
@@ -102,9 +121,13 @@ patient_df.age.value_counts().head()
 # Make the age feature numeric
 patient_df.age = patient_df.age.astype(float)
 
+patient_df.visualize()
+
 # Save current dataframe in memory to avoid accumulating several operations on the dask graph
-patient_df.persist()
-patient_df = client.persist(patient_df)
+# patient_df = client.persist(patient_df)
+patient_df = patient_df.persist()
+
+patient_df.visualize()
 
 # + {"toc-hr-collapsed": false, "cell_type": "markdown"}
 # ### Discretize categorical features
@@ -146,8 +169,13 @@ cat_embed_feat_enum
 
 patient_df[cat_feat].dtypes
 
+patient_df.visualize()
+
 # Save current dataframe in memory to avoid accumulating several operations on the dask graph
-patient_df.persist()
+# patient_df = client.persist(patient_df)
+patient_df = patient_df.persist()
+
+patient_df.visualize()
 
 # ### Create mortality label
 #
@@ -164,16 +192,97 @@ patient_df['deathoffset'] = patient_df.apply(lambda df: df['hospitaldischargeoff
 
 patient_df.head()
 
+# Remove the now unneeded hospital discharge features:
+
+patient_df = patient_df.drop(['hospitaldischargeoffset', 'hospitaldischargestatus', 'hospitaldischargelocation'], axis=1)
+patient_df.head(6)
+
+patient_df.visualize()
+
 # Save current dataframe in memory to avoid accumulating several operations on the dask graph
-patient_df.persist()
+# patient_df = client.persist(patient_df)
+patient_df = patient_df.persist()
+
+patient_df.visualize()
 
 # ### Create a discharge instance and the timestamp feature
 
+# Create the timestamp (`ts`) feature:
 
+patient_df['ts'] = 0
+patient_df.head()
+
+patient_df.patientunitstayid.value_counts().compute()
+
+# Duplicate every row, so as to create a discharge event:
+
+patient_df = patient_df.append(patient_df)
+patient_df.patientunitstayid.value_counts().compute()
+
+# Sort by `patientunitstayid` so as to keep the timestamps of the same patient together:
+
+patient_df = patient_df.compute().sort_values(by='patientunitstayid')
+patient_df.head(6)
+
+# Create a weight feature:
+
+# Create feature weight and assign the initial weight that the patient has on admission
+patient_df['weight'] = patient_df['admissionweight']
+patient_df.head()
+
+
+# Set the `weight` and `ts` features to initially have the value on admission and, on the second timestamp, have the value on discharge:
+
+def set_weight(row):
+    global patient_first_row
+    if not patient_first_row:
+        row['weight'] = row['dischargeweight']
+        patient_first_row = True
+    else:
+        patient_first_row = False
+    return row
+
+
+patient_first_row = False
+patient_df = patient_df.apply(lambda row: set_weight(row), axis=1)
+patient_df.head(6)
+
+
+def set_ts(row):
+    global patient_first_row
+    if not patient_first_row:
+        row['ts'] = row['unitdischargeoffset']
+        patient_first_row = True
+    else:
+        patient_first_row = False
+    return row
+
+
+patient_first_row = False
+patient_df = dd.from_pandas(patient_df.apply(lambda row: set_ts(row), axis=1), npartitions=8)
+patient_df.head(6)
+
+# Remove the remaining, now unneeded, weight and timestamp features:
+
+patient_df = patient_df.drop(['admissionweight', 'dischargeweight', 'unitdischargeoffset'], axis=1)
+patient_df.head(6)
+
+patient_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+# patient_df = client.persist(patient_df)
+patient_df = patient_df.persist()
+
+patient_df.visualize()
 
 # ### Normalize data
 
+# Save the dataframe before normalizing:
 
+patient_df.to_parquet(f'{data_path}/cleaned/patient.parquet')
+
+patient_df_norm = utils.normalize_data(patient_df)
+patient_df_norm
 
 # ### Rename columns
 

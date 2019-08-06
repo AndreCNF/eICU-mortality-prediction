@@ -40,7 +40,7 @@ def dataframe_missing_values(df, column=None):
 
     Parameters
     ----------
-    df : pandas.DataFrame
+    df : pandas.DataFrame or dask.DataFrame
         Original dataframe which the user wants to analyze for missing values.
     column : string, default None
         Optional argument which, if provided, makes the function only return
@@ -48,7 +48,7 @@ def dataframe_missing_values(df, column=None):
 
     Returns
     -------
-    missing_value_df : pandas.DataFrame
+    missing_value_df : pandas.DataFrame or dask.DataFrame
         DataFrame containing the percentages of missing values for each column.
     col_percent_missing : float
         If the "column" argument is provided, the function only returns a float
@@ -103,7 +103,7 @@ def is_one_hot_encoded_column(df, column):
 
     Parameters
     ----------
-    df : pandas.DataFrame
+    df : pandas.DataFrame or dask.DataFrame
         Dataframe that will be used, which contains the specified column.
     column : string
         Name of the column that will be checked for one hot encoding.
@@ -129,7 +129,7 @@ def list_one_hot_encoded_columns(df):
 
     Parameters
     ----------
-    df : pandas.DataFrame
+    df : pandas.DataFrame or dask.DataFrame
         Dataframe that will be used checked for one hot encoded columns.
 
     Returns
@@ -147,7 +147,7 @@ def one_hot_encoding_dataframe(df, columns, std_name=True, has_nan=False,
 
     Parameters
     ----------
-    df : pandas.DataFrame
+    df : pandas.DataFrame or dask.DataFrame
         Dataframe that will be used, which contains the specified column.
     columns : list of strings
         Name of the column(s) that will be conveted to one hot encoding. Even if
@@ -174,7 +174,7 @@ def one_hot_encoding_dataframe(df, columns, std_name=True, has_nan=False,
 
     Returns
     -------
-    ohe_df : pandas.Dataframe
+    ohe_df : pandas.DataFrame or dask.DataFrame
         Returns a new dataframe with the specified column in a one hot encoding
         representation.
     '''
@@ -209,6 +209,16 @@ def one_hot_encoding_dataframe(df, columns, std_name=True, has_nan=False,
         ohe_df.loc[:, ohe_columns] = ohe_df[ohe_columns].clip(upper=1)
 
     return ohe_df
+
+
+def apply_dict_convertion(x, conv_dict, nan_value=0):
+    # Check if it's a missing value (NaN)
+    if isinstance(x, numbers.Number):
+        if np.isnan(x):
+            return nan_value
+    # Must be a convertable value
+    else:
+        return conv_dict[x]
 
 
 def enum_categorical_feature(df, feature, nan_value=0):
@@ -247,9 +257,9 @@ def enum_categorical_feature(df, feature, nan_value=0):
                 enum_dict[key] = nan_value
     # Create a series from the enumerations of the original feature's categories
     if 'dask' in str(type(df)):
-        enum_series = df[feature].map(lambda x: enum_dict[x], meta=('x', int))
+        enum_series = df[feature].map(lambda x: apply_dict_convertion(x, enum_dict, nan_value), meta=('x', int))
     else:
-        enum_series = df[feature].map(lambda x: enum_dict[x])
+        enum_series = df[feature].map(lambda x: apply_dict_convertion(x, enum_dict, nan_value))
     return enum_series, enum_dict
 
 
@@ -283,7 +293,7 @@ def remove_rows_unmatched_key(df, key, columns):
 
     Parameters
     ----------
-    df : pandas.DataFrame
+    df : pandas.DataFrame or dask.DataFrame
         Dataframe resulting from a asof merge which will be searched for missing values.
     key : string
         Name of the column which was used as the "by" key in the asof merge. Typically
@@ -296,7 +306,7 @@ def remove_rows_unmatched_key(df, key, columns):
 
     Returns
     -------
-    df : pandas.DataFrame
+    df : pandas.DataFrame or dask.DataFrame
         Returns the input dataframe but without the rows which didn't have any values
         in the right dataframe's features.
     '''
@@ -323,7 +333,7 @@ def dataframe_to_padded_tensor(df, seq_len_dict, n_ids, n_inputs, id_column='sub
 
     Parameters
     ----------
-    df : pandas.Dataframe
+    df : pandas.DataFrame or dask.DataFrame
         Data in a Pandas dataframe format which will be padded and converted
         to the requested data type.
     seq_len_dict : dictionary
@@ -380,14 +390,14 @@ def dataframe_to_padded_tensor(df, seq_len_dict, n_ids, n_inputs, id_column='sub
         raise Exception('ERROR: Unavailable data type. Please choose either NumPy or PyTorch.')
 
 
-def normalize_data(df, data=None, id_columns=['subject_id', 'ts'], normalization_method='z-score',
+def normalize_data(df, data=None, id_columns=['patientunitstayid', 'ts'], normalization_method='z-score',
                    columns_to_normalize=None, see_progress=True):
     '''Performs data normalization to a continuous valued tensor or dataframe,
        changing the scale of the data.
 
     Parameters
     ----------
-    df : pandas.Dataframe
+    df : pandas.DataFrame or dask.DataFrame
         Original pandas dataframe which is used to correctly calculate the
         necessary statistical values used in the normalization. These values
         can't be calculated from the tensor as it might have been padded. If
@@ -417,7 +427,7 @@ def normalize_data(df, data=None, id_columns=['subject_id', 'ts'], normalization
 
     Returns
     -------
-    data : pandas.Dataframe or torch.Tensor
+    data : pandas.DataFrame or dask.DataFrame or torch.Tensor
         Normalized Pandas dataframe or PyTorch tensor.
     '''
     # Check if specific columns have been specified for normalization
@@ -503,11 +513,11 @@ def denormalize_data(df, data, id_columns=['subject_id', 'ts'], normalization_me
 
     Parameters
     ----------
-    df : pandas.DataFrame
+    df : pandas.DataFrame or dask.DataFrame
         Original pandas dataframe which is used to correctly calculate the
         necessary statistical values used in the denormalization. These values
         can't be calculated from the tensor as it might have been padded.
-    data : torch.Tensor or pandas.DataFrame
+    data : torch.Tensor or pandas.DataFrame or dask.DataFrame
         PyTorch tensor or pandas dataframe corresponding to the data which will
         be denormalized by the specified normalization method.
     id_columns : list of strings, default ['subject_id', 'ts']
@@ -531,7 +541,7 @@ def denormalize_data(df, data, id_columns=['subject_id', 'ts'], normalization_me
 
     Returns
     -------
-    data : pandas.DataFrame or torch.Tensor
+    data : pandas.DataFrame or dask.DataFrame or torch.Tensor
         Denormalized Pandas dataframe or PyTorch tensor.
     '''
     # Variable that will store the denormalized data

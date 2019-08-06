@@ -22,6 +22,7 @@ fsspec = "^0.4.0"
 cloudpickle = "^1.2"
 graphviz = "^0.11.1"
 distributed = "^2.2"
+fastparquet = "^0.3.2"
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
