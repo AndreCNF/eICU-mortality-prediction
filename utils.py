@@ -58,6 +58,7 @@ def dataframe_missing_values(df, column=None):
         columns = df.columns
         percent_missing = df.isnull().sum() * 100 / len(df)
         if 'dask' in str(type(df)):
+            # Make sure that the values are computed, in case we're using Dask
             percent_missing = percent_missing.compute()
         missing_value_df = pd.DataFrame({'column_name': columns,
                                          'percent_missing': percent_missing})
@@ -114,12 +115,20 @@ def is_one_hot_encoded_column(df, column):
         Returns true if the column is in one hot encoding format.
         Otherwise, returns false.
     '''
+    n_unique_values = df[column].nunique()
+    if 'dask' in str(type(df)):
+        # Make sure that the number of unique values are computed, in case we're using Dask
+        n_unique_values = n_unique_values.compute()
     # Check if it only has 2 possible values
-    if df[column].nunique() == 2:
+    if n_unique_values == 2:
+        unique_values = df[column].unique()
+        if 'dask' in str(type(df)):
+            # Make sure that the unique values are computed, in case we're using Dask
+            unique_values = unique_values.compute()
         # Check if the possible values are all numeric
-        if all([isinstance(x, numbers.Number) for x in df[column].unique()]):
+        if all([isinstance(x, numbers.Number) for x in unique_values]):
             # Check if the only possible values are 0 and 1 (and ignore NaN's)
-            if (np.sort(list(set(np.nan_to_num(df[column].unique())))) == [0, 1]).all():
+            if (np.sort(list(set(np.nan_to_num(unique_values)))) == [0, 1]).all():
                 return True
     return False
 
@@ -391,7 +400,7 @@ def dataframe_to_padded_tensor(df, seq_len_dict, n_ids, n_inputs, id_column='sub
 
 
 def normalize_data(df, data=None, id_columns=['patientunitstayid', 'ts'], normalization_method='z-score',
-                   columns_to_normalize=None, see_progress=True):
+                   columns_to_normalize=None, embed_columns=None, see_progress=True):
     '''Performs data normalization to a continuous valued tensor or dataframe,
        changing the scale of the data.
 
@@ -421,6 +430,9 @@ def normalize_data(df, data=None, id_columns=['patientunitstayid', 'ts'], normal
     columns_to_normalize : list of strings, default None
         If specified, the columns provided in the list are the only ones that
         will be normalized. Otherwise, all continuous columns will be normalized.
+    embed_columns : list of strings, default None
+        If specified, the columns in the list, which represent features that
+        will be embedded, aren't going to be normalized.
     see_progress : bool, default True
         If set to True, a progress bar will show up indicating the execution
         of the normalization calculations.
@@ -432,19 +444,38 @@ def normalize_data(df, data=None, id_columns=['patientunitstayid', 'ts'], normal
     '''
     # Check if specific columns have been specified for normalization
     if columns_to_normalize is None:
+        # List of all columns in the dataframe
+        feature_columns = list(df.columns)
+
+        # List of all columns in the dataframe, except the ID columns
+        [feature_columns.remove(col) for col in id_columns]
+
+        if embed_columns:
+            # Prevent all features that will be embedded from being normalized
+            [feature_columns.remove(col) for col in embed_columns]
+
         # List of binary or one hot encoded columns
-        binary_cols = list_one_hot_encoded_columns(df)
+        binary_cols = list_one_hot_encoded_columns(df[feature_columns])
 
         # Normalize all non identifier continuous columns, ignore one hot encoded ones
-        columns_to_normalize = [col for col in df.columns if col not in binary_cols and col not in id_columns]
+        columns_to_normalize = [col for col in feature_columns if col not in binary_cols]
 
     if type(normalization_method) is not str:
         raise ValueError('Argument normalization_method should be a string. Available options \
                          are \'z-score\' and \'min-max\'.')
 
     if normalization_method.lower() == 'z-score':
-        column_means = dict(df[columns_to_normalize].mean())
-        column_stds = dict(df[columns_to_normalize].std())
+        # Calculate the means and standard deviations
+        means = df[columns_to_normalize].mean()
+        stds = df[columns_to_normalize].std()
+
+        if 'dask' in str(type(df)):
+            # Make sure that the values are computed, in case we're using Dask
+            means = means.compute()
+            stds = stds.compute()
+
+        column_means = dict(means)
+        column_stds = dict(stds)
 
         # Check if the data being normalized is directly the dataframe
         if data is None:
@@ -471,8 +502,16 @@ def normalize_data(df, data=None, id_columns=['patientunitstayid', 'ts'], normal
                 data[:, :, col] = (data[:, :, col] - column_means[idx_to_name[col]]) / column_stds[idx_to_name[col]]
 
     elif normalization_method.lower() == 'min-max':
-        column_mins = dict(df[columns_to_normalize].min())
-        column_maxs = dict(df[columns_to_normalize].max())
+        mins = df[columns_to_normalize].min()
+        maxs = df[columns_to_normalize].max()
+
+        if 'dask' in str(type(df)):
+            # Make sure that the values are computed, in case we're using Dask
+            mins = means.compute()
+            maxs = maxs.compute()
+
+        column_mins = dict(mins)
+        column_maxs = dict(maxs)
 
         # Check if the data being normalized is directly the dataframe
         if data is None:
@@ -808,12 +847,8 @@ def in_ipynb():
 def iterations_loop(x, see_progress=True):
     '''Determine if a progress bar is shown or not.'''
     if see_progress:
-        # Define the method to use as a progress bar, depending on whether code
-        # is running on a notebook or terminal
-        if in_ipynb():
-            return tqdm_notebook(x)
-        else:
-            return tqdm(x)
+        # Use a progress bar
+        return tqdm(x)
     else:
         # Don't show any progress bar if see_progress is False
         return x

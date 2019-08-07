@@ -7,3 +7,5 @@
 .DS_Store
 .ipynb_checkpoints/eICU_data_joining-checkpoint.ipynb
 .ipynb_checkpoints/eICU_data_joining-checkpoint.py
+*.dirlock
+Datasets/

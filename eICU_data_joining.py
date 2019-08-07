@@ -47,20 +47,13 @@ os.chdir("../..")
 data_path = 'Datasets/Thesis/eICU/uncompressed/'
 # -
 
-# Activate the progress bar for all dask computations
-pbar = ProgressBar()
-pbar.register()
-
-# +
 # Set up local cluster
-# client = Client("tcp://127.0.0.1:57608")
-# client
+client = Client("tcp://127.0.0.1:54273")
+client
 
-# +
 # Upload the utils.py file, so that the Dask cluster has access to relevant auxiliary functions
-# client.upload_file('GitHub/eICU-mortality-prediction/NeuralNetwork.py')
-# client.upload_file('utils.py')
-# -
+client.upload_file('GitHub/eICU-mortality-prediction/NeuralNetwork.py')
+client.upload_file('GitHub/eICU-mortality-prediction/utils.py')
 
 # ## Initialize variables
 
@@ -81,8 +74,12 @@ patient_df.head()
 # patient_df.head()
 
 # +
-# patient_df = patient_df.repartition(npartitions=4)
+# patient_df = patient_df.repartition(npartitions=8)
 # -
+
+# Get an overview of the dataframe through the `describe` method:
+
+patient_df.describe().compute().transpose()
 
 patient_df.visualize()
 
@@ -149,11 +146,18 @@ patient_df.gender.value_counts().compute()
 #
 # [TODO] Only enumerate the `apacheadmissiondx` feature after joining it with all the remaining diagnosis features
 
-# Update list of categorical features
-cat_feat = ['ethnicity', 'apacheadmissiondx']
+# Update list of categorical features and add those that will need embedding (features with more than 5 unique values):
 
-cat_feat_nunique = [patient_df[feature].nunique().compute() for feature in cat_feat]
+new_cat_feat = ['ethnicity', 'apacheadmissiondx']
+[cat_feat.append(col) for col in new_cat_feat]
+
+cat_feat_nunique = [patient_df[feature].nunique().compute() for feature in new_cat_feat]
 cat_feat_nunique
+
+for i in range(len(new_cat_feat)):
+    if cat_feat_nunique[i] > 5:
+        # Add feature to the list of those that will be embedded
+        cat_embed_feat.append(new_cat_feat[i])
 
 patient_df[cat_feat].head()
 
@@ -259,12 +263,46 @@ def set_ts(row):
 
 
 patient_first_row = False
-patient_df = dd.from_pandas(patient_df.apply(lambda row: set_ts(row), axis=1), npartitions=8)
+patient_df = patient_df.apply(lambda row: set_ts(row), axis=1)
 patient_df.head(6)
 
 # Remove the remaining, now unneeded, weight and timestamp features:
 
 patient_df = patient_df.drop(['admissionweight', 'dischargeweight', 'unitdischargeoffset'], axis=1)
+patient_df.head(6)
+
+# Create a `diagnosis` feature:
+
+patient_df['diagnosis'] = patient_df['apacheadmissiondx']
+patient_df.head()
+
+# Add to the list of categorical and to be embedded features:
+
+cat_feat.remove('apacheadmissiondx')
+cat_embed_feat.remove('apacheadmissiondx')
+cat_feat.append('diagnosis')
+cat_embed_feat.append('diagnosis')
+
+
+# Similarly, only set the `diagnosis` to the admission instance, as the current table only has diagnosis on admission:
+
+def set_diagnosis(row):
+    global patient_first_row
+    if not patient_first_row:
+        row['diagnosis'] = np.nan
+        patient_first_row = True
+    else:
+        patient_first_row = False
+    return row
+
+
+patient_first_row = False
+patient_df = dd.from_pandas(patient_df.apply(lambda row: set_diagnosis(row), axis=1), npartitions=8)
+patient_df.head(6)
+
+# Remove the admission diagnosis feature `apacheadmissiondx`:
+
+patient_df = patient_df.drop('apacheadmissiondx', axis=1)
 patient_df.head(6)
 
 patient_df.visualize()
@@ -281,12 +319,17 @@ patient_df.visualize()
 
 patient_df.to_parquet(f'{data_path}/cleaned/patient.parquet')
 
-patient_df_norm = utils.normalize_data(patient_df)
-patient_df_norm
+# + {"pixiedust": {"displayParams": {}}}
+patient_df_norm = utils.normalize_data(patient_df, embed_columns=cat_embed_feat, 
+                                       id_columns=['patientunitstayid', 'ts', 'deathoffset'])
+patient_df_norm.head(6)
+# -
 
-# ### Rename columns
+patient_df_norm.to_parquet(f'{data_path}/cleaned/normalized/patient.parquet')
 
+# Confirm that everything is ok through the `describe` method:
 
+patient_df_norm.describe().compute().transpose()
 
 # ## Vital signs periodic data
 
