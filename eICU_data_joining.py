@@ -20,7 +20,7 @@
 #
 # The main goal of this notebook is to prepare a single CSV document that contains all the relevant data to be used when training a machine learning model that predicts mortality, joining tables, filtering useless columns and performing imputation.
 
-# + {"colab_type": "text", "id": "KOdmFzXqF7nq", "cell_type": "markdown"}
+# + {"colab_type": "text", "id": "KOdmFzXqF7nq", "toc-hr-collapsed": true, "cell_type": "markdown"}
 # ## Importing the necessary packages
 
 # + {"colab": {}, "colab_type": "code", "id": "G5RrWE9R_Nkl"}
@@ -41,19 +41,22 @@ import pixiedust                           # Debugging in Jupyter Notebook cells
 
 # +
 # Change to parent directory (presumably "Documents")
-os.chdir("../..")
+os.chdir("../../..")
 
 # Path to the CSV dataset files
-data_path = 'Datasets/Thesis/eICU/uncompressed/'
+data_path = 'Documents/Datasets/Thesis/eICU/uncompressed/'
+project_path = 'Documents/GitHub/eICU-mortality-prediction/'
 # -
 
 # Set up local cluster
-client = Client("tcp://127.0.0.1:54273")
+client = Client("tcp://127.0.0.1:49882")
 client
 
 # Upload the utils.py file, so that the Dask cluster has access to relevant auxiliary functions
-client.upload_file('GitHub/eICU-mortality-prediction/NeuralNetwork.py')
-client.upload_file('GitHub/eICU-mortality-prediction/utils.py')
+client.upload_file(f'{project_path}NeuralNetwork.py')
+client.upload_file(f'{project_path}utils.py')
+
+client.run(os.getcwd)
 
 # ## Initialize variables
 
@@ -61,21 +64,18 @@ cat_feat = []                              # List of categorical features
 cat_embed_feat = []                        # List of categorical features that will be embedded
 cat_embed_feat_enum = dict()               # Dictionary of the enumerations of the categorical features that will be embedded
 
+# + {"toc-hr-collapsed": false, "cell_type": "markdown"}
 # ## Patient data
+# -
 
 # ### Read the data
 
-patient_df = pd.read_csv(f'{data_path}patient.csv')
-patient_df = dd.from_pandas(patient_df, npartitions=8)
+patient_df = dd.read_csv(f'{data_path}original/patient.csv')
 patient_df.head()
 
-# +
-# patient_df = dd.read_csv(f'{data_path}patient.csv')
-# patient_df.head()
+patient_df = patient_df.repartition(npartitions=30)
 
-# +
-# patient_df = patient_df.repartition(npartitions=8)
-# -
+patient_df.npartitions
 
 # Get an overview of the dataframe through the `describe` method:
 
@@ -86,8 +86,6 @@ patient_df.visualize()
 patient_df.columns
 
 patient_df.dtypes
-
-patient_df.npartitions
 
 # ### Remove unneeded features
 
@@ -101,8 +99,6 @@ patient_df.head()
 # + {"pixiedust": {"displayParams": {}}}
 utils.dataframe_missing_values(patient_df)
 # -
-
-patient_df.visualize()
 
 # ### Make the age feature numeric
 #
@@ -121,12 +117,11 @@ patient_df.age = patient_df.age.astype(float)
 patient_df.visualize()
 
 # Save current dataframe in memory to avoid accumulating several operations on the dask graph
-# patient_df = client.persist(patient_df)
-patient_df = patient_df.persist()
+patient_df = client.persist(patient_df)
 
 patient_df.visualize()
 
-# + {"toc-hr-collapsed": false, "cell_type": "markdown"}
+# + {"toc-hr-collapsed": true, "cell_type": "markdown"}
 # ### Discretize categorical features
 #
 # Convert binary categorical features into simple numberings, one hot encode features with a low number of categories (in this case, 5) and enumerate sparse categorical features that will be embedded.
@@ -159,7 +154,7 @@ for i in range(len(new_cat_feat)):
         # Add feature to the list of those that will be embedded
         cat_embed_feat.append(new_cat_feat[i])
 
-patient_df[cat_feat].head()
+patient_df[new_cat_feat].head()
 
 for i in range(len(cat_feat)):
     feature = cat_feat[i]
@@ -176,8 +171,7 @@ patient_df[cat_feat].dtypes
 patient_df.visualize()
 
 # Save current dataframe in memory to avoid accumulating several operations on the dask graph
-# patient_df = client.persist(patient_df)
-patient_df = patient_df.persist()
+patient_df = client.persist(patient_df)
 
 patient_df.visualize()
 
@@ -204,8 +198,7 @@ patient_df.head(6)
 patient_df.visualize()
 
 # Save current dataframe in memory to avoid accumulating several operations on the dask graph
-# patient_df = client.persist(patient_df)
-patient_df = patient_df.persist()
+patient_df = client.persist(patient_df)
 
 patient_df.visualize()
 
@@ -297,7 +290,7 @@ def set_diagnosis(row):
 
 
 patient_first_row = False
-patient_df = dd.from_pandas(patient_df.apply(lambda row: set_diagnosis(row), axis=1), npartitions=8)
+patient_df = patient_df.apply(lambda row: set_diagnosis(row), axis=1)
 patient_df.head(6)
 
 # Remove the admission diagnosis feature `apacheadmissiondx`:
@@ -305,11 +298,15 @@ patient_df.head(6)
 patient_df = patient_df.drop('apacheadmissiondx', axis=1)
 patient_df.head(6)
 
+# Sort by `ts` so as to be easier to merge with other dataframes later:
+
+patient_df = dd.from_pandas(patient_df.sort_values(by='ts'), npartitions=30, sort=False)
+patient_df.head(6)
+
 patient_df.visualize()
 
 # Save current dataframe in memory to avoid accumulating several operations on the dask graph
-# patient_df = client.persist(patient_df)
-patient_df = patient_df.persist()
+patient_df = client.persist(patient_df)
 
 patient_df.visualize()
 
@@ -317,7 +314,7 @@ patient_df.visualize()
 
 # Save the dataframe before normalizing:
 
-patient_df.to_parquet(f'{data_path}/cleaned/patient.parquet')
+patient_df.to_parquet(f'{data_path}cleaned/unnormalized/patient.parquet')
 
 # + {"pixiedust": {"displayParams": {}}}
 patient_df_norm = utils.normalize_data(patient_df, embed_columns=cat_embed_feat, 
@@ -325,18 +322,230 @@ patient_df_norm = utils.normalize_data(patient_df, embed_columns=cat_embed_feat,
 patient_df_norm.head(6)
 # -
 
-patient_df_norm.to_parquet(f'{data_path}/cleaned/normalized/patient.parquet')
+patient_df_norm.to_parquet(f'{data_path}cleaned/normalized/patient.parquet')
 
 # Confirm that everything is ok through the `describe` method:
 
 patient_df_norm.describe().compute().transpose()
 
+# + {"toc-hr-collapsed": true, "cell_type": "markdown"}
 # ## Vital signs periodic data
+# -
 
+# ### Read the data
 
+vital_prdc_df = dd.read_csv(f'{data_path}original/vitalPeriodic.csv')
+vital_prdc_df.head()
 
+vital_prdc_df = vital_prdc_df.repartition(npartitions=30)
 
+vital_prdc_df.npartitions
+
+# Get an overview of the dataframe through the `describe` method:
+
+vital_prdc_df.describe().compute().transpose()
+
+vital_prdc_df.visualize()
+
+vital_prdc_df.columns
+
+vital_prdc_df.dtypes
+
+# ### Remove unneeded features
+
+patient_df = patient_df[['patientunitstayid', 'gender', 'age', 'ethnicity', 'apacheadmissiondx',  'admissionheight', 
+                         'hospitaldischargeoffset', 'hospitaldischargelocation', 'hospitaldischargestatus', 
+                         'admissionweight', 'dischargeweight', 'unitdischargeoffset']]
+patient_df.head()
+
+# ### Check for missing values
+
+# + {"pixiedust": {"displayParams": {}}}
+utils.dataframe_missing_values(patient_df)
+
+# + {"toc-hr-collapsed": true, "cell_type": "markdown"}
+# ### Discretize categorical features
+#
+# Convert binary categorical features into simple numberings, one hot encode features with a low number of categories (in this case, 5) and enumerate sparse categorical features that will be embedded.
+# -
+
+# #### Convert binary categorical features into numeric
+
+patient_df.gender.value_counts().compute()
+
+patient_df.gender = patient_df.gender.map(lambda x: 1 if x == 'Male' else 0 if x == 'Female' else np.nan)
+
+patient_df.gender.value_counts().compute()
+
+# #### Separate and prepare features for embedding
+#
+# Identify categorical features that have more than 5 unique categories, which will go through an embedding layer afterwards, and enumerate them.
+#
+# [TODO] Only enumerate the `apacheadmissiondx` feature after joining it with all the remaining diagnosis features
+
+# Update list of categorical features and add those that will need embedding (features with more than 5 unique values):
+
+new_cat_feat = ['ethnicity', 'apacheadmissiondx']
+[cat_feat.append(col) for col in new_cat_feat]
+
+cat_feat_nunique = [patient_df[feature].nunique().compute() for feature in new_cat_feat]
+cat_feat_nunique
+
+for i in range(len(new_cat_feat)):
+    if cat_feat_nunique[i] > 5:
+        # Add feature to the list of those that will be embedded
+        cat_embed_feat.append(new_cat_feat[i])
+
+patient_df[new_cat_feat].head()
+
+for i in range(len(cat_feat)):
+    feature = cat_feat[i]
+    if cat_feat_nunique[i] > 5 and feature is not 'apacheadmissiondx':
+        # Prepare for embedding, i.e. enumerate categories
+        patient_df[feature], cat_embed_feat_enum[feature] = utils.enum_categorical_feature(patient_df, feature)
+
+patient_df[cat_feat].head()
+
+cat_embed_feat_enum
+
+patient_df[cat_feat].dtypes
+
+patient_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+patient_df = client.persist(patient_df)
+
+patient_df.visualize()
+
+# ### Create the timestamp feature and sort
+
+# Create the timestamp (`ts`) feature:
+
+patient_df['ts'] = 0
+patient_df.head()
+
+patient_df.patientunitstayid.value_counts().compute()
+
+# Sort by `ts` so as to be easier to merge with other dataframes later:
+
+vital_prdc_df = dd.from_pandas(vital_prdc_df.compute().sort_values(by='ts'), npartitions=30, sort=False)
+vital_prdc_df.head(6)
+
+patient_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+patient_df = client.persist(patient_df)
+
+patient_df.visualize()
+
+# ### Normalize data
+
+# Save the dataframe before normalizing:
+
+patient_df.to_parquet(f'{data_path}cleaned/unnormalized/patient.parquet')
+
+# + {"pixiedust": {"displayParams": {}}}
+patient_df_norm = utils.normalize_data(patient_df, embed_columns=cat_embed_feat, 
+                                       id_columns=['patientunitstayid', 'ts', 'deathoffset'])
+patient_df_norm.head(6)
+# -
+
+patient_df_norm.to_parquet(f'{data_path}cleaned/normalized/patient.parquet')
+
+# Confirm that everything is ok through the `describe` method:
+
+patient_df_norm.describe().compute().transpose()
 
 # ### Join dataframes and save to a parquet file
+
+patient_df = dd.read_parquet(f'{data_path}cleaned/normalized/patient.parquet')
+patient_df.head()
+
+
+
+# + {"toc-hr-collapsed": true, "cell_type": "markdown"}
+# ## Vital signs aperiodic data
+# -
+
+# ### Read the data
+
+vital_aprdc_df = dd.read_csv(f'{data_path}original/vitalAperiodic.csv')
+vital_aprdc_df.head()
+
+vital_aprdc_df = vital_aprdc_df.repartition(npartitions=30)
+
+vital_aprdc_df.npartitions
+
+# Get an overview of the dataframe through the `describe` method:
+
+vital_aprdc_df.describe().compute().transpose()
+
+vital_aprdc_df.visualize()
+
+vital_aprdc_df.columns
+
+vital_aprdc_df.dtypes
+
+# ### Remove unneeded features
+
+vital_aprdc_df = vital_aprdc_df.drop('vitalaperiodicid', axis=1)
+vital_aprdc_df.head()
+
+# ### Check for missing values
+
+# + {"pixiedust": {"displayParams": {}}}
+utils.dataframe_missing_values(vital_aprdc_df)
+# -
+
+# ### Create the timestamp feature and sort
+
+# Create the timestamp (`ts`) feature:
+
+vital_aprdc_df['ts'] = vital_aprdc_df['observationoffset']
+vital_aprdc_df = vital_aprdc_df.drop('observationoffset', axis=1)
+vital_aprdc_df.head()
+
+# Sort by `ts` so as to be easier to merge with other dataframes later:
+
+vital_aprdc_df = dd.from_pandas(vital_aprdc_df.compute().sort_values(by='ts'), npartitions=30, sort=False)
+vital_aprdc_df.head(6)
+
+vital_aprdc_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+vital_aprdc_df = client.persist(vital_aprdc_df)
+
+vital_aprdc_df.visualize()
+
+# ### Normalize data
+
+# Save the dataframe before normalizing:
+
+vital_aprdc_df.to_parquet(f'{data_path}cleaned/unnormalized/vitalAperiodic.parquet')
+
+# + {"pixiedust": {"displayParams": {}}}
+vital_aprdc_df_norm = utils.normalize_data(vital_aprdc_df, 
+                                           id_columns=['patientunitstayid', 'ts'])
+vital_aprdc_df_norm.head(6)
+# -
+
+vital_aprdc_df_norm.to_parquet(f'{data_path}cleaned/normalized/vitalAperiodic.parquet')
+
+# Confirm that everything is ok through the `describe` method:
+
+vital_aprdc_df_norm.describe().compute().transpose()
+
+# ### Join dataframes
+#
+# Merge dataframes by the unit stay, `patientunitstayid`, and the timestamp, `ts`, with a tolerence for a difference of up to 30 minutes.
+
+patient_df = dd.read_parquet(f'{data_path}cleaned/unnormalized/patient.parquet')
+patient_df.head()
+
+vital_aprdc_df = dd.read_parquet(f'{data_path}cleaned/normalized/vitalAperiodic.parquet')
+vital_aprdc_df.head()
+
+eICU_df = dd.merge_asof(patient_df, vital_aprdc_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
+eICU_df.head()
 
 
