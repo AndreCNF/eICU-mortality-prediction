@@ -13,6 +13,7 @@ from NeuralNetwork import NeuralNetwork                 # Import the neural netw
 from sklearn.metrics import roc_auc_score               # ROC AUC model performance metric
 import warnings                                         # Print warnings for bad practices
 import sys                                              # Identify types of exceptions
+from functools import reduce                            # Parallelize functions
 
 # [TODO] Make the random seed a user option (randomly generated or user defined)
 # Random seed used in PyTorch and NumPy's random operations (such as weight initialization)
@@ -24,6 +25,9 @@ import sys                                              # Identify types of exce
 random_seed = 0
 np.random.seed(random_seed)
 torch.manual_seed(random_seed)
+
+# Ignore Dask's 'meta' warning
+warnings.filterwarnings("ignore", message="`meta` is not specified, inferred from partial data. Please provide `meta` if the result is unexpected.")
 
 # Exceptions
 
@@ -294,6 +298,10 @@ def enum_categorical_feature(df, feature, nan_value=0):
             if 'other' in key.lower() or 'unknown' in key.lower() or 'null' in key.lower():
                 # Move NaN-like key to nan_value
                 enum_dict[key] = nan_value
+        elif isinstance(key, numbers.Number):
+            if np.isnan(key) or str(key).lower() == 'nan':
+                # Move NaN-like key to nan_value
+                enum_dict[key] = nan_value
     # Create a series from the enumerations of the original feature's categories
     if 'dask' in str(type(df)):
         enum_series = df[feature].map(lambda x: apply_dict_convertion(x, enum_dict, nan_value), meta=('x', int))
@@ -301,6 +309,51 @@ def enum_categorical_feature(df, feature, nan_value=0):
         enum_series = df[feature].map(lambda x: apply_dict_convertion(x, enum_dict, nan_value))
     return enum_series, enum_dict
 
+
+def join_categorical_enum(df, cat_feat, id_columns=['patientunitstayid', 'ts']):
+    '''Join rows that have the same identifier columns based on concatenating
+    categorical encodings and on averaging continuous features.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame or dask.DataFrame
+        Dataframe which will be processed.
+    cat_feat : string
+        Name(s) of the categorical feature(s) which will have their values
+        concatenated along the ID's.
+    id_columns : list of strings, default ['patientunitstayid', 'ts']
+        List of columns names which represent identifier columns. These are not
+        supposed to be changed.
+
+    Returns
+    -------
+    data_df : pandas.DataFrame or dask.DataFrame
+        Resulting dataframe from merging all the concatenated or averaged
+        features.
+    '''
+    # Make a copy of the data to avoid potentially unwanted changes to the original dataframe
+    data_df = df.copy()
+    # Define a list of dataframes
+    df_list = []
+    print('Concatenating categorical encodings...')
+    for feature in tqdm(cat_feat):
+        # Convert to string format
+        data_df[feature] = data_df[feature].astype(str)
+        # Join with other categorical enumerations on the same ID's
+        df_list.append(data_df.groupby(id_columns)[feature].apply(lambda x: "%s" % ';'.join(x)).to_frame().reset_index().set_index('ts'))
+    remaining_feat = list(set(data_df.columns) - set(cat_feat) - set(id_columns))
+    print('Averaging continuous features...')
+    for feature in tqdm(remaining_feat):
+        # Join remaining features through their average value (just to be sure that there aren't missing or different values)
+        df_list.append(data_df.groupby(id_columns)[feature].mean().to_frame().reset_index().set_index('ts'))
+    # Merge all dataframes
+    print('Merging features\' dataframes...')
+    if 'dask' in str(type(data_df)):
+        data_df = reduce(lambda x, y: dd.merge(x, y, on=id_columns), df_list)
+    else:
+        data_df = reduce(lambda x, y: pd.merge(x, y, on=id_columns), df_list)
+    print('Done!')
+    return data_df
 
 def prepare_embed_bag(df, feature):
     '''Prepare a categorical feature for embedding bag, i.e. split category
@@ -346,6 +399,13 @@ def prepare_embed_bag(df, feature):
     embed_num = torch.tensor(embed_num)
     offset = torch.tensor(offset)
     return embed_num, offset
+
+
+# [TODO] Create a function that takes a set of embeddings (which will be used in
+# an embedding bag) and reverts them back to the original text
+# [TODO] Define an automatic method to discover which embedded category was more
+# important by doing inference on individual embeddings of each category separately,
+# seeing which one caused a bigger change in the output.
 
 
 def is_definitely_string(x):

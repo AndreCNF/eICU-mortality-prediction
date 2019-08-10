@@ -150,20 +150,22 @@ new_cat_feat = ['ethnicity', 'apacheadmissiondx']
 cat_feat_nunique = [patient_df[feature].nunique().compute() for feature in new_cat_feat]
 cat_feat_nunique
 
+new_cat_embed_feat = []
 for i in range(len(new_cat_feat)):
     if cat_feat_nunique[i] > 5:
         # Add feature to the list of those that will be embedded
         cat_embed_feat.append(new_cat_feat[i])
+        # Add feature to the list of the new ones (from the current table) that will be embedded
+        new_cat_embed_feat.append(new_cat_feat[i])
 
 patient_df[new_cat_feat].head()
 
-for i in range(len(cat_feat)):
-    feature = cat_feat[i]
-    if cat_feat_nunique[i] > 5 and feature is not 'apacheadmissiondx':
-        # Prepare for embedding, i.e. enumerate categories
-        patient_df[feature], cat_embed_feat_enum[feature] = utils.enum_categorical_feature(patient_df, feature)
+for i in range(len(new_cat_embed_feat)):
+    feature = new_cat_embed_feat[i]
+    # Prepare for embedding, i.e. enumerate categories
+    patient_df[feature], cat_embed_feat_enum[feature] = utils.enum_categorical_feature(patient_df, feature)
 
-patient_df[cat_feat].head()
+patient_df[new_cat_feat].head()
 
 cat_embed_feat_enum
 
@@ -274,8 +276,12 @@ patient_df.head()
 
 cat_feat.remove('apacheadmissiondx')
 cat_embed_feat.remove('apacheadmissiondx')
+new_cat_feat.remove('apacheadmissiondx')
+new_cat_embed_feat.remove('apacheadmissiondx')
 cat_feat.append('diagnosis')
 cat_embed_feat.append('diagnosis')
+new_cat_feat.append('diagnosis')
+new_cat_embed_feat.append('diagnosis')
 
 
 # Similarly, only set the `diagnosis` to the admission instance, as the current table only has diagnosis on admission:
@@ -301,7 +307,7 @@ patient_df.head(6)
 
 # Sort by `ts` so as to be easier to merge with other dataframes later:
 
-patient_df = dd.from_pandas(patient_df.sort_values(by='ts'), npartitions=30, sort=False)
+patient_df = dd.from_pandas(patient_df.set_index('ts'), npartitions=30, sort=False)
 patient_df.head(6)
 
 patient_df.visualize()
@@ -317,9 +323,13 @@ patient_df.visualize()
 
 patient_df.to_parquet(f'{data_path}cleaned/unnormalized/patient.parquet')
 
+new_cat_feat
+
+patient_df.head()
+
 # + {"pixiedust": {"displayParams": {}}}
-patient_df_norm = utils.normalize_data(patient_df, embed_columns=cat_feat, 
-                                       id_columns=['patientunitstayid', 'ts', 'deathoffset'])
+patient_df_norm = utils.normalize_data(patient_df, embed_columns=new_cat_feat, 
+                                       id_columns=['patientunitstayid', 'deathoffset'])
 patient_df_norm.head(6)
 # -
 
@@ -391,20 +401,22 @@ new_cat_feat = ['ethnicity', 'apacheadmissiondx']
 cat_feat_nunique = [patient_df[feature].nunique().compute() for feature in new_cat_feat]
 cat_feat_nunique
 
+new_cat_embed_feat = []
 for i in range(len(new_cat_feat)):
     if cat_feat_nunique[i] > 5:
         # Add feature to the list of those that will be embedded
         cat_embed_feat.append(new_cat_feat[i])
+        # Add feature to the list of the new ones (from the current table) that will be embedded
+        new_cat_embed_feat.append(new_cat_feat[i])
 
 patient_df[new_cat_feat].head()
 
-for i in range(len(cat_feat)):
-    feature = cat_feat[i]
-    if cat_feat_nunique[i] > 5 and feature is not 'apacheadmissiondx':
-        # Prepare for embedding, i.e. enumerate categories
-        patient_df[feature], cat_embed_feat_enum[feature] = utils.enum_categorical_feature(patient_df, feature)
+for i in range(len(new_cat_embed_feat)):
+    feature = new_cat_embed_feat[i]
+    # Prepare for embedding, i.e. enumerate categories
+    patient_df[feature], cat_embed_feat_enum[feature] = utils.enum_categorical_feature(patient_df, feature)
 
-patient_df[cat_feat].head()
+patient_df[new_cat_feat].head()
 
 cat_embed_feat_enum
 
@@ -429,7 +441,7 @@ patient_df.patientunitstayid.value_counts().compute()
 
 # Sort by `ts` so as to be easier to merge with other dataframes later:
 
-vital_prdc_df = dd.from_pandas(vital_prdc_df.compute().sort_values(by='ts'), npartitions=30, sort=False)
+vital_prdc_df = vital_prdc_df.set_index('ts')
 vital_prdc_df.head(6)
 
 patient_df.visualize()
@@ -446,7 +458,7 @@ patient_df.visualize()
 patient_df.to_parquet(f'{data_path}cleaned/unnormalized/patient.parquet')
 
 # + {"pixiedust": {"displayParams": {}}}
-patient_df_norm = utils.normalize_data(patient_df, embed_columns=cat_feat, 
+patient_df_norm = utils.normalize_data(patient_df, embed_columns=new_cat_feat, 
                                        id_columns=['patientunitstayid', 'ts', 'deathoffset'])
 patient_df_norm.head(6)
 # -
@@ -514,7 +526,7 @@ vital_aprdc_df.head()
 
 # Sort by `ts` so as to be easier to merge with other dataframes later:
 
-vital_aprdc_df = dd.from_pandas(vital_aprdc_df.compute().sort_values(by='ts'), npartitions=30, sort=False)
+vital_aprdc_df = vital_aprdc_df.set_index('ts')
 vital_aprdc_df.head(6)
 
 vital_aprdc_df.visualize()
@@ -617,20 +629,22 @@ new_cat_feat = ['infectdiseasesite']
 cat_feat_nunique = [infect_df[feature].nunique().compute() for feature in new_cat_feat]
 cat_feat_nunique
 
+new_cat_embed_feat = []
 for i in range(len(new_cat_feat)):
     if cat_feat_nunique[i] > 5:
         # Add feature to the list of those that will be embedded
         cat_embed_feat.append(new_cat_feat[i])
+        # Add feature to the list of the new ones (from the current table) that will be embedded
+        new_cat_embed_feat.append(new_cat_feat[i])
 
 infect_df[new_cat_feat].head()
 
-for i in range(len(cat_feat)):
-    feature = cat_feat[i]
-    if cat_feat_nunique[i] > 5:
-        # Prepare for embedding, i.e. enumerate categories
-        infect_df[feature], cat_embed_feat_enum[feature] = utils.enum_categorical_feature(infect_df, feature)
+for i in range(len(new_cat_embed_feat)):
+    feature = new_cat_embed_feat[i]
+    # Prepare for embedding, i.e. enumerate categories
+    infect_df[feature], cat_embed_feat_enum[feature] = utils.enum_categorical_feature(infect_df, feature)
 
-infect_df[cat_feat].head()
+infect_df[new_cat_feat].head()
 
 cat_embed_feat_enum
 
@@ -657,7 +671,7 @@ infect_df.patientunitstayid.value_counts().compute()
 
 # Sort by `ts` so as to be easier to merge with other dataframes later:
 
-infect_df = dd.from_pandas(infect_df.compute().sort_values(by='ts'), npartitions=30, sort=False)
+infect_df = infect_df.set_index('ts')
 infect_df.head(6)
 
 infect_df.visualize()
@@ -674,7 +688,7 @@ infect_df.visualize()
 infect_df.to_parquet(f'{data_path}cleaned/unnormalized/carePlanInfectiousDisease.parquet')
 
 # + {"pixiedust": {"displayParams": {}}}
-infect_df_norm = utils.normalize_data(infect_df, embed_columns=cat_feat, 
+infect_df_norm = utils.normalize_data(infect_df, embed_columns=new_cat_feat, 
                                       id_columns=['patientunitstayid', 'ts'])
 infect_df_norm.head(6)
 # -
@@ -757,6 +771,8 @@ micro_df.head()
 # #### Separate and prepare features for embedding
 #
 # Identify categorical features that have more than 5 unique categories, which will go through an embedding layer afterwards, and enumerate them.
+#
+# In the case of microbiology data, we're also going to embed the antibiotic `sensitivitylevel`, not because it has many categories, but because there can be several rows of data per timestamp (which would be impractical on one hot encoded data).
 
 # Update list of categorical features and add those that will need embedding (features with more than 5 unique values):
 
@@ -766,38 +782,23 @@ new_cat_feat = ['culturesite', 'organism', 'antibiotic', 'sensitivitylevel']
 cat_feat_nunique = [micro_df[feature].nunique().compute() for feature in new_cat_feat]
 cat_feat_nunique
 
+new_cat_embed_feat = []
 for i in range(len(new_cat_feat)):
-    if cat_feat_nunique[i] > 5:
+    if cat_feat_nunique[i] > 5 or new_cat_feat[i] == 'sensitivitylevel':
         # Add feature to the list of those that will be embedded
         cat_embed_feat.append(new_cat_feat[i])
+        new_cat_embed_feat.append(new_cat_feat[i])
 
 micro_df[new_cat_feat].head()
 
-for i in range(len(cat_feat)):
-    feature = cat_feat[i]
-    if cat_feat_nunique[i] > 5 and feature is not 'apacheadmissiondx':
-        # Prepare for embedding, i.e. enumerate categories
-        micro_df[feature], cat_embed_feat_enum[feature] = utils.enum_categorical_feature(micro_df, feature)
-
-# One hot encode remaining features:
-
-features_ohe = list(set(new_cat_feat) - set(cat_embed_feat))
-features_ohe
-
 # + {"pixiedust": {"displayParams": {}}}
-micro_df, new_ohe_columns = utils.one_hot_encoding_dataframe(micro_df, features_ohe, has_nan=True, join_rows=False, get_new_column_names=True)
-micro_df.head()
+for i in range(len(new_cat_embed_feat)):
+    feature = new_cat_embed_feat[i]
+    # Prepare for embedding, i.e. enumerate categories
+    micro_df[feature], cat_embed_feat_enum[feature] = utils.enum_categorical_feature(micro_df, feature)
 # -
 
-# Update the list of categorical features with the new, one hot encoded ones:
-
-# Add the new one hot encoded columns
-[cat_feat.append(col) for col in new_ohe_columns]
-# Remove the old categorical features
-[cat_feat.remove(col) for col in features_ohe]
-cat_feat
-
-micro_df[cat_feat].head()
+micro_df[new_cat_feat].head()
 
 cat_embed_feat_enum
 
@@ -820,8 +821,8 @@ micro_df.head()
 
 # Sort by `ts` so as to be easier to merge with other dataframes later:
 
-micro_df = dd.from_pandas(micro_df.compute().sort_values(by='ts'), npartitions=30, sort=False)
-micro_df.head(6)
+micro_df = micro_df.set_index('ts')
+micro_df.head()
 
 micro_df.visualize()
 
@@ -832,11 +833,33 @@ micro_df.visualize()
 
 # Check for possible multiple rows with the same unit stay ID and timestamp:
 
-micro_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='culturesite').head()
+micro_df.reset_index().head()
+
+micro_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='culturesite').head()
 
 micro_df[micro_df.patientunitstayid == 3069495].compute().head(20)
 
-data_df = data_df.groupby(['id', 'ts']).Var0.apply(lambda x: "%s" % ';'.join(x)).to_frame().reset_index()
+# ### Join rows that have the same IDs
+
+# + {"pixiedust": {"displayParams": {}}}
+micro_df = utils.join_categorical_enum(micro_df, new_cat_embed_feat)
+micro_df.head()
+# -
+
+micro_df.dtypes
+
+micro_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='culturesite').head()
+
+micro_df[micro_df.patientunitstayid == 3069495].compute().head(20)
+
+# Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
+
+micro_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+micro_df = client.persist(micro_df)
+
+micro_df.visualize()
 
 # ### Normalize data
 
@@ -845,8 +868,8 @@ data_df = data_df.groupby(['id', 'ts']).Var0.apply(lambda x: "%s" % ';'.join(x))
 micro_df.to_parquet(f'{data_path}cleaned/unnormalized/microLab.parquet')
 
 # + {"pixiedust": {"displayParams": {}}}
-micro_df_norm = utils.normalize_data(micro_df, embed_columns=cat_feat, 
-                                     id_columns=['patientunitstayid', 'ts'])
+micro_df_norm = utils.normalize_data(micro_df, embed_columns=new_cat_feat, 
+                                     id_columns=['patientunitstayid'])
 micro_df_norm.head(6)
 # -
 
