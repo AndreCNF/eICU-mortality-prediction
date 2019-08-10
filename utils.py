@@ -150,8 +150,9 @@ def list_one_hot_encoded_columns(df):
 
 
 def one_hot_encoding_dataframe(df, columns, std_name=True, has_nan=False,
-                               join_rows=True, join_by=['patientunitstayid', 'ts']):
-    '''Transforms a specified column from a dataframe into a one hot encoding
+                               join_rows=True, join_by=['patientunitstayid', 'ts'],
+                               get_new_column_names=False):
+    '''Transforms specified column(s) from a dataframe into a one hot encoding
     representation.
 
     Parameters
@@ -175,6 +176,8 @@ def one_hot_encoding_dataframe(df, columns, std_name=True, has_nan=False,
         the dataframe's rows, which will be used in the groupby operation if the
         parameter join_rows is set to true. Can be a string (single column) or a
         list of strings (multiple columns).
+    get_new_column_names : bool, default False
+        If set to True, the names of the new columns will also be outputed.
 
     Raises
     ------
@@ -186,25 +189,42 @@ def one_hot_encoding_dataframe(df, columns, std_name=True, has_nan=False,
     ohe_df : pandas.DataFrame or dask.DataFrame
         Returns a new dataframe with the specified column in a one hot encoding
         representation.
+    new_column_names : list of strings
+        List of the new, one hot encoded columns' names.
     '''
+    data = df.copy()
+
     for col in columns:
+        # Check if the column exists
+        if col not in df.columns:
+            raise ColumnNotFoundError('Column name not found in the dataframe.')
+
         if has_nan:
             # Fill NaN with "missing_value" name
-            df[col].fillna(value='missing_value', inplace=True)
-
-        # Check if the column exists
-        if col not in df:
-            raise ColumnNotFoundError('Column name not found in the dataframe.')
+            data[col] = data[col].fillna(value='missing_value')
 
         if std_name:
             # Change categorical values to only have lower case letters and underscores
-            df[col] = df[col].apply(lambda x: str(x).lower().replace(' ', '_').replace(',', '_and'))
+            if 'dask' in str(type(data)):
+                data[col] = data[col].map(lambda x: str(x).lower().replace(' ', '_').replace(',', '_and'), meta=('x', str))
+            else:
+                data[col] = data[col].map(lambda x: str(x).lower().replace(' ', '_').replace(',', '_and'))
 
         # Cast the variable into the built in pandas Categorical data type
-        df[col] = pd.Categorical(df[col])
+        if 'pandas' in str(type(data)):
+            data[col] = pd.Categorical(data[col])
+    if 'dask' in str(type(data)):
+        data = data.categorize(columns)
+
+    if get_new_column_names:
+        # Find the previously existing column names
+        old_column_names = data.columns
 
     # Apply the one hot encoding to the specified columns
-    ohe_df = pd.get_dummies(df, columns=columns)
+    if 'dask' in str(type(data)):
+        ohe_df = dd.get_dummies(data, columns=columns)
+    else:
+        ohe_df = pd.get_dummies(data, columns=columns)
 
     if join_rows:
         # Columns which are one hot encoded
@@ -217,7 +237,12 @@ def one_hot_encoding_dataframe(df, columns, std_name=True, has_nan=False,
         # (there might be duplicates which cause values bigger than 1)
         ohe_df.loc[:, ohe_columns] = ohe_df[ohe_columns].clip(upper=1)
 
-    return ohe_df
+    if get_new_column_names:
+        # Find the new column names and output them
+        new_column_names = list(set(ohe_df.columns) - set(old_column_names))
+        return ohe_df, new_column_names
+    else:
+        return ohe_df
 
 
 def apply_dict_convertion(x, conv_dict, nan_value=0):
@@ -252,8 +277,13 @@ def enum_categorical_feature(df, feature, nan_value=0):
         Dictionary containing the mapping between the original categorical values
         and the numbering obtained.
     '''
+    # Get the unique values of the cateforical feature
+    unique_values = df[feature].unique()
+    if 'dask' in str(type(df)):
+        # Make sure that the unique values are computed, in case we're using Dask
+        unique_values = unique_values.compute()
     # Enumerate the unique values in the categorical feature and put them in a dictionary
-    enum_dict = dict(enumerate(df[feature].unique().compute(), start=1))
+    enum_dict = dict(enumerate(unique_values, start=1))
     # Invert the dictionary to have the unique categories as keys and the numbers as values
     enum_dict = {v: k for k, v in enum_dict.items()}
     # Move NaN to key 0
@@ -270,6 +300,52 @@ def enum_categorical_feature(df, feature, nan_value=0):
     else:
         enum_series = df[feature].map(lambda x: apply_dict_convertion(x, enum_dict, nan_value))
     return enum_series, enum_dict
+
+
+def prepare_embed_bag(df, feature):
+    '''Prepare a categorical feature for embedding bag, i.e. split category
+    enumerations into separate numbers, combine them into a single list and set
+    the appropriate offsets as to when each row's group of categories end.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame or dask.DataFrame
+        Dataframe that contains the categorical feature that will be embedded.
+    feature : string
+        Name of the categorical feature on which embedding bag will be applied.
+
+    Returns
+    -------
+    embed_num : torch.Tensor
+        List of all categorical enumerations, i.e. the numbers corresponding to
+        each of the feature's categories, contained in the input series.
+    offset : torch.Tensor
+        List of when each row's categorical enumerations start, considering the
+        embed_num list.
+    '''
+    embed_num = []
+    count = 0
+    offset = [count]
+    for i in range(len(df)):
+        # Separate digits in the same string
+        if 'dask' in str(type(df)):
+            # The line of code bellow corresponds to df[feature][i] in Pandas
+            feature_val_i = df.head(i+1, npartitions=df.npartitions).tail(1)[feature].values[0]
+        elif 'pandas' in str(type(df)):
+            feature_val_i = df[feature][i]
+        else:
+            raise Exception(f'ERROR: df should either be a Pandas or Dask dataframe, not {type(df)}.')
+        digits_list = feature_val_i.split(';')
+        embed_num.append(digits_list)
+        # Set the end of the current list
+        count += len(digits_list)
+        offset.append(count)
+    # Flatten list
+    embed_num = [int(item) for sublist in embed_num for item in sublist]
+    # Convert to PyTorch tensor
+    embed_num = torch.tensor(embed_num)
+    offset = torch.tensor(offset)
+    return embed_num, offset
 
 
 def is_definitely_string(x):
@@ -446,19 +522,26 @@ def normalize_data(df, data=None, id_columns=['patientunitstayid', 'ts'], normal
     if columns_to_normalize is None:
         # List of all columns in the dataframe
         feature_columns = list(df.columns)
+        # Normalize all non identifier continuous columns, ignore one hot encoded ones
+        columns_to_normalize = feature_columns
 
         # List of all columns in the dataframe, except the ID columns
-        [feature_columns.remove(col) for col in id_columns]
+        [columns_to_normalize.remove(col) for col in id_columns]
 
         if embed_columns:
             # Prevent all features that will be embedded from being normalized
-            [feature_columns.remove(col) for col in embed_columns]
+            [columns_to_normalize.remove(col) for col in embed_columns]
 
         # List of binary or one hot encoded columns
-        binary_cols = list_one_hot_encoded_columns(df[feature_columns])
+        binary_cols = list_one_hot_encoded_columns(df[columns_to_normalize])
 
-        # Normalize all non identifier continuous columns, ignore one hot encoded ones
-        columns_to_normalize = [col for col in feature_columns if col not in binary_cols]
+        if binary_cols:
+            # Prevent binary features from being normalized
+            [columns_to_normalize.remove(col) for col in binary_cols]
+
+        if not columns_to_normalize:
+            print('No columns to normalize, returning the original dataframe.')
+            return df
 
     if type(normalization_method) is not str:
         raise ValueError('Argument normalization_method should be a string. Available options \
@@ -546,7 +629,7 @@ def normalize_data(df, data=None, id_columns=['patientunitstayid', 'ts'], normal
 
 
 def denormalize_data(df, data, id_columns=['subject_id', 'ts'], normalization_method='z-score',
-                     columns_to_denormalize=None, see_progress=True):
+                     columns_to_denormalize=None, embed_columns=None, see_progress=True):
     '''Performs data denormalization to a continuous valued tensor or dataframe,
        changing the scale of the data.
 
@@ -574,6 +657,9 @@ def denormalize_data(df, data, id_columns=['subject_id', 'ts'], normalization_me
         If specified, the columns provided in the list are the only ones that
         will be denormalized. Otherwise, all non identifier continuous columns
         will be denormalized.
+    embed_columns : list of strings, default None
+        If specified, the columns in the list, which represent features that
+        will be embedded, aren't going to be denormalized.
     see_progress : bool, default True
         If set to True, a progress bar will show up indicating the execution
         of the normalization calculations.
@@ -588,22 +674,48 @@ def denormalize_data(df, data, id_columns=['subject_id', 'ts'], normalization_me
 
     # Check if specific columns have been specified for denormalization
     if columns_to_denormalize is None:
-        # List of binary or one hot encoded columns
-        binary_cols = list_one_hot_encoded_columns(df)
-
+        # List of all columns in the dataframe
+        feature_columns = list(df.columns)
         # Denormalize all non identifier continuous columns, ignore one hot encoded ones
-        columns_to_denormalize = [col for col in df.columns if col not in binary_cols and col not in id_columns]
+        columns_to_denormalize = feature_columns
+
+        # List of all columns in the dataframe, except the ID columns
+        [columns_to_denormalize.remove(col) for col in id_columns]
+
+        if embed_columns:
+            # Prevent all features that will be embedded from being normalized
+            [columns_to_denormalize.remove(col) for col in embed_columns]
+
+        # List of binary or one hot encoded columns
+        binary_cols = list_one_hot_encoded_columns(df[columns_to_denormalize])
+
+        if binary_cols:
+            # Prevent binary features from being normalized
+            [columns_to_denormalize.remove(col) for col in binary_cols]
+
+        if not columns_to_denormalize:
+            print('No columns to denormalize, returning the original dataframe.')
+            return df
 
     if type(normalization_method) is not str:
         raise ValueError('Argument normalization_method should be a string. Available options \
                          are \'z-score\' and \'min-max\'.')
 
     if normalization_method.lower() == 'z-score':
-        column_means = dict(df[columns_to_denormalize].mean())
-        column_stds = dict(df[columns_to_denormalize].std())
+        # Calculate the means and standard deviations
+        means = df[columns_to_denormalize].mean()
+        stds = df[columns_to_denormalize].std()
+
+        if 'dask' in str(type(df)):
+            # Make sure that the values are computed, in case we're using Dask
+            means = means.compute()
+            stds = stds.compute()
+
+        column_means = dict(means)
+        column_stds = dict(stds)
 
         # Check if the data being denormalized is a dataframe
-        if type(data) is pd.DataFrame:
+        if type(data) is pd.DataFrame or dd.DataFrame:
             # Denormalize the right columns
             for col in iterations_loop(columns_to_denormalize, see_progress=see_progress):
                 denorm_data[col] = data[col] * column_stds[col] + column_means[col]
@@ -624,11 +736,19 @@ def denormalize_data(df, data, id_columns=['subject_id', 'ts'], normalization_me
                 denorm_data[:, :, col] = data[:, :, col] * column_stds[idx_to_name[col]] + column_means[idx_to_name[col]]
 
     elif normalization_method.lower() == 'min-max':
-        column_mins = dict(df[columns_to_denormalize].min())
-        column_maxs = dict(df[columns_to_denormalize].max())
+        mins = df[columns_to_denormalize].min()
+        maxs = df[columns_to_denormalize].max()
+
+        if 'dask' in str(type(df)):
+            # Make sure that the values are computed, in case we're using Dask
+            mins = means.compute()
+            maxs = maxs.compute()
+
+        column_mins = dict(mins)
+        column_maxs = dict(maxs)
 
         # Check if the data being normalized is directly the dataframe
-        if type(data) is pd.DataFrame:
+        if type(data) is pd.DataFrame or dd.DataFrame:
             # Denormalize the right columns
             for col in iterations_loop(columns_to_denormalize, see_progress=see_progress):
                 denorm_data[col] = data[col] * (column_maxs[col] - column_mins[col]) + column_mins[col]
