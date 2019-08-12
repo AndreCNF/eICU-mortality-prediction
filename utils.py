@@ -153,7 +153,34 @@ def list_one_hot_encoded_columns(df):
     return [col for col in df.columns if is_one_hot_encoded_column(df, col)]
 
 
-def one_hot_encoding_dataframe(df, columns, std_name=True, has_nan=False,
+def clean_naming(df, column):
+    '''Change categorical values to only have lower case letters and underscores.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame or dask.DataFrame
+        Dataframe that contains the column to be cleaned.
+    column : string
+        Name of the dataframe's column which needs to have its string values
+        standardized.
+
+    Returns
+    -------
+    df : pandas.DataFrame or dask.DataFrame
+        Dataframe with its string column already cleaned.
+    '''
+    if 'dask' in str(type(df)):
+        df[column] = df[column].map(lambda x: str(x).lower().replace('  ', '') \
+                                                            .replace(' ', '_') \
+                                                            .replace(',', '_and'), meta=('x', str))
+    else:
+        df[column] = df[column].map(lambda x: str(x).lower().replace('  ', '') \
+                                                            .replace(' ', '_') \
+                                                            .replace(',', '_and'))
+    return df
+
+
+def one_hot_encoding_dataframe(df, columns, clean_name=True, has_nan=False,
                                join_rows=True, join_by=['patientunitstayid', 'ts'],
                                get_new_column_names=False):
     '''Transforms specified column(s) from a dataframe into a one hot encoding
@@ -166,7 +193,7 @@ def one_hot_encoding_dataframe(df, columns, std_name=True, has_nan=False,
     columns : list of strings
         Name of the column(s) that will be conveted to one hot encoding. Even if
         it's just one column, please provide inside a list.
-    std_name : bool, default True
+    clean_name : bool, default True
         If set to true, changes the name of the categorical values into lower
         case, with words separated by an underscore instead of space.
     has_nan : bool, default False
@@ -207,12 +234,9 @@ def one_hot_encoding_dataframe(df, columns, std_name=True, has_nan=False,
             # Fill NaN with "missing_value" name
             data[col] = data[col].fillna(value='missing_value')
 
-        if std_name:
-            # Change categorical values to only have lower case letters and underscores
-            if 'dask' in str(type(data)):
-                data[col] = data[col].map(lambda x: str(x).lower().replace(' ', '_').replace(',', '_and'), meta=('x', str))
-            else:
-                data[col] = data[col].map(lambda x: str(x).lower().replace(' ', '_').replace(',', '_and'))
+        if clean_name:
+            # Clean the column's string values to have the same, standard format
+            data = clean_naming(data, col)
 
         # Cast the variable into the built in pandas Categorical data type
         if 'pandas' in str(type(data)):
@@ -259,7 +283,7 @@ def apply_dict_convertion(x, conv_dict, nan_value=0):
         return conv_dict[x]
 
 
-def enum_categorical_feature(df, feature, nan_value=0):
+def enum_categorical_feature(df, feature, nan_value=0, clean_name=True):
     '''Enumerate all categories in a specified categorical feature, while also
     attributing a specific number to NaN and other unknown values.
 
@@ -271,6 +295,10 @@ def enum_categorical_feature(df, feature, nan_value=0):
         Name of the categorical feature which will be enumerated.
     nan_value : int
         Integer number that gets assigned to NaN and NaN-like values.
+    clean_name : bool
+        If set to True, the method assumes that the feature is of type string
+        and it will make sure that all the feature's values are in lower case,
+        to reduce duplicate information.
 
     Returns
     -------
@@ -281,6 +309,9 @@ def enum_categorical_feature(df, feature, nan_value=0):
         Dictionary containing the mapping between the original categorical values
         and the numbering obtained.
     '''
+    if clean_name:
+        # Clean the column's string values to have the same, standard format
+        df = clean_naming(df, feature)
     # Get the unique values of the cateforical feature
     unique_values = df[feature].unique()
     if 'dask' in str(type(df)):
@@ -310,7 +341,8 @@ def enum_categorical_feature(df, feature, nan_value=0):
     return enum_series, enum_dict
 
 
-def join_categorical_enum(df, cat_feat, id_columns=['patientunitstayid', 'ts']):
+def join_categorical_enum(df, cat_feat=[], id_columns=['patientunitstayid', 'ts'],
+                          cont_join_method='mean'):
     '''Join rows that have the same identifier columns based on concatenating
     categorical encodings and on averaging continuous features.
 
@@ -318,12 +350,15 @@ def join_categorical_enum(df, cat_feat, id_columns=['patientunitstayid', 'ts']):
     ----------
     df : pandas.DataFrame or dask.DataFrame
         Dataframe which will be processed.
-    cat_feat : string
+    cat_feat : string, default []
         Name(s) of the categorical feature(s) which will have their values
         concatenated along the ID's.
     id_columns : list of strings, default ['patientunitstayid', 'ts']
         List of columns names which represent identifier columns. These are not
         supposed to be changed.
+    cont_join_method : string, default 'mean'
+        Defines which method to use when joining rows of continuous features.
+        Can be either 'mean', 'min' or 'max'.
 
     Returns
     -------
@@ -344,8 +379,13 @@ def join_categorical_enum(df, cat_feat, id_columns=['patientunitstayid', 'ts']):
     remaining_feat = list(set(data_df.columns) - set(cat_feat) - set(id_columns))
     print('Averaging continuous features...')
     for feature in tqdm(remaining_feat):
-        # Join remaining features through their average value (just to be sure that there aren't missing or different values)
-        df_list.append(data_df.groupby(id_columns)[feature].mean().to_frame().reset_index().set_index('ts'))
+        # Join remaining features through their average, min or max value (just to be sure that there aren't missing or different values)
+        if cont_join_method.lower() == 'mean':
+            df_list.append(data_df.groupby(id_columns)[feature].mean().to_frame().reset_index().set_index('ts'))
+        elif cont_join_method.lower() == 'min':
+            df_list.append(data_df.groupby(id_columns)[feature].min().to_frame().reset_index().set_index('ts'))
+        elif cont_join_method.lower() == 'max':
+            df_list.append(data_df.groupby(id_columns)[feature].max().to_frame().reset_index().set_index('ts'))
     # Merge all dataframes
     print('Merging features\' dataframes...')
     if 'dask' in str(type(data_df)):

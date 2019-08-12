@@ -50,7 +50,7 @@ project_path = 'Documents/GitHub/eICU-mortality-prediction/'
 # -
 
 # Set up local cluster
-client = Client("tcp://127.0.0.1:61964")
+client = Client("tcp://127.0.0.1:63403")
 client
 
 # Upload the utils.py file, so that the Dask cluster has access to relevant auxiliary functions
@@ -451,6 +451,36 @@ patient_df = client.persist(patient_df)
 
 patient_df.visualize()
 
+# Check for possible multiple rows with the same unit stay ID and timestamp:
+
+micro_df.reset_index().head()
+
+micro_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='culturesite').head()
+
+micro_df[micro_df.patientunitstayid == 3069495].compute().head(20)
+
+# ### Join rows that have the same IDs
+
+# + {"pixiedust": {"displayParams": {}}}
+micro_df = utils.join_categorical_enum(micro_df, new_cat_embed_feat)
+micro_df.head()
+# -
+
+micro_df.dtypes
+
+micro_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='culturesite').head()
+
+micro_df[micro_df.patientunitstayid == 3069495].compute().head(20)
+
+# Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
+
+micro_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+micro_df = client.persist(micro_df)
+
+micro_df.visualize()
+
 # ### Normalize data
 
 # Save the dataframe before normalizing:
@@ -535,6 +565,34 @@ vital_aprdc_df.visualize()
 vital_aprdc_df = client.persist(vital_aprdc_df)
 
 vital_aprdc_df.visualize()
+
+# Check for possible multiple rows with the same unit stay ID and timestamp:
+
+vital_aprdc_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='noninvasivemean').head()
+
+vital_aprdc_df[micro_df.patientunitstayid == 3069495].compute().head(20)
+
+# ### Join rows that have the same IDs
+
+# + {"pixiedust": {"displayParams": {}}}
+micro_df = utils.join_categorical_enum(micro_df, new_cat_embed_feat)
+micro_df.head()
+# -
+
+micro_df.dtypes
+
+micro_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='culturesite').head()
+
+micro_df[micro_df.patientunitstayid == 3069495].compute().head(20)
+
+# Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
+
+micro_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+micro_df = client.persist(micro_df)
+
+micro_df.visualize()
 
 # ### Normalize data
 
@@ -681,6 +739,36 @@ infect_df = client.persist(infect_df)
 
 infect_df.visualize()
 
+# Check for possible multiple rows with the same unit stay ID and timestamp:
+
+infect_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='infectdiseasesite').head()
+
+infect_df[infect_df.patientunitstayid == 3049689].compute().head(20)
+
+# We can see that there are up to 6 categories per set of `patientunitstayid` and `ts`. As such, we must join them.
+
+# ### Join rows that have the same IDs
+
+# + {"pixiedust": {"displayParams": {}}}
+infect_df = utils.join_categorical_enum(infect_df, new_cat_embed_feat)
+infect_df.head()
+# -
+
+infect_df.dtypes
+
+infect_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='infectdiseasesite').head()
+
+infect_df[infect_df.patientunitstayid == 3049689].compute().head(20)
+
+# Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
+
+infect_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+infect_df = client.persist(infect_df)
+
+infect_df.visualize()
+
 # ### Normalize data
 
 # Save the dataframe before normalizing:
@@ -689,7 +777,7 @@ infect_df.to_parquet(f'{data_path}cleaned/unnormalized/carePlanInfectiousDisease
 
 # + {"pixiedust": {"displayParams": {}}}
 infect_df_norm = utils.normalize_data(infect_df, embed_columns=new_cat_feat, 
-                                      id_columns=['patientunitstayid', 'ts'])
+                                      id_columns=['patientunitstayid'])
 infect_df_norm.head(6)
 # -
 
@@ -703,13 +791,10 @@ infect_df_norm.describe().compute().transpose()
 #
 # Merge dataframes by the unit stay, `patientunitstayid`, and the timestamp, `ts`, with a tolerence for a difference of up to 30 minutes.
 
-patient_df = dd.read_parquet(f'{data_path}cleaned/normalized/patient.parquet')
-patient_df.head()
+infect_df = dd.read_parquet(f'{data_path}cleaned/normalized/carePlanInfectiousDisease.parquet')
+infect_df.head()
 
-vital_prdc_df = dd.read_parquet(f'{data_path}cleaned/normalized/vitalPeriodic.parquet')
-vital_prdc_df.head()
-
-eICU_df = dd.merge_asof(patient_df, vital_aprdc_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
+eICU_df = dd.merge_asof(eICU_df, infect_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
 eICU_df.head()
 
 # + {"toc-hr-collapsed": true, "cell_type": "markdown"}
@@ -802,7 +887,7 @@ micro_df[new_cat_feat].head()
 
 cat_embed_feat_enum
 
-micro_df[cat_feat].dtypes
+micro_df[new_cat_feat].dtypes
 
 micro_df.visualize()
 
@@ -838,6 +923,8 @@ micro_df.reset_index().head()
 micro_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='culturesite').head()
 
 micro_df[micro_df.patientunitstayid == 3069495].compute().head(20)
+
+# We can see that there are up to 120 categories per set of `patientunitstayid` and `ts`. As such, we must join them.
 
 # ### Join rows that have the same IDs
 
@@ -883,11 +970,432 @@ micro_df_norm.describe().compute().transpose()
 #
 # Merge dataframes by the unit stay, `patientunitstayid`, and the timestamp, `ts`, with a tolerence for a difference of up to 30 minutes.
 
-patient_df = dd.read_parquet(f'{data_path}cleaned/normalized/patient.parquet')
-patient_df.head()
+micro_df = dd.read_parquet(f'{data_path}cleaned/normalized/microLab.parquet')
+micro_df.head()
 
-vital_prdc_df = dd.read_parquet(f'{data_path}cleaned/normalized/vitalPeriodic.parquet')
-vital_prdc_df.head()
+eICU_df = dd.merge_asof(eICU_df, micro_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
+eICU_df.head()
 
-eICU_df = dd.merge_asof(patient_df, vital_aprdc_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
+# + {"toc-hr-collapsed": true, "cell_type": "markdown"}
+# ## Respiratory care data
+# -
+
+# ### Read the data
+
+resp_care_df = dd.read_csv(f'{data_path}original/respiratoryCare.csv', dtype={'airwayposition': 'object',
+                                                                              'airwaysize': 'object',
+                                                                              'apneaparms': 'object',
+                                                                              'setapneafio2': 'object',
+                                                                              'setapneaie': 'object',
+                                                                              'setapneainsptime': 'object',
+                                                                              'setapneainterval': 'object',
+                                                                              'setapneaippeephigh': 'object',
+                                                                              'setapneapeakflow': 'object',
+                                                                              'setapneatv': 'object'})
+resp_care_df.head()
+
+len(resp_care_df)
+
+resp_care_df.patientunitstayid.nunique().compute()
+
+resp_care_df.npartitions
+
+resp_care_df = resp_care_df.repartition(npartitions=30)
+
+# Get an overview of the dataframe through the `describe` method:
+
+resp_care_df.describe().compute().transpose()
+
+resp_care_df.visualize()
+
+resp_care_df.columns
+
+resp_care_df.dtypes
+
+# ### Check for missing values
+
+# + {"pixiedust": {"displayParams": {}}}
+utils.dataframe_missing_values(resp_care_df)
+# -
+
+# ### Remove unneeded features
+
+# For the respiratoryCare table, I'm not going to use any of the several features that detail what the vent in the hospital is like. Besides not appearing to be very relevant for the patient, they have a lot of missing values (>67%). Instead, I'm going to set a ventilation label (between the start and the end), and a previous ventilation label.
+
+resp_care_df = resp_care_df[['patientunitstayid', 'ventstartoffset',
+                             'ventendoffset', 'priorventstartoffset']]
+resp_care_df.head()
+
+# ### Create the timestamp feature and sort
+
+# Create the timestamp (`ts`) feature:
+
+resp_care_df['ts'] = resp_care_df['ventstartoffset']
+resp_care_df = resp_care_df.drop('ventstartoffset', axis=1)
+resp_care_df.head()
+
+# Sort by `ts` so as to be easier to merge with other dataframes later:
+
+resp_care_df = resp_care_df.set_index('ts')
+resp_care_df.head()
+
+resp_care_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+resp_care_df = client.persist(resp_care_df)
+
+resp_care_df.visualize()
+
+# Check for possible multiple rows with the same unit stay ID and timestamp:
+
+resp_care_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='ventendoffset').head()
+
+resp_care_df[resp_care_df.patientunitstayid == 3348331].compute().head(20)
+
+# We can see that there are up to 5283 duplicate rows per set of `patientunitstayid` and `ts`. As such, we must join them.
+
+# ### Join rows that have the same IDs
+
+# Remove duplicate rows:
+
+resp_care_df = resp_care_df.drop_duplicates()
+resp_care_df.head()
+
+resp_care_df = resp_care_df.repartition(npartitions=30)
+
+resp_care_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='ventendoffset').head()
+
+resp_care_df[resp_care_df.patientunitstayid == 1113084].compute().head(10)
+
+# Even after removing duplicates rows, there are still some that have different information for the same ID and timestamp. We have to apply a groupby function, selecting the minimum value for each of the offset features, as the larger values don't make sense (in the `priorventstartoffset`).
+
+((resp_care_df.index > resp_care_df.ventendoffset) & resp_care_df.ventendoffset != 0).compute().value_counts()
+
+# There are no errors of having the start vent timestamp later than the end vent timestamp.
+
+# + {"pixiedust": {"displayParams": {}}}
+resp_care_df = utils.join_categorical_enum(resp_care_df, cont_join_method='min')
+resp_care_df.head()
+# -
+
+resp_care_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='ventendoffset').head()
+
+resp_care_df[resp_care_df.patientunitstayid == 1113084].compute().head(10)
+
+# Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
+
+resp_care_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+resp_care_df = client.persist(resp_care_df)
+
+resp_care_df.visualize()
+
+# Only keep the first instance of each patient, as we're only keeping track of when they are on ventilation:
+
+resp_care_df = resp_care_df.reset_index().groupby('patientunitstayid').first().reset_index().set_index('ts')
+resp_care_df.head(20)
+
+# ### Create prior ventilation label
+#
+# Make a feature `priorvent` that indicates if the patient has been on ventilation before.
+
+# Convert to pandas:
+
+resp_care_df = resp_care_df.compute()
+
+# Create the prior ventilation column:
+
+resp_care_df['priorvent'] = (resp_care_df.priorventstartoffset < resp_care_df.index).astype(int)
+resp_care_df.head()
+
+# Revert to Dask:
+
+resp_care_df = dd.from_pandas(resp_care_df, npartitions=30)
+resp_care_df.head()
+
+# Remove the now unneeded `priorventstartoffset` column:
+
+resp_care_df = resp_care_df.drop('priorventstartoffset', axis=1)
+resp_care_df.head()
+
+# ### Create current ventilation label
+#
+# Make a feature `onvent` that indicates if the patient is currently on ventilation.
+
+# Duplicate every row, so as to create a discharge event:
+
+resp_care_df = resp_care_df.append(resp_care_df)
+resp_care_df.head()
+
+# Sort by `ts` so as to keep the order of timestamps:
+
+resp_care_df = resp_care_df.reset_index()
+resp_care_df.head()
+
+resp_care_df = resp_care_df.compute().sort_values(by='ts')
+resp_care_df.head(6)
+
+# Create a `onvent` feature:
+
+resp_care_df['onvent'] = 1
+resp_care_df.head(6)
+
+
+# Set the `onvent` and `ts` features to initially have the value on ventilation start and, on the second timestamp, have the value on ventilation end:
+
+def set_onvent(row):
+    global first_row
+    if not first_row:
+        row['onvent'] = 0
+        first_row = True
+    else:
+        first_row = False
+    return row
+
+
+first_row = False
+resp_care_df = resp_care_df.apply(lambda row: set_onvent(row), axis=1)
+resp_care_df.head(6)
+
+
+def set_ts_vent(row):
+    global first_row
+    if not first_row:
+        row['ts'] = row['ventendoffset']
+        first_row = True
+    else:
+        first_row = False
+    return row
+
+
+first_row = False
+resp_care_df = resp_care_df.apply(lambda row: set_ts_vent(row), axis=1)
+resp_care_df.head(6)
+
+# Remove the now unneeded ventilation end column:
+
+resp_care_df = resp_care_df.drop('ventendoffset', axis=1)
+resp_care_df.head(6)
+
+# Sort by `ts` so as to be easier to merge with other dataframes later:
+
+resp_care_df = dd.from_pandas(resp_care_df.set_index('ts'), npartitions=30, sort=True)
+resp_care_df.head(6)
+
+resp_care_df.tail(6)
+
+resp_care_df[resp_care_df.patientunitstayid == 1557538].compute()
+
+# Save the dataframe:
+
+resp_care_df.to_parquet(f'{data_path}cleaned/unnormalized/respiratoryCare.parquet')
+
+resp_care_df.to_parquet(f'{data_path}cleaned/normalized/respiratoryCare.parquet')
+
+# ### Join dataframes
+#
+# Merge dataframes by the unit stay, `patientunitstayid`, and the timestamp, `ts`, with a tolerence for a difference of up to 30 minutes.
+
+resp_care_df = dd.read_parquet(f'{data_path}cleaned/normalized/respiratoryCare.parquet')
+resp_care_df.head()
+
+eICU_df = dd.merge_asof(eICU_df, resp_care_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
+eICU_df.head()
+
+# + {"toc-hr-collapsed": true, "cell_type": "markdown"}
+# ## Allergy data
+# -
+
+# ### Read the data
+
+alrg_df = dd.read_csv(f'{data_path}original/allergy.csv')
+alrg_df.head()
+
+len(alrg_df)
+
+alrg_df.patientunitstayid.nunique().compute()
+
+alrg_df.npartitions
+
+alrg_df = alrg_df.repartition(npartitions=30)
+
+# Get an overview of the dataframe through the `describe` method:
+
+alrg_df.describe().compute().transpose()
+
+alrg_df.visualize()
+
+alrg_df.columns
+
+alrg_df.dtypes
+
+# ### Check for missing values
+
+# + {"pixiedust": {"displayParams": {}}}
+utils.dataframe_missing_values(alrg_df)
+# -
+
+# ### Remove unneeded features
+
+alrg_df[alrg_df.allergytype == 'Non Drug'].drughiclseqno.value_counts().compute()
+
+alrg_df[alrg_df.allergytype == 'Drug'].drughiclseqno.value_counts().compute()
+
+# As we can see, the drug features in this table only have data if the allergy derives from using the drug. As such, we don't need the `allergytype` feature. Also ignoring hospital staff related information and using just the drug codes instead of their names, as they're independent of the drug brand.
+
+alrg_df.allergynotetype.value_counts().compute()
+
+# Feature `allergynotetype` also doesn't seem very relevant, discarding it.
+
+alrg_df = alrg_df[['patientunitstayid', 'allergyoffset', 
+                   'allergyname', 'drughiclseqno']]
+alrg_df.head()
+
+# + {"toc-hr-collapsed": true, "cell_type": "markdown"}
+# ### Discretize categorical features
+#
+# Convert binary categorical features into simple numberings, one hot encode features with a low number of categories (in this case, 5) and enumerate sparse categorical features that will be embedded.
+# -
+
+# #### Separate and prepare features for embedding
+#
+# Identify categorical features that have more than 5 unique categories, which will go through an embedding layer afterwards, and enumerate them.
+#
+# In the case of microbiology data, we're also going to embed the antibiotic `sensitivitylevel`, not because it has many categories, but because there can be several rows of data per timestamp (which would be impractical on one hot encoded data).
+
+# Update list of categorical features and add those that will need embedding (features with more than 5 unique values):
+
+new_cat_feat = ['allergyname', 'drughiclseqno']
+[cat_feat.append(col) for col in new_cat_feat]
+
+cat_feat_nunique = [alrg_df[feature].nunique().compute() for feature in new_cat_feat]
+cat_feat_nunique
+
+new_cat_embed_feat = []
+for i in range(len(new_cat_feat)):
+    if cat_feat_nunique[i] > 5:
+        # Add feature to the list of those that will be embedded
+        cat_embed_feat.append(new_cat_feat[i])
+        new_cat_embed_feat.append(new_cat_feat[i])
+
+alrg_df[new_cat_feat].head()
+
+# + {"pixiedust": {"displayParams": {}}}
+for i in range(len(new_cat_embed_feat)):
+    feature = new_cat_embed_feat[i]
+    # Skip the 'drughiclseqno' from enumeration encoding
+    if feature == 'drughiclseqno':
+        continue
+    # Prepare for embedding, i.e. enumerate categories
+    alrg_df[feature], cat_embed_feat_enum[feature] = utils.enum_categorical_feature(alrg_df, feature)
+# -
+
+# Fill missing values of the drug data with 0, so as to prepare for embedding:
+
+alrg_df.drughiclseqno = alrg_df.drughiclseqno.fillna(0).astype(int)
+
+alrg_df[new_cat_feat].head()
+
+cat_embed_feat_enum
+
+alrg_df[new_cat_feat].dtypes
+
+alrg_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+alrg_df = client.persist(alrg_df)
+
+alrg_df.visualize()
+
+# ### Create the timestamp feature and sort
+
+# Create the timestamp (`ts`) feature:
+
+alrg_df['ts'] = alrg_df['allergyoffset']
+alrg_df = alrg_df.drop('allergyoffset', axis=1)
+alrg_df.head()
+
+# Sort by `ts` so as to be easier to merge with other dataframes later:
+
+alrg_df = alrg_df.set_index('ts')
+alrg_df.head()
+
+alrg_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+alrg_df = client.persist(alrg_df)
+
+alrg_df.visualize()
+
+# Check for possible multiple rows with the same unit stay ID and timestamp:
+
+alrg_df.reset_index().head()
+
+alrg_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='allergyname').head()
+
+alrg_df[alrg_df.patientunitstayid == 3197554].compute().head(10)
+
+# We can see that there are up to 47 categories per set of `patientunitstayid` and `ts`. As such, we must join them.
+
+# ### Join rows that have the same IDs
+
+# Remove duplicate rows:
+
+alrg_df = alrg_df.drop_duplicates()
+alrg_df.head()
+
+alrg_df = alrg_df.repartition(npartitions=30)
+
+alrg_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='allergyname').head()
+
+# Even after removing duplicates rows, there are still some that have different information for the same ID and timestamp. We have to concatenate the categorical enumerations.
+
+# + {"pixiedust": {"displayParams": {}}}
+alrg_df = utils.join_categorical_enum(alrg_df, new_cat_embed_feat)
+alrg_df.head()
+# -
+
+alrg_df.dtypes
+
+alrg_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='allergyname').head()
+
+alrg_df[alrg_df.patientunitstayid == 3197554].compute().head(10)
+
+# Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
+
+alrg_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+alrg_df = client.persist(alrg_df)
+
+alrg_df.visualize()
+
+# ### Renaming columns
+
+alrg_df = alrg_df.rename(columns={'drughiclseqno':'drugallergyhiclseqno'})
+alrg_df.head()
+
+# Save the dataframe:
+
+alrg_df = alrg_df.repartition(npartitions=30)
+
+alrg_df.to_parquet(f'{data_path}cleaned/unnormalized/allergy.parquet')
+
+alrg_df.to_parquet(f'{data_path}cleaned/normalized/allergy.parquet')
+
+# Confirm that everything is ok through the `describe` method:
+
+alrg_df.describe().compute().transpose()
+
+# ### Join dataframes
+#
+# Merge dataframes by the unit stay, `patientunitstayid`, and the timestamp, `ts`, with a tolerence for a difference of up to 30 minutes.
+
+alrg_df = dd.read_parquet(f'{data_path}cleaned/normalized/allergy.parquet')
+alrg_df.head()
+
+alrg_df.npartitions
+
+eICU_df = dd.merge_asof(eICU_df, alrg_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
 eICU_df.head()
