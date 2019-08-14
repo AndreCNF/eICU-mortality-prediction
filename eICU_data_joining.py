@@ -50,7 +50,7 @@ project_path = 'Documents/GitHub/eICU-mortality-prediction/'
 # -
 
 # Set up local cluster
-client = Client("tcp://127.0.0.1:63403")
+client = Client("tcp://127.0.0.1:58996")
 client
 
 # Upload the utils.py file, so that the Dask cluster has access to relevant auxiliary functions
@@ -439,6 +439,17 @@ patient_df.head()
 
 patient_df.patientunitstayid.value_counts().compute()
 
+# Remove duplicate rows:
+
+len(patient_df)
+
+patient_df = patient_df.drop_duplicates()
+patient_df.head()
+
+len(patient_df)
+
+patient_df = patient_df.repartition(npartitions=30)
+
 # Sort by `ts` so as to be easier to merge with other dataframes later:
 
 vital_prdc_df = vital_prdc_df.set_index('ts')
@@ -553,6 +564,17 @@ vital_aprdc_df.head()
 vital_aprdc_df['ts'] = vital_aprdc_df['observationoffset']
 vital_aprdc_df = vital_aprdc_df.drop('observationoffset', axis=1)
 vital_aprdc_df.head()
+
+# Remove duplicate rows:
+
+len(vital_aprdc_df)
+
+vital_aprdc_df = vital_aprdc_df.drop_duplicates()
+vital_aprdc_df.head()
+
+len(vital_aprdc_df)
+
+vital_aprdc_df = vital_aprdc_df.repartition(npartitions=30)
 
 # Sort by `ts` so as to be easier to merge with other dataframes later:
 
@@ -726,6 +748,17 @@ infect_df.head()
 infect_df.patientunitstayid.value_counts().compute()
 
 # Only 3620 unit stays have infection data. Might not be useful to include them.
+
+# Remove duplicate rows:
+
+len(infect_df)
+
+infect_df = infect_df.drop_duplicates()
+infect_df.head()
+
+len(infect_df)
+
+infect_df = infect_df.repartition(npartitions=30)
 
 # Sort by `ts` so as to be easier to merge with other dataframes later:
 
@@ -904,6 +937,17 @@ micro_df['ts'] = micro_df['culturetakenoffset']
 micro_df = micro_df.drop('culturetakenoffset', axis=1)
 micro_df.head()
 
+# Remove duplicate rows:
+
+len(micro_df)
+
+micro_df = micro_df.drop_duplicates()
+micro_df.head()
+
+len(micro_df)
+
+micro_df = micro_df.repartition(npartitions=30)
+
 # Sort by `ts` so as to be easier to merge with other dataframes later:
 
 micro_df = micro_df.set_index('ts')
@@ -1034,6 +1078,17 @@ resp_care_df['ts'] = resp_care_df['ventstartoffset']
 resp_care_df = resp_care_df.drop('ventstartoffset', axis=1)
 resp_care_df.head()
 
+# Remove duplicate rows:
+
+len(resp_care_df)
+
+resp_care_df = resp_care_df.drop_duplicates()
+resp_care_df.head()
+
+len(resp_care_df)
+
+resp_care_df = resp_care_df.repartition(npartitions=30)
+
 # Sort by `ts` so as to be easier to merge with other dataframes later:
 
 resp_care_df = resp_care_df.set_index('ts')
@@ -1055,17 +1110,6 @@ resp_care_df[resp_care_df.patientunitstayid == 3348331].compute().head(20)
 # We can see that there are up to 5283 duplicate rows per set of `patientunitstayid` and `ts`. As such, we must join them.
 
 # ### Join rows that have the same IDs
-
-# Remove duplicate rows:
-
-resp_care_df = resp_care_df.drop_duplicates()
-resp_care_df.head()
-
-resp_care_df = resp_care_df.repartition(npartitions=30)
-
-resp_care_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='ventendoffset').head()
-
-resp_care_df[resp_care_df.patientunitstayid == 1113084].compute().head(10)
 
 # Even after removing duplicates rows, there are still some that have different information for the same ID and timestamp. We have to apply a groupby function, selecting the minimum value for each of the offset features, as the larger values don't make sense (in the `priorventstartoffset`).
 
@@ -1252,7 +1296,7 @@ alrg_df = alrg_df[['patientunitstayid', 'allergyoffset',
                    'allergyname', 'drughiclseqno']]
 alrg_df.head()
 
-# + {"toc-hr-collapsed": true, "cell_type": "markdown"}
+# + {"toc-hr-collapsed": false, "cell_type": "markdown"}
 # ### Discretize categorical features
 #
 # Convert binary categorical features into simple numberings, one hot encode features with a low number of categories (in this case, 5) and enumerate sparse categorical features that will be embedded.
@@ -1316,6 +1360,17 @@ alrg_df['ts'] = alrg_df['allergyoffset']
 alrg_df = alrg_df.drop('allergyoffset', axis=1)
 alrg_df.head()
 
+# Remove duplicate rows:
+
+len(alrg_df)
+
+alrg_df = alrg_df.drop_duplicates()
+alrg_df.head()
+
+len(alrg_df)
+
+alrg_df = alrg_df.repartition(npartitions=30)
+
 # Sort by `ts` so as to be easier to merge with other dataframes later:
 
 alrg_df = alrg_df.set_index('ts')
@@ -1339,15 +1394,6 @@ alrg_df[alrg_df.patientunitstayid == 3197554].compute().head(10)
 # We can see that there are up to 47 categories per set of `patientunitstayid` and `ts`. As such, we must join them.
 
 # ### Join rows that have the same IDs
-
-# Remove duplicate rows:
-
-alrg_df = alrg_df.drop_duplicates()
-alrg_df.head()
-
-alrg_df = alrg_df.repartition(npartitions=30)
-
-alrg_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='allergyname').head()
 
 # Even after removing duplicates rows, there are still some that have different information for the same ID and timestamp. We have to concatenate the categorical enumerations.
 
@@ -1398,4 +1444,420 @@ alrg_df.head()
 alrg_df.npartitions
 
 eICU_df = dd.merge_asof(eICU_df, alrg_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
+eICU_df.head()
+
+# +
+# [TODO] Check if careplangeneral table could be useful. It seems to have mostly subjective data.
+
+# + {"toc-hr-collapsed": true, "cell_type": "markdown"}
+# ## General care plan data
+# -
+
+# ### Read the data
+
+careplangen_df = dd.read_csv(f'{data_path}original/carePlanGeneral.csv')
+careplangen_df.head()
+
+len(careplangen_df)
+
+careplangen_df.patientunitstayid.nunique().compute()
+
+careplangen_df.npartitions
+
+careplangen_df = careplangen_df.repartition(npartitions=30)
+
+# Get an overview of the dataframe through the `describe` method:
+
+careplangen_df.describe().compute().transpose()
+
+careplangen_df.visualize()
+
+careplangen_df.columns
+
+careplangen_df.dtypes
+
+# ### Check for missing values
+
+# + {"pixiedust": {"displayParams": {}}}
+utils.dataframe_missing_values(careplangen_df)
+# -
+
+# ### Remove unneeded features
+
+careplangen_df.cplgroup.value_counts().compute()
+
+careplangen_df.cplitemvalue.value_counts().compute()
+
+careplangen_df[careplangen_df.cplgroup == 'Activity'].cplitemvalue.value_counts().compute()
+
+careplangen_df[careplangen_df.cplgroup == 'Care Limitation'].cplitemvalue.value_counts().compute()
+
+careplangen_df[careplangen_df.cplgroup == 'Route-Status'].cplitemvalue.value_counts().compute()
+
+careplangen_df[careplangen_df.cplgroup == 'Critical Care Discharge/Transfer Planning'].cplitemvalue.value_counts().compute()
+
+careplangen_df[careplangen_df.cplgroup == 'Safety/Restraints'].cplitemvalue.value_counts().compute()
+
+careplangen_df[careplangen_df.cplgroup == 'Sedation'].cplitemvalue.value_counts().compute()
+
+careplangen_df[careplangen_df.cplgroup == 'Analgesia'].cplitemvalue.value_counts().compute()
+
+careplangen_df[careplangen_df.cplgroup == 'Ordered Protocols'].cplitemvalue.value_counts().compute()
+
+careplangen_df[careplangen_df.cplgroup == 'Volume Status'].cplitemvalue.value_counts().compute()
+
+careplangen_df[careplangen_df.cplgroup == 'Psychosocial Status'].cplitemvalue.value_counts().compute()
+
+careplangen_df[careplangen_df.cplgroup == 'Current Rate'].cplitemvalue.value_counts().compute()
+
+careplangen_df[careplangen_df.cplgroup == 'Baseline Status'].cplitemvalue.value_counts().compute()
+
+careplangen_df[careplangen_df.cplgroup == 'Protein'].cplitemvalue.value_counts().compute()
+
+careplangen_df[careplangen_df.cplgroup == 'Calories'].cplitemvalue.value_counts().compute()
+
+# In this case, there aren't entire columns to remove. However, some specific types of care plan categories seem to be less relevant (e.g. activity, critical care discharge/transfer planning) or redundant (e.g. ventilation, infectious diseases). So, we're going to remove rows that have those categories.
+
+careplangen_df = careplangen_df.drop('cplgeneralid', axis=1)
+careplangen_df.head()
+
+categories_to_remove = ['Ventilation', 'Airway', 'Activity', 'Care Limitation', 
+                        'Route-Status', 'Critical Care Discharge/Transfer Planning', 
+                        'Ordered Protocols', 'Acuity', 'Volume Status', 'Prognosis', 
+                        'Care Providers', 'Family/Health Care Proxy/Contact Info', 'Current Rate', 
+                        'Daily Goals/Safety Risks/Discharge Requirements', 'Goal Rate', 
+                        'Planned Procedures', 'Infectious Disease', 
+                        'Care Plan Reviewed with Patient/Family', 'Protein', 'Calories']
+
+~(careplangen_df.cplgroup.isin(categories_to_remove)).head()
+
+careplangen_df = careplangen_df[~(careplangen_df.cplgroup.isin(categories_to_remove))]
+careplangen_df.head()
+
+len(careplangen_df)
+
+careplangen_df.patientunitstayid.nunique().compute()
+
+# There's still plenty of data left, affecting around 92.48% of the unit stays, even after removing several categories.
+
+# + {"toc-hr-collapsed": false, "cell_type": "markdown"}
+# ### Discretize categorical features
+#
+# Convert binary categorical features into simple numberings, one hot encode features with a low number of categories (in this case, 5) and enumerate sparse categorical features that will be embedded.
+# -
+
+# #### Separate and prepare features for embedding
+#
+# Identify categorical features that have more than 5 unique categories, which will go through an embedding layer afterwards, and enumerate them.
+
+# Update list of categorical features and add those that will need embedding (features with more than 5 unique values):
+
+new_cat_feat = ['cplgroup', 'cplitemvalue']
+[cat_feat.append(col) for col in new_cat_feat]
+
+cat_feat_nunique = [careplangen_df[feature].nunique().compute() for feature in new_cat_feat]
+cat_feat_nunique
+
+new_cat_embed_feat = []
+for i in range(len(new_cat_feat)):
+    if cat_feat_nunique[i] > 5:
+        # Add feature to the list of those that will be embedded
+        cat_embed_feat.append(new_cat_feat[i])
+        new_cat_embed_feat.append(new_cat_feat[i])
+
+careplangen_df[new_cat_feat].head()
+
+# + {"pixiedust": {"displayParams": {}}}
+for i in range(len(new_cat_embed_feat)):
+    feature = new_cat_embed_feat[i]
+    # Prepare for embedding, i.e. enumerate categories
+    careplangen_df[feature], cat_embed_feat_enum[feature] = utils.enum_categorical_feature(careplangen_df, feature)
+# -
+
+careplangen_df[new_cat_feat].head()
+
+cat_embed_feat_enum
+
+careplangen_df[new_cat_feat].dtypes
+
+careplangen_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+careplangen_df = client.persist(careplangen_df)
+
+careplangen_df.visualize()
+
+# ### Create the timestamp feature and sort
+
+# Create the timestamp (`ts`) feature:
+
+careplangen_df['ts'] = careplangen_df['cplitemoffset']
+careplangen_df = careplangen_df.drop('cplitemoffset', axis=1)
+careplangen_df.head()
+
+# Remove duplicate rows:
+
+len(careplangen_df)
+
+careplangen_df = careplangen_df.drop_duplicates()
+careplangen_df.head()
+
+len(careplangen_df)
+
+careplangen_df = careplangen_df.repartition(npartitions=30)
+
+# Sort by `ts` so as to be easier to merge with other dataframes later:
+
+careplangen_df = careplangen_df.set_index('ts')
+careplangen_df.head()
+
+careplangen_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+careplangen_df = client.persist(careplangen_df)
+
+careplangen_df.visualize()
+
+# Check for possible multiple rows with the same unit stay ID and timestamp:
+
+careplangen_df.reset_index().head()
+
+careplangen_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='cplgroup').head()
+
+careplangen_df[careplangen_df.patientunitstayid == 3138123].compute().head(10)
+
+# We can see that there are up to 32 categories per set of `patientunitstayid` and `ts`. As such, we must join them.
+
+# ### Join rows that have the same IDs
+
+# + {"pixiedust": {"displayParams": {}}}
+careplangen_df = utils.join_categorical_enum(careplangen_df, new_cat_embed_feat)
+careplangen_df.head()
+# -
+
+careplangen_df.dtypes
+
+careplangen_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='cplgroup').head()
+
+careplangen_df[careplangen_df.patientunitstayid == 3138123].compute().head(10)
+
+# Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
+
+careplangen_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+careplangen_df = client.persist(careplangen_df)
+
+careplangen_df.visualize()
+
+# ### Renaming columns
+#
+# Keeping the `activeupondischarge` feature so as to decide if forward fill or leave at NaN each general care plan value, when we have the full dataframe. However, we need to identify this feature's original table, general care plan, so as to not confound with other data.
+
+careplangen_df = careplangen_df.rename(columns={'activeupondischarge':'cpl_activeupondischarge'})
+careplangen_df.head()
+
+# Save the dataframe:
+
+careplangen_df = careplangen_df.repartition(npartitions=30)
+
+careplangen_df.to_parquet(f'{data_path}cleaned/unnormalized/carePlanGeneral.parquet')
+
+careplangen_df.to_parquet(f'{data_path}cleaned/normalized/carePlanGeneral.parquet')
+
+# Confirm that everything is ok through the `describe` method:
+
+careplangen_df.describe().compute().transpose()
+
+# ### Join dataframes
+#
+# Merge dataframes by the unit stay, `patientunitstayid`, and the timestamp, `ts`, with a tolerence for a difference of up to 30 minutes.
+
+careplangen_df = dd.read_parquet(f'{data_path}cleaned/normalized/carePlanGeneral.parquet')
+careplangen_df.head()
+
+careplangen_df.npartitions
+
+eICU_df = dd.merge_asof(eICU_df, careplangen_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
+eICU_df.head()
+
+# + {"toc-hr-collapsed": true, "cell_type": "markdown"}
+# ## Past history data
+# -
+
+# ### Read the data
+
+pasthist_df = dd.read_csv(f'{data_path}original/pastHistory.csv')
+pasthist_df.head()
+
+len(pasthist_df)
+
+pasthist_df.patientunitstayid.nunique().compute()
+
+pasthist_df.npartitions
+
+pasthist_df = pasthist_df.repartition(npartitions=30)
+
+# Get an overview of the dataframe through the `describe` method:
+
+pasthist_df.describe().compute().transpose()
+
+pasthist_df.visualize()
+
+pasthist_df.columns
+
+pasthist_df.dtypes
+
+# ### Check for missing values
+
+# + {"pixiedust": {"displayParams": {}}}
+utils.dataframe_missing_values(pasthist_df)
+# -
+
+# ### Remove unneeded features
+
+pasthist_df.pasthistorypath.value_counts().head(20)
+
+pasthist_df.pasthistorypath.value_counts().tail(20)
+
+pasthist_df.pasthistoryvalue.value_counts().compute()
+
+pasthist_df.pasthistorynotetype.value_counts().compute()
+
+pasthist_df[pasthist_df.pasthistorypath == 'notes/Progress Notes/Past History/Past History Obtain Options/Performed'].pasthistoryvalue.value_counts().compute()
+
+# In this case, considering that it regards past diagnosis of the patients, the timestamp when that was observed probably isn't very reliable nor useful. As such, I'm going to remove the offset variables. Furthermore, `pasthistoryvaluetext` is redundant with `pasthistoryvalue`, while `pasthistorynotetype` and the past history path 'notes/Progress Notes/Past History/Past History Obtain Options/Performed' seem to be irrelevant.
+
+pasthist_df = pasthist_df.drop(['pasthistoryid', 'pasthistoryoffset', 'pasthistoryenteredoffset',
+                                'pasthistorynotetype', 'pasthistoryvaluetext'], axis=1)
+pasthist_df.head()
+
+categories_to_remove = ['notes/Progress Notes/Past History/Past History Obtain Options/Performed']
+
+~(pasthist_df.pasthistorypath.isin(categories_to_remove)).head()
+
+pasthist_df = pasthist_df[~(pasthist_df.pasthistorypath.isin(categories_to_remove))]
+pasthist_df.head()
+
+len(pasthist_df)
+
+pasthist_df.patientunitstayid.nunique().compute()
+
+# There's still plenty of data left, affecting around 81.87% of the unit stays, even after removing several categories.
+
+# + {"toc-hr-collapsed": false, "cell_type": "markdown"}
+# ### Discretize categorical features
+#
+# Convert binary categorical features into simple numberings, one hot encode features with a low number of categories (in this case, 5) and enumerate sparse categorical features that will be embedded.
+# -
+
+# #### Separate and prepare features for embedding
+#
+# Identify categorical features that have more than 5 unique categories, which will go through an embedding layer afterwards, and enumerate them.
+
+# Update list of categorical features and add those that will need embedding (features with more than 5 unique values):
+
+new_cat_feat = ['pasthistorypath', 'pasthistoryvalue']
+[cat_feat.append(col) for col in new_cat_feat]
+
+cat_feat_nunique = [pasthist_df[feature].nunique().compute() for feature in new_cat_feat]
+cat_feat_nunique
+
+new_cat_embed_feat = []
+for i in range(len(new_cat_feat)):
+    if cat_feat_nunique[i] > 5:
+        # Add feature to the list of those that will be embedded
+        cat_embed_feat.append(new_cat_feat[i])
+        new_cat_embed_feat.append(new_cat_feat[i])
+
+pasthist_df[new_cat_feat].head()
+
+# + {"pixiedust": {"displayParams": {}}}
+for i in range(len(new_cat_embed_feat)):
+    feature = new_cat_embed_feat[i]
+    # Prepare for embedding, i.e. enumerate categories
+    pasthist_df[feature], cat_embed_feat_enum[feature] = utils.enum_categorical_feature(pasthist_df, feature)
+# -
+
+pasthist_df[new_cat_feat].head()
+
+cat_embed_feat_enum
+
+pasthist_df[new_cat_feat].dtypes
+
+pasthist_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+pasthist_df = client.persist(pasthist_df)
+
+pasthist_df.visualize()
+
+# ### Remove duplicate rows
+
+# Remove duplicate rows:
+
+len(pasthist_df)
+
+pasthist_df = pasthist_df.drop_duplicates()
+pasthist_df.head()
+
+len(pasthist_df)
+
+pasthist_df = pasthist_df.repartition(npartitions=30)
+
+pasthist_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+pasthist_df = client.persist(pasthist_df)
+
+pasthist_df.visualize()
+
+# Check for possible multiple rows with the same unit stay ID and timestamp:
+
+pasthist_df.groupby(['patientunitstayid']).count().nlargest(columns='pasthistorypath').head()
+
+pasthist_df[pasthist_df.patientunitstayid == 1558102].compute().head(10)
+
+# We can see that there are up to 20 categories per `patientunitstayid`. As such, we must join them.
+
+# ### Join rows that have the same IDs
+
+# + {"pixiedust": {"displayParams": {}}}
+pasthist_df = utils.join_categorical_enum(pasthist_df, new_cat_embed_feat, id_columns=['patientunitstayid'])
+pasthist_df.head()
+# -
+
+pasthist_df.dtypes
+
+pasthist_df.groupby(['patientunitstayid']).count().nlargest(columns='pasthistorypath').head()
+
+pasthist_df[pasthist_df.patientunitstayid == 1558102].compute().head(10)
+
+# Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
+
+pasthist_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+pasthist_df = client.persist(pasthist_df)
+
+pasthist_df.visualize()
+
+# ### Save the dataframe
+
+pasthist_df = pasthist_df.repartition(npartitions=30)
+
+pasthist_df.to_parquet(f'{data_path}cleaned/unnormalized/pastHistory.parquet')
+
+pasthist_df.to_parquet(f'{data_path}cleaned/normalized/pastHistory.parquet')
+
+# ### Join dataframes
+#
+# Merge dataframes by the unit stay, `patientunitstayid`, and the timestamp, `ts`, with a tolerence for a difference of up to 30 minutes.
+
+pasthist_df = dd.read_parquet(f'{data_path}cleaned/normalized/pastHistory.parquet')
+pasthist_df.head()
+
+pasthist_df.npartitions
+
+eICU_df = dd.merge_asof(eICU_df, pasthist_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
 eICU_df.head()

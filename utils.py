@@ -326,7 +326,11 @@ def enum_categorical_feature(df, feature, nan_value=0, clean_name=True):
     # Search for NaN-like categories
     for key, val in enum_dict.items():
         if type(key) is str:
-            if 'other' in key.lower() or 'unknown' in key.lower() or 'null' in key.lower():
+            # Considering the possibility of just 3 more random characters in NaN-like strings
+            if ('other' in key.lower() and len(key) < 9) \
+            or ('unknown' in key.lower() and len(key) < 10) \
+            or ('null' in key.lower() and len(key) < 7) \
+            or ('nan' in key.lower() and len(key) < 6):
                 # Move NaN-like key to nan_value
                 enum_dict[key] = nan_value
         elif isinstance(key, numbers.Number):
@@ -342,7 +346,7 @@ def enum_categorical_feature(df, feature, nan_value=0, clean_name=True):
 
 
 def join_categorical_enum(df, cat_feat=[], id_columns=['patientunitstayid', 'ts'],
-                          cont_join_method='mean'):
+                          cont_join_method='mean', has_timestamp=None):
     '''Join rows that have the same identifier columns based on concatenating
     categorical encodings and on averaging continuous features.
 
@@ -359,6 +363,10 @@ def join_categorical_enum(df, cat_feat=[], id_columns=['patientunitstayid', 'ts'
     cont_join_method : string, default 'mean'
         Defines which method to use when joining rows of continuous features.
         Can be either 'mean', 'min' or 'max'.
+    has_timestamp : bool, default None
+        If set to True, the resulting dataframe will be sorted and set as index
+        by the timestamp column (`ts`). If not specified, the method will
+        automatically look for a `ts` named column in the input dataframe.
 
     Returns
     -------
@@ -370,22 +378,38 @@ def join_categorical_enum(df, cat_feat=[], id_columns=['patientunitstayid', 'ts'
     data_df = df.copy()
     # Define a list of dataframes
     df_list = []
+    # See if there is a timestamp column on the dataframe
+    if has_timestamp is None:
+        if 'ts' in id_columns:
+            has_timestamp = True
+        else:
+            has_timestamp = False
     print('Concatenating categorical encodings...')
     for feature in tqdm(cat_feat):
         # Convert to string format
         data_df[feature] = data_df[feature].astype(str)
         # Join with other categorical enumerations on the same ID's
-        df_list.append(data_df.groupby(id_columns)[feature].apply(lambda x: "%s" % ';'.join(x)).to_frame().reset_index().set_index('ts'))
+        data_to_add = data_df.groupby(id_columns)[feature].apply(lambda x: "%s" % ';'.join(x)).to_frame().reset_index()
+        if has_timestamp:
+            # Sort by time `ts` and set it as index
+            data_to_add = data_to_add.set_index('ts')
+        # Add to the list of dataframes that will be merged
+        df_list.append(data_to_add)
     remaining_feat = list(set(data_df.columns) - set(cat_feat) - set(id_columns))
     print('Averaging continuous features...')
     for feature in tqdm(remaining_feat):
         # Join remaining features through their average, min or max value (just to be sure that there aren't missing or different values)
         if cont_join_method.lower() == 'mean':
-            df_list.append(data_df.groupby(id_columns)[feature].mean().to_frame().reset_index().set_index('ts'))
+            data_to_add = data_df.groupby(id_columns)[feature].mean().to_frame().reset_index()
         elif cont_join_method.lower() == 'min':
-            df_list.append(data_df.groupby(id_columns)[feature].min().to_frame().reset_index().set_index('ts'))
+            data_to_add = data_df.groupby(id_columns)[feature].min().to_frame().reset_index()
         elif cont_join_method.lower() == 'max':
-            df_list.append(data_df.groupby(id_columns)[feature].max().to_frame().reset_index().set_index('ts'))
+            data_to_add = data_df.groupby(id_columns)[feature].max().to_frame().reset_index()
+        if has_timestamp:
+            # Sort by time `ts` and set it as index
+            data_to_add = data_to_add.set_index('ts')
+        # Add to the list of dataframes that will be merged
+        df_list.append(data_to_add)
     # Merge all dataframes
     print('Merging features\' dataframes...')
     if 'dask' in str(type(data_df)):
