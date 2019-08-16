@@ -50,12 +50,14 @@ project_path = 'Documents/GitHub/eICU-mortality-prediction/'
 # -
 
 # Set up local cluster
-client = Client("tcp://127.0.0.1:58996")
+client = Client("tcp://127.0.0.1:56898")
 client
 
 # Upload the utils.py file, so that the Dask cluster has access to relevant auxiliary functions
 client.upload_file(f'{project_path}NeuralNetwork.py')
 client.upload_file(f'{project_path}utils.py')
+
+print(f'{project_path}utils.py')
 
 client.run(os.getcwd)
 
@@ -532,9 +534,13 @@ eICU_df.head()
 vital_aprdc_df = dd.read_csv(f'{data_path}original/vitalAperiodic.csv')
 vital_aprdc_df.head()
 
-vital_aprdc_df = vital_aprdc_df.repartition(npartitions=30)
+len(vital_aprdc_df)
+
+vital_aprdc_df.patientunitstayid.nunique().compute()
 
 vital_aprdc_df.npartitions
+
+vital_aprdc_df = vital_aprdc_df.repartition(npartitions=30)
 
 # Get an overview of the dataframe through the `describe` method:
 
@@ -1860,4 +1866,232 @@ pasthist_df.head()
 pasthist_df.npartitions
 
 eICU_df = dd.merge_asof(eICU_df, pasthist_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
+eICU_df.head()
+
+# + {"toc-hr-collapsed": true, "cell_type": "markdown"}
+# ## Infusion drug data
+# -
+
+# ### Read the data
+
+infdrug_df = dd.read_csv(f'{data_path}original/infusionDrug.csv')
+infdrug_df.head()
+
+len(infdrug_df)
+
+infdrug_df.patientunitstayid.nunique().compute()
+
+infdrug_df.npartitions
+
+infdrug_df = infdrug_df.repartition(npartitions=30)
+
+# Get an overview of the dataframe through the `describe` method:
+
+infdrug_df.describe().compute().transpose()
+
+infdrug_df.visualize()
+
+infdrug_df.columns
+
+infdrug_df.dtypes
+
+# ### Check for missing values
+
+# + {"pixiedust": {"displayParams": {}}}
+utils.dataframe_missing_values(infdrug_df)
+# -
+
+# ### Remove unneeded features
+#
+# Besides removing the row ID `infusiondrugid`, I'm also removing `infusionrate`, `volumeoffluid` and `drugamount` as they seem redundant with `drugrate` although with a lot more missing values.
+
+infdrug_df = infdrug_df.drop(['infusiondrugid', 'infusionrate', 'volumeoffluid', 'drugamount'], axis=1)
+infdrug_df.head()
+
+# ### Remove string drug rate values
+
+infdrug_df[infdrug_df.drugrate.map(utils.is_definitely_string)].head()
+
+infdrug_df[infdrug_df.drugrate.map(utils.is_definitely_string)].drugrate.value_counts().compute()
+
+infdrug_df.drugrate = infdrug_df.drugrate.map(lambda x: np.nan if utils.is_definitely_string(x) else x)
+infdrug_df.head()
+
+infdrug_df.patientunitstayid = infdrug_df.patientunitstayid.astype(int)
+infdrug_df.infusionoffset = infdrug_df.infusionoffset.astype(int)
+infdrug_df.drugname = infdrug_df.drugname.astype(str)
+infdrug_df.drugrate = infdrug_df.drugrate.astype(float)
+infdrug_df.patientweight = infdrug_df.patientweight.astype(float)
+infdrug_df.head()
+
+infdrug_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+infdrug_df = client.persist(infdrug_df)
+
+infdrug_df.visualize()
+
+# + {"toc-hr-collapsed": false, "cell_type": "markdown"}
+# ### Discretize categorical features
+#
+# Convert binary categorical features into simple numberings, one hot encode features with a low number of categories (in this case, 5) and enumerate sparse categorical features that will be embedded.
+# -
+
+# #### Separate and prepare features for embedding
+#
+# Identify categorical features that have more than 5 unique categories, which will go through an embedding layer afterwards, and enumerate them.
+
+# Update list of categorical features and add those that will need embedding (features with more than 5 unique values):
+
+new_cat_feat = ['drugname']
+[cat_feat.append(col) for col in new_cat_feat]
+
+cat_feat_nunique = [infdrug_df[feature].nunique().compute() for feature in new_cat_feat]
+cat_feat_nunique
+
+new_cat_embed_feat = []
+for i in range(len(new_cat_feat)):
+    if cat_feat_nunique[i] > 5:
+        # Add feature to the list of those that will be embedded
+        cat_embed_feat.append(new_cat_feat[i])
+        new_cat_embed_feat.append(new_cat_feat[i])
+
+infdrug_df[new_cat_feat].head()
+
+# + {"pixiedust": {"displayParams": {}}}
+for i in range(len(new_cat_embed_feat)):
+    feature = new_cat_embed_feat[i]
+    # Prepare for embedding, i.e. enumerate categories
+    infdrug_df[feature], cat_embed_feat_enum[feature] = utils.enum_categorical_feature(infdrug_df, feature)
+# -
+
+infdrug_df[new_cat_feat].head()
+
+cat_embed_feat_enum
+
+infdrug_df[new_cat_feat].dtypes
+
+infdrug_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+infdrug_df = client.persist(infdrug_df)
+
+infdrug_df.visualize()
+
+# ### Create the timestamp feature and sort
+
+# Create the timestamp (`ts`) feature:
+
+infdrug_df['ts'] = infdrug_df['infusionoffset']
+infdrug_df = infdrug_df.drop('infusionoffset', axis=1)
+infdrug_df.head()
+
+# Standardize drug names:
+
+infdrug_df = utils.clean_naming(infdrug_df, 'drugname')
+infdrug_df.head()
+
+# Remove duplicate rows:
+
+len(infdrug_df)
+
+infdrug_df = infdrug_df.drop_duplicates()
+infdrug_df.head()
+
+len(infdrug_df)
+
+infdrug_df = infdrug_df.repartition(npartitions=30)
+
+# Sort by `ts` so as to be easier to merge with other dataframes later:
+
+infdrug_df = infdrug_df.set_index('ts')
+infdrug_df.head(6)
+
+infdrug_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+infdrug_df = client.persist(infdrug_df)
+
+infdrug_df.visualize()
+
+# Check for possible multiple rows with the same unit stay ID and timestamp:
+
+infdrug_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='drugname').head()
+
+infdrug_df[infdrug_df.patientunitstayid == 1785711].compute().head(20)
+
+# We can see that there are up to 17 categories per set of `patientunitstayid` and `ts`. As such, we must join them. But first, as we shouldn't mix absolute values of drug rates from different drugs, we better normalize it first.
+
+# ### Normalize data
+
+# + {"pixiedust": {"displayParams": {}}}
+infdrug_df_norm = utils.normalize_data(infdrug_df, 
+                                       columns_to_normalize=['patientweight'],
+                                       columns_to_normalize_cat=[('drugname', 'drugrate')])
+infdrug_df_norm.head()
+# -
+
+infdrug_df_norm.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+infdrug_df_norm = client.persist(infdrug_df_norm)
+
+infdrug_df_norm.visualize()
+
+infdrug_df_norm.patientweight.value_counts().compute()
+
+# ### Join rows that have the same IDs
+
+# + {"pixiedust": {"displayParams": {}}}
+infdrug_df_norm = utils.join_categorical_enum(infdrug_df_norm, new_cat_embed_feat)
+infdrug_df_norm.head()
+# -
+
+infdrug_df_norm.dtypes
+
+infdrug_df_norm.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='drugname').head()
+
+infdrug_df_norm[infdrug_df_norm.patientunitstayid == 1785711].compute().head(20)
+
+# Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
+
+infdrug_df_norm.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+infdrug_df_norm = client.persist(infdrug_df_norm)
+
+infdrug_df_norm.visualize()
+
+# ### Renaming columns
+
+infdrug_df = infdrug_df.rename(columns={'patientweight': 'weight', 'drugname': 'infusion_drugname',
+                                        'drugrate': 'infusion_drugrate'})
+infdrug_df.head()
+
+infdrug_df_norm = infdrug_df_norm.rename(columns={'patientweight': 'weight', 'drugname': 'infusion_drugname',
+                                                  'drugrate': 'infusion_drugrate'})
+infdrug_df_norm.head()
+
+# ### Save the dataframe
+
+# Save the dataframe before normalizing:
+
+infdrug_df.to_parquet(f'{data_path}cleaned/unnormalized/infusionDrug.parquet')
+
+# Save the dataframe after normalizing:
+
+infdrug_df_norm.to_parquet(f'{data_path}cleaned/normalized/infusionDrug.parquet')
+
+# Confirm that everything is ok through the `describe` method:
+
+infdrug_df_norm.describe().compute().transpose()
+
+# ### Join dataframes
+#
+# Merge dataframes by the unit stay, `patientunitstayid`, and the timestamp, `ts`, with a tolerence for a difference of up to 30 minutes.
+
+infdrug_df = dd.read_parquet(f'{data_path}cleaned/normalized/infusionDrug.parquet')
+infdrug_df.head()
+
+eICU_df = dd.merge_asof(eICU_df, infdrug_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
 eICU_df.head()
