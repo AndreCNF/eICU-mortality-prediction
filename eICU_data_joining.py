@@ -2095,3 +2095,195 @@ infdrug_df.head()
 
 eICU_df = dd.merge_asof(eICU_df, infdrug_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
 eICU_df.head()
+
+# + {"toc-hr-collapsed": true, "cell_type": "markdown"}
+# ## Diagnosis data
+# -
+
+# ### Read the data
+
+diagn_df = dd.read_csv(f'{data_path}original/diagnosis.csv')
+diagn_df.head()
+
+len(diagn_df)
+
+diagn_df.patientunitstayid.nunique().compute()
+
+diagn_df.npartitions
+
+diagn_df = diagn_df.repartition(npartitions=30)
+
+# Get an overview of the dataframe through the `describe` method:
+
+diagn_df.describe().compute().transpose()
+
+diagn_df.visualize()
+
+diagn_df.columns
+
+diagn_df.dtypes
+
+# ### Check for missing values
+
+# + {"pixiedust": {"displayParams": {}}}
+utils.dataframe_missing_values(diagn_df)
+# -
+
+# ### Remove unneeded features
+
+# Besides the usual removal of row identifier, `diagnosisid`, I'm also removing apparently irrelevant (and subjective) `diagnosispriority`, redundant, with missing values and other issues `icd9code`, and `activeupondischarge`, as we don't have complete information as to when diagnosis end.
+
+diagn_df = diagn_df.drop(['diagnosisid', 'diagnosispriority', 'icd9code', 'activeupondischarge'], axis=1)
+diagn_df.head()
+
+# ### Separate high level diagnosis
+
+diagn_df.diagnosisstring.value_counts().compute()
+
+diagn_df.diagnosisstring.map(lambda x: x.split('|')).head()
+
+diagn_df.diagnosisstring.map(lambda x: len(x.split('|'))).min().compute()
+
+# There are always at least 2 higher level diagnosis. It could be beneficial to extract those first 2 levels to separate features, so as to avoid the need tfor the model to learn similarities that are already known.
+
+separator = '|'
+diagn_df['diagnosis_type_1'] = diagn_df.diagnosisstring.map(lambda x: x.split('|')).map(lambda x: x[0])
+diagn_df['diagnosis_disorder_2'] = diagn_df.diagnosisstring.map(lambda x: x.split('|')).map(lambda x: x[1])
+diagn_df['diagnosis_detailed_3'] = diagn_df.diagnosisstring.map(lambda x: x.split('|')).map(lambda x: separator.join(x[2:]))
+# Remove now redundant `diagnosisstring` feature
+diagn_df = diagn_df.drop('diagnosisstring', axis=1)
+diagn_df.head()
+
+# + {"toc-hr-collapsed": false, "cell_type": "markdown"}
+# ### Discretize categorical features
+#
+# Convert binary categorical features into simple numberings, one hot encode features with a low number of categories (in this case, 5) and enumerate sparse categorical features that will be embedded.
+# -
+
+# #### Separate and prepare features for embedding
+#
+# Identify categorical features that have more than 5 unique categories, which will go through an embedding layer afterwards, and enumerate them.
+
+# Update list of categorical features and add those that will need embedding (features with more than 5 unique values):
+
+new_cat_feat = ['diagnosis_type_1', 'diagnosis_disorder_2', 'diagnosis_detailed_3']
+[cat_feat.append(col) for col in new_cat_feat]
+
+cat_feat_nunique = [diagn_df[feature].nunique().compute() for feature in new_cat_feat]
+cat_feat_nunique
+
+new_cat_embed_feat = []
+for i in range(len(new_cat_feat)):
+    if cat_feat_nunique[i] > 5:
+        # Add feature to the list of those that will be embedded
+        cat_embed_feat.append(new_cat_feat[i])
+        new_cat_embed_feat.append(new_cat_feat[i])
+
+diagn_df[new_cat_feat].head()
+
+# + {"pixiedust": {"displayParams": {}}}
+for i in range(len(new_cat_embed_feat)):
+    feature = new_cat_embed_feat[i]
+    # Prepare for embedding, i.e. enumerate categories
+    diagn_df[feature], cat_embed_feat_enum[feature] = utils.enum_categorical_feature(diagn_df, feature)
+# -
+
+diagn_df[new_cat_feat].head()
+
+cat_embed_feat_enum
+
+diagn_df[new_cat_feat].dtypes
+
+diagn_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+diagn_df = client.persist(diagn_df)
+
+diagn_df.visualize()
+
+# ### Create the timestamp feature and sort
+
+# Create the timestamp (`ts`) feature:
+
+diagn_df['ts'] = diagn_df['diagnosisoffset']
+diagn_df = diagn_df.drop('diagnosisoffset', axis=1)
+diagn_df.head()
+
+# Remove duplicate rows:
+
+len(diagn_df)
+
+diagn_df = diagn_df.drop_duplicates()
+diagn_df.head()
+
+len(diagn_df)
+
+diagn_df = diagn_df.repartition(npartitions=30)
+
+# Sort by `ts` so as to be easier to merge with other dataframes later:
+
+diagn_df = diagn_df.set_index('ts')
+diagn_df.head()
+
+diagn_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+diagn_df = client.persist(diagn_df)
+
+diagn_df.visualize()
+
+# Check for possible multiple rows with the same unit stay ID and timestamp:
+
+diagn_df.reset_index().head()
+
+diagn_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='diagnosis_type_1').head()
+
+diagn_df[diagn_df.patientunitstayid == 3089982].compute().head(10)
+
+# We can see that there are up to 69 categories per set of `patientunitstayid` and `ts`. As such, we must join them.
+
+# ### Join rows that have the same IDs
+
+# + {"pixiedust": {"displayParams": {}}}
+diagn_df = utils.join_categorical_enum(diagn_df, new_cat_embed_feat)
+diagn_df.head()
+# -
+
+diagn_df.dtypes
+
+diagn_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='diagnosis_type_1').head()
+
+diagn_df[diagn_df.patientunitstayid == 3089982].compute().head(10)
+
+# Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
+
+diagn_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+diagn_df = client.persist(diagn_df)
+
+diagn_df.visualize()
+
+# ### Save the dataframe
+
+diagn_df = diagn_df.repartition(npartitions=30)
+
+diagn_df.to_parquet(f'{data_path}cleaned/unnormalized/diagnosis.parquet')
+
+diagn_df.to_parquet(f'{data_path}cleaned/normalized/diagnosis.parquet')
+
+# Confirm that everything is ok through the `describe` method:
+
+diagn_df.describe().compute().transpose()
+
+# ### Join dataframes
+#
+# Merge dataframes by the unit stay, `patientunitstayid`, and the timestamp, `ts`, with a tolerence for a difference of up to 30 minutes.
+
+diagn_df = dd.read_parquet(f'{data_path}cleaned/normalized/diagnosis.parquet')
+diagn_df.head()
+
+diagn_df.npartitions
+
+eICU_df = dd.merge_asof(eICU_df, diagn_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
+eICU_df.head()
