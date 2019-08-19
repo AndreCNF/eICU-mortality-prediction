@@ -50,7 +50,7 @@ project_path = 'Documents/GitHub/eICU-mortality-prediction/'
 # -
 
 # Set up local cluster
-client = Client("tcp://127.0.0.1:56898")
+client = Client("tcp://127.0.0.1:58594")
 client
 
 # Upload the utils.py file, so that the Dask cluster has access to relevant auxiliary functions
@@ -97,9 +97,11 @@ utils.dataframe_missing_values(patient_df)
 # -
 
 # ### Remove unneeded features
+#
+# Besides removing unneeded hospital and time information, I'm also removing the admission diagnosis (`apacheadmissiondx`) as it doesn't follow the same structure as the remaining diagnosis data (which is categorized in increasingly specific categories, separated by "|").
 
-patient_df = patient_df[['patientunitstayid', 'gender', 'age', 'ethnicity', 'apacheadmissiondx',  'admissionheight', 
-                         'hospitaldischargeoffset', 'hospitaldischargelocation', 'hospitaldischargestatus', 
+patient_df = patient_df[['patientunitstayid', 'gender', 'age', 'ethnicity',  'admissionheight',
+                         'hospitaldischargeoffset', 'hospitaldischargelocation', 'hospitaldischargestatus',
                          'admissionweight', 'dischargeweight', 'unitdischargeoffset']]
 patient_df.head()
 
@@ -142,11 +144,10 @@ patient_df.gender.value_counts().compute()
 #
 # Identify categorical features that have more than 5 unique categories, which will go through an embedding layer afterwards, and enumerate them.
 #
-# [TODO] Only enumerate the `apacheadmissiondx` feature after joining it with all the remaining diagnosis features
 
 # Update list of categorical features and add those that will need embedding (features with more than 5 unique values):
 
-new_cat_feat = ['ethnicity', 'apacheadmissiondx']
+new_cat_feat = ['ethnicity']
 [cat_feat.append(col) for col in new_cat_feat]
 
 cat_feat_nunique = [patient_df[feature].nunique().compute() for feature in new_cat_feat]
@@ -188,9 +189,9 @@ patient_df.hospitaldischargestatus.value_counts().compute()
 
 patient_df.hospitaldischargelocation.value_counts().compute()
 
-patient_df['deathoffset'] = patient_df.apply(lambda df: df['hospitaldischargeoffset'] 
+patient_df['deathoffset'] = patient_df.apply(lambda df: df['hospitaldischargeoffset']
                                                         if df['hospitaldischargestatus'] == 'Expired' or
-                                                        df['hospitaldischargelocation'] == 'Death' else np.nan, axis=1, 
+                                                        df['hospitaldischargelocation'] == 'Death' else np.nan, axis=1,
                                                         meta=('x', float))
 
 patient_df.head()
@@ -269,44 +270,6 @@ patient_df.head(6)
 patient_df = patient_df.drop(['admissionweight', 'dischargeweight', 'unitdischargeoffset'], axis=1)
 patient_df.head(6)
 
-# Create a `diagnosis` feature:
-
-patient_df['diagnosis'] = patient_df['apacheadmissiondx']
-patient_df.head()
-
-# Add to the list of categorical and to be embedded features:
-
-cat_feat.remove('apacheadmissiondx')
-cat_embed_feat.remove('apacheadmissiondx')
-new_cat_feat.remove('apacheadmissiondx')
-new_cat_embed_feat.remove('apacheadmissiondx')
-cat_feat.append('diagnosis')
-cat_embed_feat.append('diagnosis')
-new_cat_feat.append('diagnosis')
-new_cat_embed_feat.append('diagnosis')
-
-
-# Similarly, only set the `diagnosis` to the admission instance, as the current table only has diagnosis on admission:
-
-def set_diagnosis(row):
-    global patient_first_row
-    if not patient_first_row:
-        row['diagnosis'] = np.nan
-        patient_first_row = True
-    else:
-        patient_first_row = False
-    return row
-
-
-patient_first_row = False
-patient_df = patient_df.apply(lambda row: set_diagnosis(row), axis=1)
-patient_df.head(6)
-
-# Remove the admission diagnosis feature `apacheadmissiondx`:
-
-patient_df = patient_df.drop('apacheadmissiondx', axis=1)
-patient_df.head(6)
-
 # Sort by `ts` so as to be easier to merge with other dataframes later:
 
 patient_df = dd.from_pandas(patient_df.set_index('ts'), npartitions=30, sort=False)
@@ -330,7 +293,7 @@ new_cat_feat
 patient_df.head()
 
 # + {"pixiedust": {"displayParams": {}}}
-patient_df_norm = utils.normalize_data(patient_df, embed_columns=new_cat_feat, 
+patient_df_norm = utils.normalize_data(patient_df, embed_columns=new_cat_feat,
                                        id_columns=['patientunitstayid', 'deathoffset'])
 patient_df_norm.head(6)
 # -
@@ -372,8 +335,8 @@ utils.dataframe_missing_values(patient_df)
 
 # ### Remove unneeded features
 
-patient_df = patient_df[['patientunitstayid', 'gender', 'age', 'ethnicity', 'apacheadmissiondx',  'admissionheight', 
-                         'hospitaldischargeoffset', 'hospitaldischargelocation', 'hospitaldischargestatus', 
+patient_df = patient_df[['patientunitstayid', 'gender', 'age', 'ethnicity', 'apacheadmissiondx',  'admissionheight',
+                         'hospitaldischargeoffset', 'hospitaldischargelocation', 'hospitaldischargestatus',
                          'admissionweight', 'dischargeweight', 'unitdischargeoffset']]
 patient_df.head()
 
@@ -501,7 +464,7 @@ micro_df.visualize()
 patient_df.to_parquet(f'{data_path}cleaned/unnormalized/patient.parquet')
 
 # + {"pixiedust": {"displayParams": {}}}
-patient_df_norm = utils.normalize_data(patient_df, embed_columns=new_cat_feat, 
+patient_df_norm = utils.normalize_data(patient_df, embed_columns=new_cat_feat,
                                        id_columns=['patientunitstayid', 'ts', 'deathoffset'])
 patient_df_norm.head(6)
 # -
@@ -629,7 +592,7 @@ micro_df.visualize()
 vital_aprdc_df.to_parquet(f'{data_path}cleaned/unnormalized/vitalAperiodic.parquet')
 
 # + {"pixiedust": {"displayParams": {}}}
-vital_aprdc_df_norm = utils.normalize_data(vital_aprdc_df, 
+vital_aprdc_df_norm = utils.normalize_data(vital_aprdc_df,
                                            id_columns=['patientunitstayid', 'ts'])
 vital_aprdc_df_norm.head(6)
 # -
@@ -815,7 +778,7 @@ infect_df.visualize()
 infect_df.to_parquet(f'{data_path}cleaned/unnormalized/carePlanInfectiousDisease.parquet')
 
 # + {"pixiedust": {"displayParams": {}}}
-infect_df_norm = utils.normalize_data(infect_df, embed_columns=new_cat_feat, 
+infect_df_norm = utils.normalize_data(infect_df, embed_columns=new_cat_feat,
                                       id_columns=['patientunitstayid'])
 infect_df_norm.head(6)
 # -
@@ -1005,7 +968,7 @@ micro_df.visualize()
 micro_df.to_parquet(f'{data_path}cleaned/unnormalized/microLab.parquet')
 
 # + {"pixiedust": {"displayParams": {}}}
-micro_df_norm = utils.normalize_data(micro_df, embed_columns=new_cat_feat, 
+micro_df_norm = utils.normalize_data(micro_df, embed_columns=new_cat_feat,
                                      id_columns=['patientunitstayid'])
 micro_df_norm.head(6)
 # -
@@ -1298,7 +1261,7 @@ alrg_df.allergynotetype.value_counts().compute()
 
 # Feature `allergynotetype` also doesn't seem very relevant, discarding it.
 
-alrg_df = alrg_df[['patientunitstayid', 'allergyoffset', 
+alrg_df = alrg_df[['patientunitstayid', 'allergyoffset',
                    'allergyname', 'drughiclseqno']]
 alrg_df.head()
 
@@ -1527,12 +1490,12 @@ careplangen_df[careplangen_df.cplgroup == 'Calories'].cplitemvalue.value_counts(
 careplangen_df = careplangen_df.drop('cplgeneralid', axis=1)
 careplangen_df.head()
 
-categories_to_remove = ['Ventilation', 'Airway', 'Activity', 'Care Limitation', 
-                        'Route-Status', 'Critical Care Discharge/Transfer Planning', 
-                        'Ordered Protocols', 'Acuity', 'Volume Status', 'Prognosis', 
-                        'Care Providers', 'Family/Health Care Proxy/Contact Info', 'Current Rate', 
-                        'Daily Goals/Safety Risks/Discharge Requirements', 'Goal Rate', 
-                        'Planned Procedures', 'Infectious Disease', 
+categories_to_remove = ['Ventilation', 'Airway', 'Activity', 'Care Limitation',
+                        'Route-Status', 'Critical Care Discharge/Transfer Planning',
+                        'Ordered Protocols', 'Acuity', 'Volume Status', 'Prognosis',
+                        'Care Providers', 'Family/Health Care Proxy/Contact Info', 'Current Rate',
+                        'Daily Goals/Safety Risks/Discharge Requirements', 'Goal Rate',
+                        'Planned Procedures', 'Infectious Disease',
                         'Care Plan Reviewed with Patient/Family', 'Protein', 'Calories']
 
 ~(careplangen_df.cplgroup.isin(categories_to_remove)).head()
@@ -2025,7 +1988,7 @@ infdrug_df[infdrug_df.patientunitstayid == 1785711].compute().head(20)
 # ### Normalize data
 
 # + {"pixiedust": {"displayParams": {}}}
-infdrug_df_norm = utils.normalize_data(infdrug_df, 
+infdrug_df_norm = utils.normalize_data(infdrug_df,
                                        columns_to_normalize=['patientweight'],
                                        columns_to_normalize_cat=[('drugname', 'drugrate')])
 infdrug_df_norm.head()
@@ -2286,4 +2249,220 @@ diagn_df.head()
 diagn_df.npartitions
 
 eICU_df = dd.merge_asof(eICU_df, diagn_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
+eICU_df.head()
+
+# + {"toc-hr-collapsed": true, "cell_type": "markdown"}
+# ## Admission drug data
+# -
+
+# ### Read the data
+
+admsdrug_df = dd.read_csv(f'{data_path}original/admissionDrug.csv')
+admsdrug_df.head()
+
+len(admsdrug_df)
+
+admsdrug_df.patientunitstayid.nunique().compute()
+
+# There's not much admission drug data (only around 20% of the unit stays have this data). However, it might be useful, considering also that it complements the medication table.
+
+admsdrug_df.npartitions
+
+admsdrug_df = admsdrug_df.repartition(npartitions=30)
+
+# Get an overview of the dataframe through the `describe` method:
+
+admsdrug_df.describe().compute().transpose()
+
+admsdrug_df.visualize()
+
+admsdrug_df.columns
+
+admsdrug_df.dtypes
+
+# ### Check for missing values
+
+# + {"pixiedust": {"displayParams": {}}}
+utils.dataframe_missing_values(admsdrug_df)
+# -
+
+# ### Remove unneeded features
+
+admsdrug_df.drugname.value_counts().compute()
+
+admsdrug_df.drughiclseqno.value_counts().compute()
+
+admsdrug_df.drugnotetype.value_counts().compute()
+
+admsdrug_df.drugdosage.value_counts().compute()
+
+admsdrug_df.drugunit.value_counts().compute()
+
+admsdrug_df.drugadmitfrequency.value_counts().compute()
+
+admsdrug_df[admsdrug_df.drugdosage == 0].head(20)
+
+admsdrug_df[admsdrug_df.drugdosage == 0].drugunit.value_counts().compute()
+
+admsdrug_df[admsdrug_df.drugdosage == 0].drugadmitfrequency.value_counts().compute()
+
+admsdrug_df[admsdrug_df.drugunit == ' '].drugdosage.value_counts().compute()
+
+# Oddly, `drugunit` and `drugadmitfrequency` have several blank values. At the same time, when this happens, `drugdosage` tends to be 0 (which is also an unrealistic value). Considering that no NaNs are reported, these blanks and zeros probably represent missing values.
+
+# Besides removing irrelevant or hospital staff related data (e.g. `usertype`), I'm also removing the `drugname` column, which is redundant with the codes `drughiclseqno`, while also being brand dependant.
+
+admsdrug_df = admsdrug_df[['patientunitstayid', 'drugoffset', 'drugdosage',
+                           'drugunit', 'drugadmitfrequency', 'drughiclseqno']]
+admsdrug_df.head()
+
+# ### Fix missing values representation
+#
+# Replace blank and unrealistic zero values with NaNs.
+
+admsdrug_df.drugdosage = admsdrug_df.drugdosage.replace(0, np.nan)
+admsdrug_df.drugunit = admsdrug_df.drugunit.replace(' ', np.nan)
+admsdrug_df.drugadmitfrequency = admsdrug_df.drugadmitfrequency.replace(' ', np.nan)
+admsdrug_df.head()
+
+# + {"pixiedust": {"displayParams": {}}}
+utils.dataframe_missing_values(admsdrug_df)
+
+# + {"toc-hr-collapsed": false, "cell_type": "markdown"}
+# ### Discretize categorical features
+#
+# Convert binary categorical features into simple numberings, one hot encode features with a low number of categories (in this case, 5) and enumerate sparse categorical features that will be embedded.
+# -
+
+# #### Separate and prepare features for embedding
+#
+# Identify categorical features that have more than 5 unique categories, which will go through an embedding layer afterwards, and enumerate them.
+#
+# In the case of microbiology data, we're also going to embed the antibiotic `sensitivitylevel`, not because it has many categories, but because there can be several rows of data per timestamp (which would be impractical on one hot encoded data).
+
+# Update list of categorical features and add those that will need embedding (features with more than 5 unique values):
+
+new_cat_feat = ['drugunit', 'drugadmitfrequency', 'drughiclseqno']
+[cat_feat.append(col) for col in new_cat_feat]
+
+cat_feat_nunique = [admsdrug_df[feature].nunique().compute() for feature in new_cat_feat]
+cat_feat_nunique
+
+new_cat_embed_feat = []
+for i in range(len(new_cat_feat)):
+    if cat_feat_nunique[i] > 5:
+        # Add feature to the list of those that will be embedded
+        cat_embed_feat.append(new_cat_feat[i])
+        new_cat_embed_feat.append(new_cat_feat[i])
+
+admsdrug_df[new_cat_feat].head()
+
+# + {"pixiedust": {"displayParams": {}}}
+for i in range(len(new_cat_embed_feat)):
+    feature = new_cat_embed_feat[i]
+    # Skip the 'drughiclseqno' from enumeration encoding
+    if feature == 'drughiclseqno':
+        continue
+    # Prepare for embedding, i.e. enumerate categories
+    admsdrug_df[feature], cat_embed_feat_enum[feature] = utils.enum_categorical_feature(admsdrug_df, feature)
+# -
+
+admsdrug_df[new_cat_feat].head()
+
+cat_embed_feat_enum
+
+admsdrug_df[new_cat_feat].dtypes
+
+admsdrug_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+admsdrug_df = client.persist(admsdrug_df)
+
+admsdrug_df.visualize()
+
+# ### Create the timestamp feature and sort
+
+# Create the timestamp (`ts`) feature:
+
+admsdrug_df['ts'] = admsdrug_df['drugoffset']
+admsdrug_df = admsdrug_df.drop('drugoffset', axis=1)
+admsdrug_df.head()
+
+# Remove duplicate rows:
+
+len(admsdrug_df)
+
+admsdrug_df = admsdrug_df.drop_duplicates()
+admsdrug_df.head()
+
+len(admsdrug_df)
+
+admsdrug_df = admsdrug_df.repartition(npartitions=30)
+
+# Sort by `ts` so as to be easier to merge with other dataframes later:
+
+admsdrug_df = admsdrug_df.set_index('ts')
+admsdrug_df.head()
+
+admsdrug_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+admsdrug_df = client.persist(admsdrug_df)
+
+admsdrug_df.visualize()
+
+# Check for possible multiple rows with the same unit stay ID and timestamp:
+
+admsdrug_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='drughiclseqno').head()
+
+admsdrug_df[admsdrug_df.patientunitstayid == 2346930].compute().head(10)
+
+# We can see that there are up to 48 categories per set of `patientunitstayid` and `ts`. As such, we must join them.
+
+# ### Join rows that have the same IDs
+
+# Even after removing duplicates rows, there are still some that have different information for the same ID and timestamp. We have to concatenate the categorical enumerations.
+
+# + {"pixiedust": {"displayParams": {}}}
+admsdrug_df = utils.join_categorical_enum(admsdrug_df, new_cat_embed_feat)
+admsdrug_df.head()
+# -
+
+admsdrug_df.dtypes
+
+admsdrug_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='drughiclseqno').head()
+
+admsdrug_df[admsdrug_df.patientunitstayid == 2346930].compute().head(10)
+
+# Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
+
+admsdrug_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+admsdrug_df = client.persist(admsdrug_df)
+
+admsdrug_df.visualize()
+
+# ### Save the dataframe
+
+admsdrug_df = admsdrug_df.repartition(npartitions=30)
+
+admsdrug_df.to_parquet(f'{data_path}cleaned/unnormalized/admissionDrug.parquet')
+
+admsdrug_df.to_parquet(f'{data_path}cleaned/normalized/admissionDrug.parquet')
+
+# Confirm that everything is ok through the `describe` method:
+
+admsdrug_df.describe().compute().transpose()
+
+# ### Join dataframes
+#
+# Merge dataframes by the unit stay, `patientunitstayid`, and the timestamp, `ts`, with a tolerence for a difference of up to 30 minutes.
+
+admsdrug_df = dd.read_parquet(f'{data_path}cleaned/normalized/admissionDrug.parquet')
+admsdrug_df.head()
+
+admsdrug_df.npartitions
+
+eICU_df = dd.merge_asof(eICU_df, admsdrug_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
 eICU_df.head()

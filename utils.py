@@ -330,7 +330,9 @@ def enum_categorical_feature(df, feature, nan_value=0, clean_name=True):
             if ('other' in key.lower() and len(key) < 9) \
             or ('unknown' in key.lower() and len(key) < 10) \
             or ('null' in key.lower() and len(key) < 7) \
-            or ('nan' in key.lower() and len(key) < 6):
+            or ('nan' in key.lower() and len(key) < 6) \
+            or all([char == ' ' for char in key]) \
+            or all([char == '_' for char in key]):
                 # Move NaN-like key to nan_value
                 enum_dict[key] = nan_value
         elif isinstance(key, numbers.Number):
