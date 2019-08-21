@@ -50,14 +50,12 @@ project_path = 'Documents/GitHub/eICU-mortality-prediction/'
 # -
 
 # Set up local cluster
-client = Client("tcp://127.0.0.1:58594")
+client = Client("tcp://127.0.0.1:53622")
 client
 
 # Upload the utils.py file, so that the Dask cluster has access to relevant auxiliary functions
 client.upload_file(f'{project_path}NeuralNetwork.py')
 client.upload_file(f'{project_path}utils.py')
-
-print(f'{project_path}utils.py')
 
 client.run(os.getcwd)
 
@@ -79,6 +77,10 @@ patient_df.head()
 patient_df = patient_df.repartition(npartitions=30)
 
 patient_df.npartitions
+
+len(patient_df)
+
+patient_df.patientunitstayid.value_counts().compute()
 
 # Get an overview of the dataframe through the `describe` method:
 
@@ -193,7 +195,6 @@ patient_df['deathoffset'] = patient_df.apply(lambda df: df['hospitaldischargeoff
                                                         if df['hospitaldischargestatus'] == 'Expired' or
                                                         df['hospitaldischargelocation'] == 'Death' else np.nan, axis=1,
                                                         meta=('x', float))
-
 patient_df.head()
 
 # Remove the now unneeded hospital discharge features:
@@ -215,65 +216,43 @@ patient_df.visualize()
 patient_df['ts'] = 0
 patient_df.head()
 
-patient_df.patientunitstayid.value_counts().compute()
-
-# Duplicate every row, so as to create a discharge event:
-
-patient_df = patient_df.append(patient_df)
-patient_df.patientunitstayid.value_counts().compute()
-
-# Sort by `patientunitstayid` so as to keep the timestamps of the same patient together:
-
-patient_df = patient_df.compute().sort_values(by='patientunitstayid')
-patient_df.head(6)
-
 # Create a weight feature:
 
 # Create feature weight and assign the initial weight that the patient has on admission
 patient_df['weight'] = patient_df['admissionweight']
 patient_df.head()
 
+# Duplicate every row, so as to create a discharge event:
+
+new_df = patient_df.copy()
+new_df.head()
 
 # Set the `weight` and `ts` features to initially have the value on admission and, on the second timestamp, have the value on discharge:
 
-def set_weight(row):
-    global patient_first_row
-    if not patient_first_row:
-        row['weight'] = row['dischargeweight']
-        patient_first_row = True
-    else:
-        patient_first_row = False
-    return row
+new_df.ts = new_df.unitdischargeoffset
+new_df.weight = new_df.dischargeweight
+new_df.head()
 
+# Join the new rows to the remaining dataframe:
 
-patient_first_row = False
-patient_df = patient_df.apply(lambda row: set_weight(row), axis=1)
-patient_df.head(6)
+patient_df = patient_df.append(new_df)
+patient_df.head()
 
-
-def set_ts(row):
-    global patient_first_row
-    if not patient_first_row:
-        row['ts'] = row['unitdischargeoffset']
-        patient_first_row = True
-    else:
-        patient_first_row = False
-    return row
-
-
-patient_first_row = False
-patient_df = patient_df.apply(lambda row: set_ts(row), axis=1)
-patient_df.head(6)
+patient_df = patient_df.repartition(npartitions=30)
 
 # Remove the remaining, now unneeded, weight and timestamp features:
 
 patient_df = patient_df.drop(['admissionweight', 'dischargeweight', 'unitdischargeoffset'], axis=1)
 patient_df.head(6)
 
+# Sort by `patientunitstayid` so as to check the data of the each patient together:
+
+patient_df.compute().sort_values(by='patientunitstayid').head(6)
+
 # Sort by `ts` so as to be easier to merge with other dataframes later:
 
-patient_df = dd.from_pandas(patient_df.set_index('ts'), npartitions=30, sort=False)
-patient_df.head(6)
+patient_df = patient_df.set_index('ts')
+patient_df.head(6, npartitions=patient_df.npartitions)
 
 patient_df.visualize()
 
@@ -290,12 +269,12 @@ patient_df.to_parquet(f'{data_path}cleaned/unnormalized/patient.parquet')
 
 new_cat_feat
 
-patient_df.head()
+patient_df.head(npartitions=patient_df.npartitions)
 
 # + {"pixiedust": {"displayParams": {}}}
 patient_df_norm = utils.normalize_data(patient_df, embed_columns=new_cat_feat,
                                        id_columns=['patientunitstayid', 'deathoffset'])
-patient_df_norm.head(6)
+patient_df_norm.head(6, npartitions=patient_df.npartitions)
 # -
 
 patient_df_norm.to_parquet(f'{data_path}cleaned/normalized/patient.parquet')
@@ -1136,71 +1115,56 @@ resp_care_df.head()
 #
 # Make a feature `onvent` that indicates if the patient is currently on ventilation.
 
-# Duplicate every row, so as to create a discharge event:
-
-resp_care_df = resp_care_df.append(resp_care_df)
-resp_care_df.head()
-
-# Sort by `ts` so as to keep the order of timestamps:
-
-resp_care_df = resp_care_df.reset_index()
-resp_care_df.head()
-
-resp_care_df = resp_care_df.compute().sort_values(by='ts')
-resp_care_df.head(6)
-
 # Create a `onvent` feature:
 
 resp_care_df['onvent'] = 1
 resp_care_df.head(6)
 
+# Reset index to allow editing the `ts` column:
 
-# Set the `onvent` and `ts` features to initially have the value on ventilation start and, on the second timestamp, have the value on ventilation end:
-
-def set_onvent(row):
-    global first_row
-    if not first_row:
-        row['onvent'] = 0
-        first_row = True
-    else:
-        first_row = False
-    return row
-
-
-first_row = False
-resp_care_df = resp_care_df.apply(lambda row: set_onvent(row), axis=1)
+resp_care_df = resp_care_df.reset_index()
 resp_care_df.head(6)
 
+# Duplicate every row, so as to create a discharge event:
 
-def set_ts_vent(row):
-    global first_row
-    if not first_row:
-        row['ts'] = row['ventendoffset']
-        first_row = True
-    else:
-        first_row = False
-    return row
+new_df = resp_care_df.copy()
+new_df.head()
 
+# Set the new dataframe's rows to have the ventilation stop timestamp, indicating that ventilation use ended:
 
-first_row = False
-resp_care_df = resp_care_df.apply(lambda row: set_ts_vent(row), axis=1)
-resp_care_df.head(6)
+new_df.ts = new_df.ventendoffset
+new_df.onvent = 0
+new_df.head()
+
+# Join the new rows to the remaining dataframe:
+
+resp_care_df = resp_care_df.append(new_df)
+resp_care_df.head()
+
+# Sort by `ts` so as to be easier to merge with other dataframes later:
+
+resp_care_df = resp_care_df.set_index('ts')
+resp_care_df.head()
+
+resp_care_df = resp_care_df.repartition(npartitions=30)
 
 # Remove the now unneeded ventilation end column:
 
 resp_care_df = resp_care_df.drop('ventendoffset', axis=1)
 resp_care_df.head(6)
 
-# Sort by `ts` so as to be easier to merge with other dataframes later:
+resp_care_df.visualize()
 
-resp_care_df = dd.from_pandas(resp_care_df.set_index('ts'), npartitions=30, sort=True)
-resp_care_df.head(6)
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+resp_care_df = client.persist(resp_care_df)
+
+resp_care_df.visualize()
 
 resp_care_df.tail(6)
 
 resp_care_df[resp_care_df.patientunitstayid == 1557538].compute()
 
-# Save the dataframe:
+# ### Save the dataframe
 
 resp_care_df.to_parquet(f'{data_path}cleaned/unnormalized/respiratoryCare.parquet')
 
@@ -2465,4 +2429,303 @@ admsdrug_df.head()
 admsdrug_df.npartitions
 
 eICU_df = dd.merge_asof(eICU_df, admsdrug_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
+eICU_df.head()
+
+# + {"toc-hr-collapsed": true, "cell_type": "markdown"}
+# ## Medication data
+# -
+
+# ### Read the data
+
+med_df = dd.read_csv(f'{data_path}original/medication.csv', dtype={'loadingdose': 'object'})
+med_df.head()
+
+len(med_df)
+
+med_df.patientunitstayid.nunique().compute()
+
+# There's not much admission drug data (only around 20% of the unit stays have this data). However, it might be useful, considering also that it complements the medication table.
+
+med_df.npartitions
+
+med_df = med_df.repartition(npartitions=30)
+
+# Get an overview of the dataframe through the `describe` method:
+
+med_df.describe().compute().transpose()
+
+med_df.visualize()
+
+med_df.columns
+
+med_df.dtypes
+
+# ### Check for missing values
+
+# + {"pixiedust": {"displayParams": {}}}
+utils.dataframe_missing_values(med_df)
+# -
+
+# ### Remove unneeded features
+
+med_df.drugname.value_counts().compute()
+
+med_df.drughiclseqno.value_counts().compute()
+
+med_df.dosage.value_counts().compute()
+
+med_df.frequency.value_counts().compute()
+
+med_df.drugstartoffset.value_counts().compute()
+
+med_df[med_df.drugstartoffset == 0].head()
+
+# Besides removing less interesting data (e.g. `drugivadmixture`), I'm also removing the `drugname` column, which is redundant with the codes `drughiclseqno`, while also being brand dependant.
+
+med_df = med_df[['patientunitstayid', 'drugstartoffset', 'drugstopoffset',
+                 'drugordercancelled', 'dosage', 'frequency', 'drughiclseqno']]
+med_df.head()
+
+# ### Remove rows of which the drug has been cancelled or not specified
+
+med_df.drugordercancelled.value_counts().compute()
+
+med_df = med_df[~((med_df.drugordercancelled == 'Yes') | (np.isnan(med_df.drughiclseqno)))]
+med_df.head()
+
+# Remove the now unneeded `drugordercancelled` column:
+
+med_df = med_df.drop('drugordercancelled', axis=1)
+med_df.head()
+
+med_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+med_df = client.persist(med_df)
+
+med_df.visualize()
+
+# + {"pixiedust": {"displayParams": {}}}
+utils.dataframe_missing_values(med_df)
+# -
+
+# ### Separating units from dosage
+#
+# In order to properly take into account the dosage quantities, as well as to standardize according to other tables like admission drugs, we should take the original `dosage` column and separate it to just the `drugdosage` values and the `drugunit`.
+
+med_df[med_df.dosage == 'PYXIS'].head(npartitions=med_df.npartitions)
+
+# No need to create a separate `pyxis` feature, which would indicate the use of the popular automated medications manager, as the frequency embedding will have that into account.
+
+# Only keep the properly defined dosages:
+
+med_df['drugdosage'] = np.nan
+med_df['drugunit'] = np.nan
+med_df.head()
+
+med_df[['drugdosage', 'drugunit']] = med_df.apply(utils.set_dosage_and_units, axis=1, result_type='expand')
+med_df.head()
+
+# Remove the now unneeded `dosage` column:
+
+med_df = med_df.drop('dosage', axis=1)
+med_df.head()
+
+med_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+med_df = client.persist(med_df)
+
+med_df.visualize()
+
+# + {"toc-hr-collapsed": true, "cell_type": "markdown"}
+# ### Discretize categorical features
+#
+# Convert binary categorical features into simple numberings, one hot encode features with a low number of categories (in this case, 5) and enumerate sparse categorical features that will be embedded.
+# -
+
+# #### Separate and prepare features for embedding
+#
+# Identify categorical features that have more than 5 unique categories, which will go through an embedding layer afterwards, and enumerate them.
+#
+# In the case of microbiology data, we're also going to embed the antibiotic `sensitivitylevel`, not because it has many categories, but because there can be several rows of data per timestamp (which would be impractical on one hot encoded data).
+
+# Update list of categorical features and add those that will need embedding (features with more than 5 unique values):
+
+new_cat_feat = ['drugunit', 'frequency', 'drughiclseqno']
+[cat_feat.append(col) for col in new_cat_feat]
+
+cat_feat_nunique = [med_df[feature].nunique().compute() for feature in new_cat_feat]
+cat_feat_nunique
+
+new_cat_embed_feat = []
+for i in range(len(new_cat_feat)):
+    if cat_feat_nunique[i] > 5:
+        # Add feature to the list of those that will be embedded
+        cat_embed_feat.append(new_cat_feat[i])
+        new_cat_embed_feat.append(new_cat_feat[i])
+
+med_df[new_cat_feat].head()
+
+# + {"pixiedust": {"displayParams": {}}}
+for i in range(len(new_cat_embed_feat)):
+    feature = new_cat_embed_feat[i]
+    # Skip the 'drughiclseqno' from enumeration encoding
+    if feature == 'drughiclseqno':
+        continue
+    # Prepare for embedding, i.e. enumerate categories
+    med_df[feature], cat_embed_feat_enum[feature] = utils.enum_categorical_feature(med_df, feature)
+# -
+
+med_df[new_cat_feat].head()
+
+cat_embed_feat_enum
+
+med_df[new_cat_feat].dtypes
+
+med_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+med_df = client.persist(med_df)
+
+med_df.visualize()
+
+# ### Create drug stop event
+#
+# Add a timestamp corresponding to when each patient stops taking each medication.
+
+# Duplicate every row, so as to create a discharge event:
+
+new_df = med_df.copy()
+new_df.head()
+
+# Set the new dataframe's rows to have the drug stop timestamp, with no more information on the drug that was being used:
+
+new_df.drugstartoffset = new_df.drugstopoffset
+new_df.drugunit = np.nan
+new_df.drugdosage = np.nan
+new_df.frequency = np.nan
+new_df.drughiclseqno = np.nan
+new_df.head()
+
+# Join the new rows to the remaining dataframe:
+
+med_df = med_df.append(new_df)
+med_df.head()
+
+med_df = med_df.repartition(npartitions=30)
+
+# Remove the now unneeded medication stop column:
+
+med_df = med_df.drop('drugstopoffset', axis=1)
+med_df.head(6)
+
+med_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+med_df = client.persist(med_df)
+
+med_df.visualize()
+
+# ### Create the timestamp feature and sort
+
+# Create the timestamp (`ts`) feature:
+
+med_df['ts'] = med_df['drugstartoffset']
+med_df = med_df.drop('drugstartoffset', axis=1)
+med_df.head()
+
+# Remove duplicate rows:
+
+len(med_df)
+
+med_df = med_df.drop_duplicates()
+med_df.head()
+
+len(med_df)
+
+med_df = med_df.repartition(npartitions=30)
+
+# Sort by `ts` so as to be easier to merge with other dataframes later:
+
+med_df = med_df.set_index('ts')
+med_df.head()
+
+med_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+med_df = client.persist(med_df)
+
+med_df.visualize()
+
+# Check for possible multiple rows with the same unit stay ID and timestamp:
+
+med_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='drughiclseqno').head()
+
+med_df[med_df.patientunitstayid == 167259].compute().head(10)
+
+# We can see that there are up to 45 categories per set of `patientunitstayid` and `ts`. As such, we must join them. But first, we need to normalize the dosage by the respective sets of drug code and units, so as to avoid mixing different absolute values.
+
+# ### Normalize data
+
+med_df_norm = med_df.reset_index()
+med_df_norm.head()
+
+# + {"pixiedust": {"displayParams": {}}}
+med_df_norm = utils.normalize_data(med_df,
+                                   columns_to_normalize_cat=[(['drughiclcode', 'drugunit'], 'drugdosage')])
+med_df_norm.head()
+# -
+
+med_df_norm = med_df_norm.set_index('ts')
+med_df_norm.head()
+
+# ### Join rows that have the same IDs
+
+# Even after removing duplicates rows, there are still some that have different information for the same ID and timestamp. We have to concatenate the categorical enumerations.
+
+list(set(med_df_norm.columns) - set(new_cat_embed_feat) - set(['patientunitstayid', 'ts']))
+
+# + {"pixiedust": {"displayParams": {}}}
+med_df_norm = utils.join_categorical_enum(med_df_norm, new_cat_embed_feat)
+med_df_norm.head()
+# -
+
+med_df_norm.dtypes
+
+med_df_norm.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='drughiclseqno').head()
+
+med_df_norm[med_df_norm.patientunitstayid == 167259].compute().head(10)
+
+# Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
+
+med_df_norm.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+med_df_norm = client.persist(med_df_norm)
+
+med_df_norm.visualize()
+
+# ### Save the dataframe
+
+med_df_norm = med_df_norm.repartition(npartitions=30)
+
+med_df.to_parquet(f'{data_path}cleaned/unnormalized/medication.parquet')
+
+med_df_norm.to_parquet(f'{data_path}cleaned/normalized/medication.parquet')
+
+# Confirm that everything is ok through the `describe` method:
+
+med_df_norm.describe().compute().transpose()
+
+# ### Join dataframes
+#
+# Merge dataframes by the unit stay, `patientunitstayid`, and the timestamp, `ts`, with a tolerence for a difference of up to 30 minutes.
+
+med_df = dd.read_parquet(f'{data_path}cleaned/normalized/medication.parquet')
+med_df.head()
+
+med_df.npartitions
+
+eICU_df = dd.merge_asof(eICU_df, med_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
 eICU_df.head()

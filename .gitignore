@@ -11,3 +11,5 @@
 Datasets/
 dataset/
 .ipynb_checkpoints/embedding-bag-test-checkpoint.ipynb
+.ipynb_checkpoints/separating-a-column-into-two-checkpoint.ipynb
+.ipynb_checkpoints/utils-checkpoint.py

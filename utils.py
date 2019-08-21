@@ -1221,6 +1221,45 @@ def set_bar_color(values, ids, seq_len, threshold=0,
         return [pos_color if val > 0 else neg_color for val in values[ids, :seq_len]]
 
 
+def set_dosage_and_units(df, orig_column='dosage'):
+    '''Separate medication dosage string column into numeric dosage and units
+    features.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame or dask.DataFrame
+        Dataframe containing the medication dosage information.
+    orig_column : string, default 'dosage'
+        Name of the original column, which will be split in two.
+
+    Returns
+    -------
+    df : pandas.DataFrame or dask.DataFrame
+        Dataframe after adding the numeric dosage and units columns.
+    '''
+    # Start by assuming that dosage and unit are unknown
+    dosage = np.nan
+    unit = np.nan
+    try:
+        x = df[orig_column].split(' ')
+        if len(x) == 2:
+            try:
+                x[0] = float(x[0])
+            except:
+                return dosage, unit
+            if is_definitely_string(x[1]):
+                # Add correctly formated dosage and unit values
+                dosage = x[0]
+                unit = x[1]
+                return dosage, unit
+            else:
+                return dosage, unit
+        else:
+            return dosage, unit
+    except:
+        return dosage, unit
+
+
 def find_subject_idx(data, subject_id, subject_id_col=0):
     '''Find the index that corresponds to a given subject in a data tensor.
 
