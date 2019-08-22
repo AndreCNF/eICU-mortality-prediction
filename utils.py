@@ -601,13 +601,42 @@ def dataframe_to_padded_tensor(df, seq_len_dict, n_ids, n_inputs, id_column='sub
         raise Exception('ERROR: Unavailable data type. Please choose either NumPy or PyTorch.')
 
 
-def apply_zscore_norm(df, value, mean=None, std=None, categories_means=None,
+def apply_zscore_norm(value, df=None, mean=None, std=None, categories_means=None,
                       categories_stds=None, groupby_columns=None):
+    '''Performs z-score normalization when used inside a Pandas or Dask
+    apply function.
+
+    Parameters
+    ----------
+    value : int or float
+        Original, unnormalized value.
+    df : pandas.DataFrame or dask.DataFrame, default None
+        Original pandas dataframe which is used to retrieve the
+        necessary statistical values used in group normalization, i.e. when
+        values are normalized according to their corresponding categories.
+    mean : int or float, default None
+        Average (mean) value to be used in the z-score normalization.
+    std : int or float, default None
+        Standard deviation value to be used in the z-score normalization.
+    categories_means : dict, default None
+        Dictionary containing the average values for each set of categories.
+    categories_stds : dict, default None
+        Dictionary containing the standard deviation values for each set of
+        categories.
+    groupby_columns : string or list of strings, default None
+        Name(s) of the column(s) that contains the categories from which
+        statistical values (mean and standard deviation) are retrieved.
+
+    Returns
+    -------
+    value_norm : int or float
+        Z-score normalized value.
+    '''
     if not isinstance(value, numbers.Number):
         raise Exception(f'ERROR: Input value should be a number, not an object of type {type(value)}.')
     if mean and std:
         return (value - mean) / std
-    elif categories_means and categories_stds and groupby_columns:
+    elif df and categories_means and categories_stds and groupby_columns:
         try:
             if isinstance(groupby_columns, list):
                 return (value - categories_means[tuple(df[groupby_columns])]) / \
@@ -619,7 +648,56 @@ def apply_zscore_norm(df, value, mean=None, std=None, categories_means=None,
             warnings.warn(f'Couldn\'t manage to find the mean and standard deviation values for the groupby columns {groupby_columns} with values {tuple(df[groupby_columns])}.')
             return np.nan
     else:
-        raise Exception('ERROR: Invalid parameters. Either the `mean` and `std` or the `categories_means`, `categories_stds` and `groupby_columns` must be set.')
+        raise Exception('ERROR: Invalid parameters. Either the `mean` and `std` or the `df`, `categories_means`, `categories_stds` and `groupby_columns` must be set.')
+
+
+def apply_minmax_norm(value, df=None, min=None, max=None, categories_mins=None,
+                      categories_maxs=None, groupby_columns=None):
+    '''Performs minmax normalization when used inside a Pandas or Dask
+    apply function.
+
+    Parameters
+    ----------
+    value : int or float
+        Original, unnormalized value.
+    df : pandas.DataFrame or dask.DataFrame, default None
+        Original pandas dataframe which is used to retrieve the
+        necessary statistical values used in group normalization, i.e. when
+        values are normalized according to their corresponding categories.
+    min : int or float, default None
+        Minimum value to be used in the minmax normalization.
+    max : int or float, default None
+        Maximum value to be used in the minmax normalization.
+    categories_mins : dict, default None
+        Dictionary containing the minimum values for each set of categories.
+    categories_maxs : dict, default None
+        Dictionary containing the maximum values for each set of categories.
+    groupby_columns : string or list of strings, default None
+        Name(s) of the column(s) that contains the categories from which
+        statistical values (minimum and maximum) are retrieved.
+
+    Returns
+    -------
+    value_norm : int or float
+        Minmax normalized value.
+    '''
+    if not isinstance(value, numbers.Number):
+        raise Exception(f'ERROR: Input value should be a number, not an object of type {type(value)}.')
+    if mean and std:
+        return (value - min) / (max - min)
+    elif df and categories_means and categories_stds and groupby_columns:
+        try:
+            if isinstance(groupby_columns, list):
+                return (value - categories_mins[tuple(df[groupby_columns])]) / \
+                       (categories_maxs[tuple(df[groupby_columns])] - categories_mins[tuple(df[groupby_columns])])
+            else:
+                return (value - categories_mins[df[groupby_columns]]) / \
+                       (categories_maxs[df[groupby_columns]] - categories_mins[df[groupby_columns]])
+        except:
+            warnings.warn(f'Couldn\'t manage to find the mean and standard deviation values for the groupby columns {groupby_columns} with values {tuple(df[groupby_columns])}.')
+            return np.nan
+    else:
+        raise Exception('ERROR: Invalid parameters. Either the `min` and `max` or the `df`, `categories_mins`, `categories_maxs` and `groupby_columns` must be set.')
 
 
 def normalize_data(df, data=None, id_columns=['patientunitstayid', 'ts'],
@@ -751,15 +829,9 @@ def normalize_data(df, data=None, id_columns=['patientunitstayid', 'ts'],
                                                                                      categories_stds=categories_stds, groupby_columns=col_tuple[0]),
                                                         axis=1, meta=('df', float))
                     else:
-                        if isinstance(col_tuple[0], list):
-                            # Special care taken when the groupby categories are from more than one column
-                            data[col_tuple[1]] = data.apply(lambda df: (df[col_tuple[1]] - categories_means[list(map(tuple, df[col_tuple[0]].values))[0]]) /
-                                                                       categories_stds[list(map(tuple, df[col_tuple[0]].values))[0]],
-                                                            axis=1)
-                        else:
-                            data[col_tuple[1]] = data.apply(lambda df: (df[col_tuple[1]] - categories_means[df[col_tuple[0]]]) /
-                                                                       categories_stds[df[col_tuple[0]]],
-                                                            axis=1)
+                        data[col_tuple[1]] = data.apply(lambda df: apply_zscore_norm(df, value=df[col_tuple[1]], categories_means=categories_means,
+                                                                                     categories_stds=categories_stds, groupby_columns=col_tuple[0]),
+                                                        axis=1)
 
         # Otherwise, the tensor is normalized
         else:
@@ -821,25 +893,13 @@ def normalize_data(df, data=None, id_columns=['patientunitstayid', 'ts'],
 
                     # Normalize the right categories
                     if 'dask' in str(type(df)):
-                        if isinstance(col_tuple[0], list):
-                            # Special care taken when the groupby categories are from more than one column
-                            data[col_tuple[1]] = data.apply(lambda df: (df[col_tuple[1]] - categories_mins[list(map(tuple, df[col_tuple[0]].values))[0]]) /
-                                                                       (categories_maxs[list(map(tuple, df[col_tuple[0]].values))[0]] - categories_mins[list(map(tuple, df[col_tuple[0]].values))[0]]),
-                                                            axis=1, meta=('x', float))
-                        else:
-                            data[col_tuple[1]] = data.apply(lambda df: (df[col_tuple[1]] - categories_mins[df[col_tuple[0]]]) /
-                                                                       (categories_maxs[df[col_tuple[0]]] - categories_mins[df[col_tuple[0]]]),
-                                                            axis=1, meta=('x', float))
+                        data[col_tuple[1]] = data.apply(lambda df: apply_minmax_norm(df, value=df[col_tuple[1]], categories_mins=categories_mins,
+                                                                                     categories_maxs=categories_maxs, groupby_columns=col_tuple[0]),
+                                                        axis=1, meta=('df', float))
                     else:
-                        if isinstance(col_tuple[0], list):
-                            # Special care taken when the groupby categories are from more than one column
-                            data[col_tuple[1]] = data.apply(lambda df: (df[col_tuple[1]] - categories_mins[list(map(tuple, df[col_tuple[0]].values))[0]]) /
-                                                                       (categories_maxs[list(map(tuple, df[col_tuple[0]].values))[0]] - categories_mins[list(map(tuple, df[col_tuple[0]].values))[0]]),
-                                                            axis=1)
-                        else:
-                            data[col_tuple[1]] = data.apply(lambda df: (df[col_tuple[1]] - categories_mins[df[col_tuple[0]]]) /
-                                                                       (categories_maxs[df[col_tuple[0]]] - categories_mins[df[col_tuple[0]]]),
-                                                            axis=1)
+                        data[col_tuple[1]] = data.apply(lambda df: apply_minmax_norm(df, value=df[col_tuple[1]], categories_mins=categories_mins,
+                                                                                     categories_maxs=categories_maxs, groupby_columns=col_tuple[0]),
+                                                        axis=1)
 
         # Otherwise, the tensor is normalized
         else:
