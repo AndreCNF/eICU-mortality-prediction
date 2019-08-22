@@ -2671,9 +2671,108 @@ med_df[med_df.patientunitstayid == 167259].compute().head(10)
 med_df_norm = med_df.reset_index()
 med_df_norm.head()
 
+med_df_norm.groupby(['drughiclseqno', 'drugunit'])['drugdosage'].mean().head()
+
+# Calculate the means and standard deviations
+means = med_df_norm.groupby(['drughiclseqno', 'drugunit'])['drugdosage'].mean().compute()
+stds = med_df_norm.groupby(['drughiclseqno', 'drugunit'])['drugdosage'].std().compute()
+categories_means = dict(means)
+categories_stds = dict(stds)
+
+categories_means
+
+med_df_norm[['drughiclseqno', 'drugunit']].head(4).tail(1).values
+
+list(map(tuple, med_df_norm[['drughiclseqno', 'drugunit']].head(4).tail(1).values))[0]
+
+categories_means[med_df_norm[['drughiclseqno', 'drugunit']].head(4).tail(1)]
+
+categories_means[list(map(tuple, med_df_norm[['drughiclseqno', 'drugunit']].head(4).tail(1).values))[0]]
+
+med_df_norm.head()
+
+tuple([1, 2, 3])
+
+(1, 2, 3)
+
+med_df_norm.apply(lambda df: (df['drughiclseqno'], df['drugunit']),
+                  axis=1).head()
+
+med_df_norm.apply(lambda df: tuple(np.array([df['drughiclseqno'], df['drugunit']])),
+                  axis=1).head()
+
+med_df_norm.apply(lambda df: tuple(np.array([df['drughiclseqno'], df['drugunit']])),
+                  axis=1).head()
+
+med_df_norm.apply(lambda df: tuple(df[['drughiclseqno', 'drugunit']]),
+                  axis=1).head()
+
+med_df_norm.head()
+
+med_df_norm.apply(lambda df: categories_means[(df['drughiclseqno'], df['drugunit'])] if not np.isnan(df['drughiclseqno'])
+                  else np.nan,
+                  axis=1).head()
+
+
+def test_getting_mean(df):
+    try:
+        if not np.isnan(df['drughiclseqno']):
+            return categories_means[(df['drughiclseqno'], df['drugunit'])]
+        else:
+            return np.nan
+    except:
+        print(f'Failed getting the mean of {(df["drughiclseqno"], df["drugunit"])}')
+        return np.nan
+
+
+med_df_norm.apply(test_getting_mean,
+                  axis=1).head()
+
+med_df_norm[(med_df_norm.drughiclseqno == 1) & (med_df_norm.drugunit == 1)].compute()
+
+categories_means[(np.nan, np.nan)]
+
+categories_means[(1, 1)]
+
+categories_means[(4553.0, 0.0)]
+
+categories_means[tuple([4553.0, 0.0])]
+
+med_df_norm.apply(lambda df: tuple(df[['drughiclseqno', 'drugunit']]),
+                  axis=1).head()
+
+med_df_norm.apply(lambda df: (df['drugdosage'] - categories_means[(df['drughiclseqno'], df['drugunit'])]) /
+                              categories_stds[(df['drughiclseqno'], df['drugunit'])],
+                  axis=1, meta=('x', float)).head()
+
+
+def test_normalizing(df):
+    try:
+        if not np.isnan(df['drughiclseqno']):
+            return (df['drugdosage'] - categories_means[(df['drughiclseqno'], df['drugunit'])]) / \
+                   categories_stds[(df['drughiclseqno'], df['drugunit'])]
+        else:
+            return np.nan
+    except:
+        print(f'Failed normalizing on group {(df["drughiclseqno"], df["drugunit"])}')
+        return np.nan
+
+
+def test_normalizing(df):
+    try:
+        return (df['drugdosage'] - categories_means[(df['drughiclseqno'], df['drugunit'])]) / \
+               categories_stds[(df['drughiclseqno'], df['drugunit'])]
+    except:
+        print(f'Failed normalizing on group {(df["drughiclseqno"], df["drugunit"])}')
+        return np.nan
+
+
+med_df_norm.apply(test_normalizing,
+                  axis=1, meta=('x', float)).head(20)
+
 # + {"pixiedust": {"displayParams": {}}}
-med_df_norm = utils.normalize_data(med_df,
-                                   columns_to_normalize_cat=[(['drughiclcode', 'drugunit'], 'drugdosage')])
+med_df_norm = utils.normalize_data(med_df_norm, columns_to_normalize=False,
+                                   columns_to_normalize_cat=[(['drughiclseqno', 'drugunit'], 'drugdosage')])
 med_df_norm.head()
 # -
 

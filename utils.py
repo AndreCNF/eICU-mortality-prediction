@@ -601,6 +601,27 @@ def dataframe_to_padded_tensor(df, seq_len_dict, n_ids, n_inputs, id_column='sub
         raise Exception('ERROR: Unavailable data type. Please choose either NumPy or PyTorch.')
 
 
+def apply_zscore_norm(df, value, mean=None, std=None, categories_means=None,
+                      categories_stds=None, groupby_columns=None):
+    if not isinstance(value, numbers.Number):
+        raise Exception(f'ERROR: Input value should be a number, not an object of type {type(value)}.')
+    if mean and std:
+        return (value - mean) / std
+    elif categories_means and categories_stds and groupby_columns:
+        try:
+            if isinstance(groupby_columns, list):
+                return (value - categories_means[tuple(df[groupby_columns])]) / \
+                       categories_stds[tuple(df[groupby_columns])]
+            else:
+                return (value - categories_means[df[groupby_columns]]) / \
+                       categories_stds[df[groupby_columns]]
+        except:
+            warnings.warn(f'Couldn\'t manage to find the mean and standard deviation values for the groupby columns {groupby_columns} with values {tuple(df[groupby_columns])}.')
+            return np.nan
+    else:
+        raise Exception('ERROR: Invalid parameters. Either the `mean` and `std` or the `categories_means`, `categories_stds` and `groupby_columns` must be set.')
+
+
 def normalize_data(df, data=None, id_columns=['patientunitstayid', 'ts'],
                    normalization_method='z-score', columns_to_normalize=None,
                    columns_to_normalize_cat=None, embed_columns=None,
@@ -633,7 +654,10 @@ def normalize_data(df, data=None, id_columns=['patientunitstayid', 'ts'],
         maximum value, getting to a fixed range from 0 to 1.
     columns_to_normalize : list of strings, default None
         If specified, the columns provided in the list are the only ones that
-        will be normalized. Otherwise, all continuous columns will be normalized.
+        will be normalized. If set to False, no column will normalized directly,
+        although columns can still be normalized in groups of categories, if
+        specified in the `columns_to_normalize_cat` parameter. Otherwise, all
+        continuous columns will be normalized.
     columns_to_normalize_cat : list of tuples of strings, default None
         If specified, the columns provided in the list are going to be
         normalized on their categories. That is, the values (column 2 in the
@@ -682,17 +706,18 @@ def normalize_data(df, data=None, id_columns=['patientunitstayid', 'ts'],
                          are \'z-score\' and \'min-max\'.')
 
     if normalization_method.lower() == 'z-score':
-        # Calculate the means and standard deviations
-        means = df[columns_to_normalize].mean()
-        stds = df[columns_to_normalize].std()
+        if columns_to_normalize is not False:
+            # Calculate the means and standard deviations
+            means = df[columns_to_normalize].mean()
+            stds = df[columns_to_normalize].std()
 
-        if 'dask' in str(type(df)):
-            # Make sure that the values are computed, in case we're using Dask
-            means = means.compute()
-            stds = stds.compute()
+            if 'dask' in str(type(df)):
+                # Make sure that the values are computed, in case we're using Dask
+                means = means.compute()
+                stds = stds.compute()
 
-        column_means = dict(means)
-        column_stds = dict(stds)
+            column_means = dict(means)
+            column_stds = dict(stds)
 
         # Check if the data being normalized is directly the dataframe
         if data is None:
@@ -700,9 +725,10 @@ def normalize_data(df, data=None, id_columns=['patientunitstayid', 'ts'],
             data = df.copy()
 
             # Normalize the right columns
-            print(f'z-score normalizing columns {columns_to_normalize}...')
-            for col in iterations_loop(columns_to_normalize, see_progress=see_progress):
-                data[col] = (data[col] - column_means[col]) / column_stds[col]
+            if columns_to_normalize is not False:
+                print(f'z-score normalizing columns {columns_to_normalize}...')
+                for col in iterations_loop(columns_to_normalize, see_progress=see_progress):
+                    data[col] = (data[col] - column_means[col]) / column_stds[col]
 
             if columns_to_normalize_cat:
                 print(f'z-score normalizing columns {columns_to_normalize_cat} by their associated categories...')
@@ -721,53 +747,62 @@ def normalize_data(df, data=None, id_columns=['patientunitstayid', 'ts'],
 
                     # Normalize the right categories
                     if 'dask' in str(type(df)):
-                        data[col_tuple[1]] = data.apply(lambda df: (df[col_tuple[1]] - categories_means[df[col_tuple[0]]]) /
-                                                                   categories_stds[df[col_tuple[0]]],
-                                                        axis=1, meta=('x', float))
+                        data[col_tuple[1]] = data.apply(lambda df: apply_zscore_norm(df, value=df[col_tuple[1]], categories_means=categories_means,
+                                                                                     categories_stds=categories_stds, groupby_columns=col_tuple[0]),
+                                                        axis=1, meta=('df', float))
                     else:
-                        data[col_tuple[1]] = data.apply(lambda df: (df[col_tuple[1]] - categories_means[df[col_tuple[0]]]) /
-                                                                   categories_stds[df[col_tuple[0]]],
-                                                        axis=1)
+                        if isinstance(col_tuple[0], list):
+                            # Special care taken when the groupby categories are from more than one column
+                            data[col_tuple[1]] = data.apply(lambda df: (df[col_tuple[1]] - categories_means[list(map(tuple, df[col_tuple[0]].values))[0]]) /
+                                                                       categories_stds[list(map(tuple, df[col_tuple[0]].values))[0]],
+                                                            axis=1)
+                        else:
+                            data[col_tuple[1]] = data.apply(lambda df: (df[col_tuple[1]] - categories_means[df[col_tuple[0]]]) /
+                                                                       categories_stds[df[col_tuple[0]]],
+                                                            axis=1)
 
         # Otherwise, the tensor is normalized
         else:
-            # Dictionary to convert the the tensor's column indeces into the dataframe's column names
-            idx_to_name = dict(enumerate(df.columns))
+            if columns_to_normalize is not False:
+                # Dictionary to convert the the tensor's column indeces into the dataframe's column names
+                idx_to_name = dict(enumerate(df.columns))
 
-            # Dictionary to convert the dataframe's column names into the tensor's column indeces
-            name_to_idx = dict([(t[1], t[0]) for t in enumerate(df.columns)])
+                # Dictionary to convert the dataframe's column names into the tensor's column indeces
+                name_to_idx = dict([(t[1], t[0]) for t in enumerate(df.columns)])
 
-            # List of indeces of the tensor's columns which are needing normalization
-            tensor_columns_to_normalize = [name_to_idx[name] for name in columns_to_normalize]
+                # List of indeces of the tensor's columns which are needing normalization
+                tensor_columns_to_normalize = [name_to_idx[name] for name in columns_to_normalize]
 
-            # Normalize the right columns
-            print(f'z-score normalizing columns {columns_to_normalize}...')
-            for col in iterations_loop(tensor_columns_to_normalize, see_progress=see_progress):
-                data[:, :, col] = (data[:, :, col] - column_means[idx_to_name[col]]) / \
-                                  column_stds[idx_to_name[col]]
+                # Normalize the right columns
+                print(f'z-score normalizing columns {columns_to_normalize}...')
+                for col in iterations_loop(tensor_columns_to_normalize, see_progress=see_progress):
+                    data[:, :, col] = (data[:, :, col] - column_means[idx_to_name[col]]) / \
+                                      column_stds[idx_to_name[col]]
 
     elif normalization_method.lower() == 'min-max':
-        mins = df[columns_to_normalize].min()
-        maxs = df[columns_to_normalize].max()
+        if columns_to_normalize is not False:
+            mins = df[columns_to_normalize].min()
+            maxs = df[columns_to_normalize].max()
 
-        if 'dask' in str(type(df)):
-            # Make sure that the values are computed, in case we're using Dask
-            mins = means.compute()
-            maxs = maxs.compute()
+            if 'dask' in str(type(df)):
+                # Make sure that the values are computed, in case we're using Dask
+                mins = means.compute()
+                maxs = maxs.compute()
 
-        column_mins = dict(mins)
-        column_maxs = dict(maxs)
+            column_mins = dict(mins)
+            column_maxs = dict(maxs)
 
         # Check if the data being normalized is directly the dataframe
         if data is None:
             # Treat the dataframe as the data being normalized
             data = df.copy()
 
-            # Normalize the right columns
-            print(f'min-max normalizing columns {columns_to_normalize}...')
-            for col in iterations_loop(columns_to_normalize, see_progress=see_progress):
-                data[col] = (data[col] - column_mins[col]) / \
-                            (column_maxs[col] - column_mins[col])
+            if columns_to_normalize is not False:
+                # Normalize the right columns
+                print(f'min-max normalizing columns {columns_to_normalize}...')
+                for col in iterations_loop(columns_to_normalize, see_progress=see_progress):
+                    data[col] = (data[col] - column_mins[col]) / \
+                                (column_maxs[col] - column_mins[col])
 
             if columns_to_normalize_cat:
                 print(f'min-max normalizing columns {columns_to_normalize_cat} by their associated categories...')
@@ -786,30 +821,43 @@ def normalize_data(df, data=None, id_columns=['patientunitstayid', 'ts'],
 
                     # Normalize the right categories
                     if 'dask' in str(type(df)):
-                        data[col_tuple[1]] = data.apply(lambda df: (df[col_tuple[1]] - categories_mins[df[col_tuple[0]]]) /
-                                                                   (categories_maxs[df[col_tuple[0]]] - categories_mins[df[col_tuple[0]]]),
-                                                        axis=1, meta=('x', float))
+                        if isinstance(col_tuple[0], list):
+                            # Special care taken when the groupby categories are from more than one column
+                            data[col_tuple[1]] = data.apply(lambda df: (df[col_tuple[1]] - categories_mins[list(map(tuple, df[col_tuple[0]].values))[0]]) /
+                                                                       (categories_maxs[list(map(tuple, df[col_tuple[0]].values))[0]] - categories_mins[list(map(tuple, df[col_tuple[0]].values))[0]]),
+                                                            axis=1, meta=('x', float))
+                        else:
+                            data[col_tuple[1]] = data.apply(lambda df: (df[col_tuple[1]] - categories_mins[df[col_tuple[0]]]) /
+                                                                       (categories_maxs[df[col_tuple[0]]] - categories_mins[df[col_tuple[0]]]),
+                                                            axis=1, meta=('x', float))
                     else:
-                        data[col_tuple[1]] = data.apply(lambda df: (df[col_tuple[1]] - categories_mins[df[col_tuple[0]]]) /
-                                                                   (categories_maxs[df[col_tuple[0]]] - categories_mins[df[col_tuple[0]]]),
-                                                        axis=1)
+                        if isinstance(col_tuple[0], list):
+                            # Special care taken when the groupby categories are from more than one column
+                            data[col_tuple[1]] = data.apply(lambda df: (df[col_tuple[1]] - categories_mins[list(map(tuple, df[col_tuple[0]].values))[0]]) /
+                                                                       (categories_maxs[list(map(tuple, df[col_tuple[0]].values))[0]] - categories_mins[list(map(tuple, df[col_tuple[0]].values))[0]]),
+                                                            axis=1)
+                        else:
+                            data[col_tuple[1]] = data.apply(lambda df: (df[col_tuple[1]] - categories_mins[df[col_tuple[0]]]) /
+                                                                       (categories_maxs[df[col_tuple[0]]] - categories_mins[df[col_tuple[0]]]),
+                                                            axis=1)
 
         # Otherwise, the tensor is normalized
         else:
-            # Dictionary to convert the the tensor's column indeces into the dataframe's column names
-            idx_to_name = dict(enumerate(df.columns))
+            if columns_to_normalize is not False:
+                # Dictionary to convert the the tensor's column indeces into the dataframe's column names
+                idx_to_name = dict(enumerate(df.columns))
 
-            # Dictionary to convert the dataframe's column names into the tensor's column indeces
-            name_to_idx = dict([(t[1], t[0]) for t in enumerate(df.columns)])
+                # Dictionary to convert the dataframe's column names into the tensor's column indeces
+                name_to_idx = dict([(t[1], t[0]) for t in enumerate(df.columns)])
 
-            # List of indeces of the tensor's columns which are needing normalization
-            tensor_columns_to_normalize = [name_to_idx[name] for name in columns_to_normalize]
+                # List of indeces of the tensor's columns which are needing normalization
+                tensor_columns_to_normalize = [name_to_idx[name] for name in columns_to_normalize]
 
-            # Normalize the right columns
-            print(f'min-max normalizing columns {columns_to_normalize}...')
-            for col in iterations_loop(tensor_columns_to_normalize, see_progress=see_progress):
-                data[:, :, col] = (data[:, :, col] - column_mins[idx_to_name[col]]) / \
-                                  (column_maxs[idx_to_name[col]] - column_mins[idx_to_name[col]])
+                # Normalize the right columns
+                print(f'min-max normalizing columns {columns_to_normalize}...')
+                for col in iterations_loop(tensor_columns_to_normalize, see_progress=see_progress):
+                    data[:, :, col] = (data[:, :, col] - column_mins[idx_to_name[col]]) / \
+                                      (column_maxs[idx_to_name[col]] - column_mins[idx_to_name[col]])
 
     else:
         raise ValueError(f'{normalization_method} isn\'t a valid normalization method. Available options \
