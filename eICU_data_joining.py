@@ -2215,7 +2215,7 @@ diagn_df.npartitions
 eICU_df = dd.merge_asof(eICU_df, diagn_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
 eICU_df.head()
 
-# + {"toc-hr-collapsed": true, "cell_type": "markdown"}
+# + {"toc-hr-collapsed": false, "cell_type": "markdown"}
 # ## Admission drug data
 # -
 
@@ -2381,43 +2381,71 @@ admsdrug_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(
 
 admsdrug_df[admsdrug_df.patientunitstayid == 2346930].compute().head(10)
 
-# We can see that there are up to 48 categories per set of `patientunitstayid` and `ts`. As such, we must join them.
+# We can see that there are up to 48 categories per set of `patientunitstayid` and `ts`. As such, we must join them. But first, we need to normalize the dosage by the respective sets of drug code and units, so as to avoid mixing different absolute values.
+
+# ### Normalize data
+
+admsdrug_df_norm = admsdrug_df.reset_index()
+admsdrug_df_norm.head()
+
+# + {"pixiedust": {"displayParams": {}}}
+admsdrug_df_norm = utils.normalize_data(admsdrug_df_norm, columns_to_normalize=False,
+                                   columns_to_normalize_cat=[(['drughiclseqno', 'drugunit'], 'drugdosage')])
+admsdrug_df_norm.head()
+# -
+
+admsdrug_df_norm.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+admsdrug_df_norm = client.persist(admsdrug_df_norm)
+
+admsdrug_df_norm.visualize()
+
+admsdrug_df_norm = admsdrug_df_norm.set_index('ts')
+admsdrug_df_norm.head()
+
+admsdrug_df_norm.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+admsdrug_df_norm = client.persist(admsdrug_df_norm)
+
+admsdrug_df_norm.visualize()
 
 # ### Join rows that have the same IDs
 
 # Even after removing duplicates rows, there are still some that have different information for the same ID and timestamp. We have to concatenate the categorical enumerations.
 
 # + {"pixiedust": {"displayParams": {}}}
-admsdrug_df = utils.join_categorical_enum(admsdrug_df, new_cat_embed_feat)
-admsdrug_df.head()
+admsdrug_df_norm = utils.join_categorical_enum(admsdrug_df_norm, new_cat_embed_feat)
+admsdrug_df_norm.head()
 # -
 
-admsdrug_df.dtypes
+admsdrug_df_norm.dtypes
 
-admsdrug_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='drughiclseqno').head()
+admsdrug_df_norm.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='drughiclseqno').head()
 
-admsdrug_df[admsdrug_df.patientunitstayid == 2346930].compute().head(10)
+admsdrug_df_norm[admsdrug_df_norm.patientunitstayid == 2346930].compute().head(10)
 
 # Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
 
-admsdrug_df.visualize()
+admsdrug_df_norm.visualize()
 
 # Save current dataframe in memory to avoid accumulating several operations on the dask graph
-admsdrug_df = client.persist(admsdrug_df)
+admsdrug_df_norm = client.persist(admsdrug_df_norm)
 
-admsdrug_df.visualize()
+admsdrug_df_norm.visualize()
 
 # ### Save the dataframe
 
-admsdrug_df = admsdrug_df.repartition(npartitions=30)
+admsdrug_df_norm = admsdrug_df_norm.repartition(npartitions=30)
 
 admsdrug_df.to_parquet(f'{data_path}cleaned/unnormalized/admissionDrug.parquet')
 
-admsdrug_df.to_parquet(f'{data_path}cleaned/normalized/admissionDrug.parquet')
+admsdrug_df_norm.to_parquet(f'{data_path}cleaned/normalized/admissionDrug.parquet')
 
 # Confirm that everything is ok through the `describe` method:
 
-admsdrug_df.describe().compute().transpose()
+admsdrug_df_norm.describe().compute().transpose()
 
 # ### Join dataframes
 #
@@ -2517,11 +2545,13 @@ med_df[med_df.dosage == 'PYXIS'].head(npartitions=med_df.npartitions)
 
 # No need to create a separate `pyxis` feature, which would indicate the use of the popular automated medications manager, as the frequency embedding will have that into account.
 
-# Only keep the properly defined dosages:
+# Create dosage and unit features:
 
 med_df['drugdosage'] = np.nan
 med_df['drugunit'] = np.nan
 med_df.head()
+
+# Get the dosage and unit values for each row:
 
 med_df[['drugdosage', 'drugunit']] = med_df.apply(utils.set_dosage_and_units, axis=1, result_type='expand')
 med_df.head()
@@ -2662,113 +2692,14 @@ med_df.visualize()
 
 med_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='drughiclseqno').head()
 
-med_df[med_df.patientunitstayid == 167259].compute().head(10)
+med_df[med_df.patientunitstayid == 979183].compute().head(10)
 
-# We can see that there are up to 45 categories per set of `patientunitstayid` and `ts`. As such, we must join them. But first, we need to normalize the dosage by the respective sets of drug code and units, so as to avoid mixing different absolute values.
+# We can see that there are up to 41 categories per set of `patientunitstayid` and `ts`. As such, we must join them. But first, we need to normalize the dosage by the respective sets of drug code and units, so as to avoid mixing different absolute values.
 
 # ### Normalize data
 
 med_df_norm = med_df.reset_index()
 med_df_norm.head()
-
-med_df_norm.groupby(['drughiclseqno', 'drugunit'])['drugdosage'].mean().head()
-
-# Calculate the means and standard deviations
-means = med_df_norm.groupby(['drughiclseqno', 'drugunit'])['drugdosage'].mean().compute()
-stds = med_df_norm.groupby(['drughiclseqno', 'drugunit'])['drugdosage'].std().compute()
-categories_means = dict(means)
-categories_stds = dict(stds)
-
-categories_means
-
-med_df_norm[['drughiclseqno', 'drugunit']].head(4).tail(1).values
-
-list(map(tuple, med_df_norm[['drughiclseqno', 'drugunit']].head(4).tail(1).values))[0]
-
-categories_means[med_df_norm[['drughiclseqno', 'drugunit']].head(4).tail(1)]
-
-categories_means[list(map(tuple, med_df_norm[['drughiclseqno', 'drugunit']].head(4).tail(1).values))[0]]
-
-med_df_norm.head()
-
-tuple([1, 2, 3])
-
-(1, 2, 3)
-
-med_df_norm.apply(lambda df: (df['drughiclseqno'], df['drugunit']),
-                  axis=1).head()
-
-med_df_norm.apply(lambda df: tuple(np.array([df['drughiclseqno'], df['drugunit']])),
-                  axis=1).head()
-
-med_df_norm.apply(lambda df: tuple(np.array([df['drughiclseqno'], df['drugunit']])),
-                  axis=1).head()
-
-med_df_norm.apply(lambda df: tuple(df[['drughiclseqno', 'drugunit']]),
-                  axis=1).head()
-
-med_df_norm.head()
-
-med_df_norm.apply(lambda df: categories_means[(df['drughiclseqno'], df['drugunit'])] if not np.isnan(df['drughiclseqno'])
-                  else np.nan,
-                  axis=1).head()
-
-
-def test_getting_mean(df):
-    try:
-        if not np.isnan(df['drughiclseqno']):
-            return categories_means[(df['drughiclseqno'], df['drugunit'])]
-        else:
-            return np.nan
-    except:
-        print(f'Failed getting the mean of {(df["drughiclseqno"], df["drugunit"])}')
-        return np.nan
-
-
-med_df_norm.apply(test_getting_mean,
-                  axis=1).head()
-
-med_df_norm[(med_df_norm.drughiclseqno == 1) & (med_df_norm.drugunit == 1)].compute()
-
-categories_means[(np.nan, np.nan)]
-
-categories_means[(1, 1)]
-
-categories_means[(4553.0, 0.0)]
-
-categories_means[tuple([4553.0, 0.0])]
-
-med_df_norm.apply(lambda df: tuple(df[['drughiclseqno', 'drugunit']]),
-                  axis=1).head()
-
-med_df_norm.apply(lambda df: (df['drugdosage'] - categories_means[(df['drughiclseqno'], df['drugunit'])]) /
-                              categories_stds[(df['drughiclseqno'], df['drugunit'])],
-                  axis=1, meta=('x', float)).head()
-
-
-def test_normalizing(df):
-    try:
-        if not np.isnan(df['drughiclseqno']):
-            return (df['drugdosage'] - categories_means[(df['drughiclseqno'], df['drugunit'])]) / \
-                   categories_stds[(df['drughiclseqno'], df['drugunit'])]
-        else:
-            return np.nan
-    except:
-        print(f'Failed normalizing on group {(df["drughiclseqno"], df["drugunit"])}')
-        return np.nan
-
-
-def test_normalizing(df):
-    try:
-        return (df['drugdosage'] - categories_means[(df['drughiclseqno'], df['drugunit'])]) / \
-               categories_stds[(df['drughiclseqno'], df['drugunit'])]
-    except:
-        print(f'Failed normalizing on group {(df["drughiclseqno"], df["drugunit"])}')
-        return np.nan
-
-
-med_df_norm.apply(test_normalizing,
-                  axis=1, meta=('x', float)).head(20)
 
 # + {"pixiedust": {"displayParams": {}}}
 med_df_norm = utils.normalize_data(med_df_norm, columns_to_normalize=False,
@@ -2776,8 +2707,22 @@ med_df_norm = utils.normalize_data(med_df_norm, columns_to_normalize=False,
 med_df_norm.head()
 # -
 
+med_df_norm.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+med_df_norm = client.persist(med_df_norm)
+
+med_df_norm.visualize()
+
 med_df_norm = med_df_norm.set_index('ts')
 med_df_norm.head()
+
+med_df_norm.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+med_df_norm = client.persist(med_df_norm)
+
+med_df_norm.visualize()
 
 # ### Join rows that have the same IDs
 
@@ -2794,7 +2739,7 @@ med_df_norm.dtypes
 
 med_df_norm.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='drughiclseqno').head()
 
-med_df_norm[med_df_norm.patientunitstayid == 167259].compute().head(10)
+med_df_norm[med_df_norm.patientunitstayid == 979183].compute().head(10)
 
 # Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
 
@@ -2804,6 +2749,11 @@ med_df_norm.visualize()
 med_df_norm = client.persist(med_df_norm)
 
 med_df_norm.visualize()
+
+# ### Rename columns
+
+med_df_norm = med_df_norm.rename(columns={'frequency':'drugadmitfrequency'})
+med_df_norm.head()
 
 # ### Save the dataframe
 
@@ -2816,6 +2766,12 @@ med_df_norm.to_parquet(f'{data_path}cleaned/normalized/medication.parquet')
 # Confirm that everything is ok through the `describe` method:
 
 med_df_norm.describe().compute().transpose()
+
+med_df.nlargest(columns='drugdosage').compute()
+
+# Although the `drugdosage` looks good on mean (close to 0) and standard deviation (close to 1), it has very large magnitude minimum (-88.9) and maximum (174.1) values. Furthermore, these don't seem to be because of NaN values, whose groupby normalization could have been unideal. As such, it's hard to say if these are outliers or realistic values.
+
+# [TODO] Check if these very large extreme dosage values make sense and, if not, try to fix them.
 
 # ### Join dataframes
 #
