@@ -2215,7 +2215,7 @@ diagn_df.npartitions
 eICU_df = dd.merge_asof(eICU_df, diagn_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
 eICU_df.head()
 
-# + {"toc-hr-collapsed": false, "cell_type": "markdown"}
+# + {"toc-hr-collapsed": true, "cell_type": "markdown"}
 # ## Admission drug data
 # -
 
@@ -2390,7 +2390,7 @@ admsdrug_df_norm.head()
 
 # + {"pixiedust": {"displayParams": {}}}
 admsdrug_df_norm = utils.normalize_data(admsdrug_df_norm, columns_to_normalize=False,
-                                   columns_to_normalize_cat=[(['drughiclseqno', 'drugunit'], 'drugdosage')])
+                                        columns_to_normalize_cat=[(['drughiclseqno', 'drugunit'], 'drugdosage')])
 admsdrug_df_norm.head()
 # -
 
