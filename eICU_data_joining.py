@@ -2215,7 +2215,7 @@ diagn_df.npartitions
 eICU_df = dd.merge_asof(eICU_df, diagn_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
 eICU_df.head()
 
-# + {"toc-hr-collapsed": true, "cell_type": "markdown"}
+# + {"toc-hr-collapsed": false, "cell_type": "markdown"}
 # ## Admission drug data
 # -
 

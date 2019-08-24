@@ -13,3 +13,6 @@ dataset/
 .ipynb_checkpoints/embedding-bag-test-checkpoint.ipynb
 .ipynb_checkpoints/separating-a-column-into-two-checkpoint.ipynb
 .ipynb_checkpoints/utils-checkpoint.py
+sandbox/.ipynb_checkpoints/separating-a-column-into-two-checkpoint.ipynb
+sandbox/.ipynb_checkpoints/handling-multiple-encodings-and-joins-checkpoint.ipynb
+sandbox/.ipynb_checkpoints/embedding-bag-test-checkpoint.ipynb
