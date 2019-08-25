@@ -637,7 +637,7 @@ def prepare_embed_bag(df, feature):
         elif 'pandas' in str(type(df)):
             feature_val_i = df[feature][i]
         else:
-            raise Exception(f'ERROR: df should either be a Pandas or Dask dataframe, not {type(df)}.')
+            raise Exception(f'ERROR: `df` should either be a Pandas or Dask dataframe, not {type(df)}.')
         digits_list = feature_val_i.split(';')
         embed_num.append(digits_list)
         # Set the end of the current list
@@ -1750,6 +1750,98 @@ def find_subject_idx(data, subject_id, subject_id_col=0):
     idx : int
         Index where the specified subject appears in the data tensor.'''
     return (data[:, 0, subject_id_col] == subject_id).nonzero().item()
+
+
+def find_row_contains_word(df, feature, words):
+    '''Find if each row in a specified dataframe string feature contains some
+    word from a list.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame or dask.DataFrame
+        Dataframe containing the feature on which to run the words search.
+    feature : string
+        Name of the feature through which the method will search if strings
+        contain any of the specified words.
+    words : list of strings
+        List of the words to search for in the feature's rows. Even if searching
+        for the existence of a single word, it should be specified inside a list.
+
+    Returns
+    -------
+    row_contains_word : pandas.Series or dask.Series
+        Boolean series indicating for each row of the dataframe if its specified
+        feature contains any of the words that the user is looking for.'''
+    row_contains_word = None
+    if not df[feature].dtype == 'object':
+        raise Exception(f'ERROR: The specified feature should have type \'object\', not type {df[feature].dtype}.')
+    if any([not isinstance(word, str) for word in words]):
+        raise Exception('ERROR: All words in the specified words list should be strings.')
+    if 'dask' in str(type(df)):
+        row_contains_word = df[feature].apply(lambda row: any([word.lower() in row.lower() for word in words]),
+                                              meta=('row', bool))
+    elif 'pandas' in str(type(df)):
+        row_contains_word = df[feature].apply(lambda row: any([word.lower() in row.lower() for word in words]))
+    else:
+        raise Exception(f'ERROR: `df` should either be a Pandas or Dask dataframe, not {type(df)}.')
+    return row_contains_word
+
+
+def get_element(x, n, till_the_end=False):
+    '''Try to get an element from a list. Useful for nagging apply and map
+    dataframe operations.
+
+    Parameters
+    ----------
+    x : list or numpy.ndarray
+        List from which to get an element.
+    n : int
+        Index of the element from the list that we want to retrieve.
+    till_the_end : bool, default False
+        If set to true, all elements from index n until the end of the list will
+        be fetched. Otherwise, the method only returns the n'th element.
+
+    Returns
+    -------
+    y : anything
+        Returns the n'th element of the list or NaN if it's not found.
+    '''
+    try:
+        if till_the_end:
+            return x[n:]
+        else:
+            return x[n]
+    except:
+        return np.nan
+
+
+def get_element_from_split(orig_string, n, separator='|', till_the_end=False):
+    '''Split a string by a specified separator and return the n'th element of
+    the obtained list of words.
+
+    Parameters
+    ----------
+    orig_string : string
+        Original string on which to apply the splitting and element retrieval.
+    n : int
+        The index of the element to return from the post-split list of words.
+    separator : string, default '|'
+        Symbol that concatenates each string's words, which will be used in the
+        splitting.
+    till_the_end : bool, default False
+        If set to true, all elements from index n until the end of the list will
+        be fetched. Otherwise, the method only returns the n'th element.
+
+    Returns
+    -------
+    n_element : string
+        The n'th element from the split string.
+    '''
+    # Split the string, by the specified separator, to get the list of all words
+    split_list = orig_string.split(separator)
+    # Get the n'th element of the list
+    n_element = get_element(split_list, n, till_the_end)
+    return n_element
 
 
 def change_grad(grad, data, min=0, max=1):
