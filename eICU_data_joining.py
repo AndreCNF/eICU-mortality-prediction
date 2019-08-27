@@ -50,7 +50,7 @@ project_path = 'Documents/GitHub/eICU-mortality-prediction/'
 # -
 
 # Set up local cluster
-client = Client("tcp://127.0.0.1:64615")
+client = Client("tcp://127.0.0.1:64667")
 client
 
 # Upload the utils.py file, so that the Dask cluster has access to relevant auxiliary functions
@@ -2790,7 +2790,7 @@ med_df.npartitions
 eICU_df = dd.merge_asof(eICU_df, med_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
 eICU_df.head()
 
-# + {"toc-hr-collapsed": false, "cell_type": "markdown"}
+# + {"toc-hr-collapsed": true, "cell_type": "markdown"}
 # ## Notes data
 # -
 
@@ -2905,6 +2905,13 @@ note_df['notetopic'] = note_df.notepath.apply(lambda x: utils.get_element_from_s
 note_df['notedetails'] = note_df.notepath.apply(lambda x: utils.get_element_from_split(x, 7, separator='/'), meta=('x', str))
 note_df.head()
 
+# Remove the now redundant `notepath` column:
+
+note_df = note_df.drop('notepath', axis=1)
+note_df.head()
+
+# Compare columns `notevalue` and `notedetails`:
+
 note_df[note_df.notevalue != note_df.notedetails].compute()
 
 # The previous blank output confirms that the newly created `notedetails` feature is exactly equal to the already existing `notevalue` feature. So, we should remove one of them:
@@ -2928,78 +2935,32 @@ note_df[note_df.notetopic == 'Bleeding Disorders'].notevalue.value_counts().comp
 
 # ### Convert categories to features
 
-note_df.reset_index().head()
-
 # Make the `notetopic` and `notevalue` columns of type categorical:
 
 note_df = note_df.categorize(columns=['notetopic', 'notevalue'])
 
 # Transform the `notetopic` categories and `notevalue` values into separate features:
 
-note_df.reset_index().pivot_table(index='index', columns='notetopic', values='notevalue', aggfunc='sum').head()
+# [TODO] Adapt the category_to_feature method to Dask
+note_df = dd.from_pandas(utils.category_to_feature(note_df.compute(), categories_feature='notetopic', values_feature='notevalue', min_len=1000), npartitions=30)
+note_df.head()
 
+# Now we have the categories separated into their own features, as desired. Notice also how categories `Bleeding Disorders` and `Recent Travel` weren't added, as they appeared in less than the specified minimum of 1000 rows.
 
-def category_to_feature(df, categories_feature, values_feature):
-    # Copy the dataframe to avoid potentially unwanted inplace changes
-    data_df = df.copy()
-    # Find the unique categories
-    categories = data_df[categories_feature].unique()
-    if 'dask' in str(type(df)):
-        categories = categories.compute()
-    # Create a feature for each category
-    for category in categories:
-        data_df[category] = data_df.apply(lambda x: x[values_feature] if x[categories_feature] == category
-                                                     else np.nan, axis=1)
-    return data_df
+# Remove the old `notevalue` and `notetopic` columns:
 
+note_df = note_df.drop(['notevalue', 'notetopic'], axis=1)
+note_df.head()
 
-# + {"pixiedust": {"displayParams": {}}}
-category_to_feature(note_df, categories_feature='notetopic', values_feature='notevalue').head()
-# -
+# While `Ethanol Use` and `Smoking Status` have several unique values, `CAD` and `Cancer` only have 1, indicating when that characteristic is present. As such,we should turn `CAD` and `Cancer` into binary features:
 
-note_df[note_df.notetopic == 'Smoking Status'].head()
+note_df['CAD'] = note_df['CAD'].apply(lambda x: 1 if x == 'CAD' else 0, meta=('CAD', int))
+note_df['Cancer'] = note_df['Cancer'].apply(lambda x: 1 if x == 'Cancer' else 0, meta=('Cancer', int))
+note_df.head()
 
-tmp_df = note_df.copy()
+note_df['CAD'].value_counts().compute()
 
-category = 'Smoking Status'
-categories_feature = 'notetopic'
-values_feature = 'notevalue'
-
-tmp_df[category] = tmp_df.apply(lambda df: df[values_feature] if df[categories_feature] == category
-                                                     else np.nan, axis=1)
-tmp_df.head()
-
-# Copy the dataframe to avoid potentially unwanted inplace changes
-data_df = note_df.copy()
-
-# Find the unique categories
-categories = data_df[categories_feature].unique()
-if 'dask' in str(type(data_df)):
-    categories = categories.compute()
-categories
-
-from IPython.display import display
-
-# Create a feature for each category
-series_list = []
-for category in categories:
-#     data_df[category] = data_df.apply(lambda x: x[values_feature] if x[categories_feature] == category
-#                                                  else np.nan, axis=1)
-#     display(category)
-#     display(data_df.head())
-    data_df = data_df.copy()
-    series_list.append(data_df.apply(lambda x: x[values_feature] if x[categories_feature] == category
-                                                 else np.nan, axis=1))
-    [display(series.head()) for series in series_list]
-for idx in range(len(categories)):
-    data_df[categories[idx]] = series_list[idx]
-    display(categories[idx])
-    display(data_df.head())
-data_df.head()
-
-list(range(len(categories)))
-
-data_df[categories[0]]
+note_df['Cancer'].value_counts().compute()
 
 # + {"toc-hr-collapsed": false, "cell_type": "markdown"}
 # ### Discretize categorical features
@@ -3013,10 +2974,10 @@ data_df[categories[0]]
 
 # Update list of categorical features and add those that will need embedding (features with more than 5 unique values):
 
-new_cat_feat = ['diagnosis_type_1', 'diagnosis_disorder_2', 'diagnosis_detailed_3']
+new_cat_feat = ['Smoking Status', 'Ethanol Use', 'CAD', 'Cancer']
 [cat_feat.append(col) for col in new_cat_feat]
 
-cat_feat_nunique = [diagn_df[feature].nunique().compute() for feature in new_cat_feat]
+cat_feat_nunique = [note_df[feature].nunique().compute() for feature in new_cat_feat]
 cat_feat_nunique
 
 new_cat_embed_feat = []
@@ -3026,111 +2987,115 @@ for i in range(len(new_cat_feat)):
         cat_embed_feat.append(new_cat_feat[i])
         new_cat_embed_feat.append(new_cat_feat[i])
 
-diagn_df[new_cat_feat].head()
+note_df[new_cat_feat].head()
 
 # + {"pixiedust": {"displayParams": {}}}
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
     # Prepare for embedding, i.e. enumerate categories
-    diagn_df[feature], cat_embed_feat_enum[feature] = utils.enum_categorical_feature(diagn_df, feature)
+    note_df[feature], cat_embed_feat_enum[feature] = utils.enum_categorical_feature(note_df, feature)
 # -
 
-diagn_df[new_cat_feat].head()
+note_df[new_cat_feat].head()
 
 cat_embed_feat_enum
 
-diagn_df[new_cat_feat].dtypes
+note_df[new_cat_feat].dtypes
 
-diagn_df.visualize()
+note_df.visualize()
 
 # Save current dataframe in memory to avoid accumulating several operations on the dask graph
-diagn_df = client.persist(diagn_df)
+note_df = client.persist(note_df)
 
-diagn_df.visualize()
+note_df.visualize()
 
 # ### Create the timestamp feature and sort
 
 # Create the timestamp (`ts`) feature:
 
-diagn_df['ts'] = diagn_df['diagnosisoffset']
-diagn_df = diagn_df.drop('diagnosisoffset', axis=1)
-diagn_df.head()
+note_df['ts'] = note_df['noteoffset']
+note_df = note_df.drop('noteoffset', axis=1)
+note_df.head()
 
 # Remove duplicate rows:
 
-len(diagn_df)
+len(note_df)
 
-diagn_df = diagn_df.drop_duplicates()
-diagn_df.head()
+note_df = note_df.drop_duplicates()
+note_df.head()
 
-len(diagn_df)
+len(note_df)
 
-diagn_df = diagn_df.repartition(npartitions=30)
+note_df = note_df.repartition(npartitions=30)
 
 # Sort by `ts` so as to be easier to merge with other dataframes later:
 
-diagn_df = diagn_df.set_index('ts')
-diagn_df.head()
+note_df = note_df.set_index('ts')
+note_df.head()
 
-diagn_df.visualize()
+note_df.visualize()
 
 # Save current dataframe in memory to avoid accumulating several operations on the dask graph
-diagn_df = client.persist(diagn_df)
+note_df = client.persist(note_df)
 
-diagn_df.visualize()
+note_df.visualize()
 
 # Check for possible multiple rows with the same unit stay ID and timestamp:
 
-diagn_df.reset_index().head()
+note_df.reset_index().head()
 
-diagn_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='diagnosis_type_1').head()
+note_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='CAD').head()
 
-diagn_df[diagn_df.patientunitstayid == 3089982].compute().head(10)
+note_df[note_df.patientunitstayid == 3091883].compute().head(10)
 
-# We can see that there are up to 69 categories per set of `patientunitstayid` and `ts`. As such, we must join them.
+note_df[note_df.patientunitstayid == 3052175].compute().head(10)
+
+# We can see that there are up to 5 categories per set of `patientunitstayid` and `ts`. As such, we must join them. However, this is a different scenario than in the other cases. Since we created the features from one categorical column, it doesn't have repeated values, only different rows to indicate each of the new features' values. As such, we just need to sum the features.
 
 # ### Join rows that have the same IDs
 
 # + {"pixiedust": {"displayParams": {}}}
-diagn_df = utils.join_categorical_enum(diagn_df, new_cat_embed_feat)
-diagn_df.head()
+note_df = utils.join_categorical_enum(note_df, cont_join_method='max')
+note_df.head()
 # -
 
-diagn_df.dtypes
+note_df.dtypes
 
-diagn_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='diagnosis_type_1').head()
+note_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='CAD').head()
 
-diagn_df[diagn_df.patientunitstayid == 3089982].compute().head(10)
+note_df[note_df.patientunitstayid == 3091883].compute().head(10)
+
+note_df[note_df.patientunitstayid == 3052175].compute().head(10)
 
 # Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
 
-diagn_df.visualize()
+note_df.visualize()
 
 # Save current dataframe in memory to avoid accumulating several operations on the dask graph
-diagn_df = client.persist(diagn_df)
+note_df = client.persist(note_df)
 
-diagn_df.visualize()
+note_df.visualize()
 
 # ### Save the dataframe
 
-diagn_df = diagn_df.repartition(npartitions=30)
+note_df = note_df.repartition(npartitions=30)
 
-diagn_df.to_parquet(f'{data_path}cleaned/unnormalized/diagnosis.parquet')
+note_df.to_parquet(f'{data_path}cleaned/unnormalized/note.parquet')
 
-diagn_df.to_parquet(f'{data_path}cleaned/normalized/diagnosis.parquet')
+note_df.to_parquet(f'{data_path}cleaned/normalized/note.parquet')
 
 # Confirm that everything is ok through the `describe` method:
 
-diagn_df.describe().compute().transpose()
+note_df.describe().compute().transpose()
 
 # ### Join dataframes
 #
 # Merge dataframes by the unit stay, `patientunitstayid`, and the timestamp, `ts`, with a tolerence for a difference of up to 30 minutes.
 
-diagn_df = dd.read_parquet(f'{data_path}cleaned/normalized/diagnosis.parquet')
-diagn_df.head()
+note_df = dd.read_parquet(f'{data_path}cleaned/normalized/note.parquet')
+note_df.head()
 
-diagn_df.npartitions
+note_df.npartitions
 
-eICU_df = dd.merge_asof(eICU_df, diagn_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
+eICU_df = dd.merge_asof(eICU_df, note_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
 eICU_df.head()

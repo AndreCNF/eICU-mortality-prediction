@@ -16,3 +16,7 @@ dataset/
 sandbox/.ipynb_checkpoints/separating-a-column-into-two-checkpoint.ipynb
 sandbox/.ipynb_checkpoints/handling-multiple-encodings-and-joins-checkpoint.ipynb
 sandbox/.ipynb_checkpoints/embedding-bag-test-checkpoint.ipynb
+sandbox/.ipynb_checkpoints/category_to_feature_example-checkpoint.ipynb
+sandbox/.ipynb_checkpoints/category_to_feature_example-checkpoint.py
+sandbox/dask-worker-space/global.lock
+sandbox/dask-worker-space/purge.lock

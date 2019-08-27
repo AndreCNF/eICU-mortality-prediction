@@ -299,6 +299,50 @@ def invert_dict(x):
     return {v: k for k, v in x.items()}
 
 
+def category_to_feature(df, categories_feature, values_feature, min_len=None):
+    '''Convert a categorical column and its corresponding values column into
+    new features, one for each category.
+    WARNING: Currently not working properly on a Dask dataframe. Apply .compute()
+    to the dataframe to convert it to Pandas, before passing it to this method.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame or dask.DataFrame
+        Dataframe on which to add the new features.
+    categories_feature : string
+        Name of the feature that contains the categories that will be converted
+        to individual features.
+    values_feature : string
+        Name of the feature that has each category's corresponding value, which
+        may or may not be a category on its own (e.g. it could be numeric values).
+    min_len : int, default None
+        If defined, only the categories that appear on at least `min_len` rows
+        are converted to features.
+
+    Returns
+    -------
+    data_df : pandas.DataFrame or dask.DataFrame
+        Dataframe with the newly created features.
+    '''
+    # Copy the dataframe to avoid potentially unwanted inplace changes
+    data_df = df.copy()
+    # Find the unique categories
+    categories = data_df[categories_feature].unique()
+    if 'dask' in str(type(df)):
+        categories = categories.compute()
+    # Create a feature for each category
+    for category in categories:
+        if min_len:
+            # Check if the current category has enough data to be worth it to convert to a feature
+            if len(data_df[data_df[categories_feature] == category]) < min_len:
+                # Ignore the current category
+                continue
+        # Convert category to feature
+        data_df[category] = data_df.apply(lambda x: x[values_feature] if x[categories_feature] == category
+                                                    else np.nan, axis=1)
+    return data_df
+
+
 def create_enum_dict(unique_values, nan_value=0):
     '''Enumerate all categories in a specified categorical feature, while also
     attributing a specific number to NaN and other unknown values.
