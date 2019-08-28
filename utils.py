@@ -375,7 +375,9 @@ def create_enum_dict(unique_values, nan_value=0):
             or ('null' in key.lower() and len(key) < 7) \
             or ('nan' in key.lower() and len(key) < 6) \
             or all([char == ' ' for char in key]) \
-            or all([char == '_' for char in key]):
+            or all([char == '_' for char in key]) \
+            or ('not obtainable' in key.lower()) \
+            or ('not obtained' in key.lower()):
                 # Move NaN-like key to nan_value
                 enum_dict[key] = nan_value
         elif isinstance(key, numbers.Number):
@@ -1885,6 +1887,9 @@ def get_element_from_split(orig_string, n, separator='|', till_the_end=False):
     split_list = orig_string.split(separator)
     # Get the n'th element of the list
     n_element = get_element(split_list, n, till_the_end)
+    if till_the_end:
+        # Rejoin the elements of the list by their separator
+        n_element = separator.join(n_element)
     return n_element
 
 

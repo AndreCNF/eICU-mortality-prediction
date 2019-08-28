@@ -50,7 +50,7 @@ project_path = 'Documents/GitHub/eICU-mortality-prediction/'
 # -
 
 # Set up local cluster
-client = Client("tcp://127.0.0.1:64667")
+client = Client("tcp://127.0.0.1:51020")
 client
 
 # Upload the utils.py file, so that the Dask cluster has access to relevant auxiliary functions
@@ -1684,6 +1684,89 @@ pasthist_df.pasthistoryvalue.value_counts().compute()
 
 # There's still plenty of data left, affecting around 81.87% of the unit stays, even after removing several categories.
 
+# ### Separate high level notes
+
+pasthist_df.pasthistorypath.map(lambda x: x.split('/')).head().values
+
+pasthist_df.pasthistorypath.map(lambda x: len(x.split('/'))).min().compute()
+
+pasthist_df.pasthistorypath.map(lambda x: len(x.split('/'))).max().compute()
+
+pasthist_df.pasthistorypath.apply(lambda x: utils.get_element_from_split(x, 0, separator='/'),
+                                  meta=('x', str)).value_counts().compute()
+
+pasthist_df.pasthistorypath.apply(lambda x: utils.get_element_from_split(x, 1, separator='/'),
+                                  meta=('x', str)).value_counts().compute()
+
+pasthist_df.pasthistorypath.apply(lambda x: utils.get_element_from_split(x, 2, separator='/'),
+                                  meta=('x', str)).value_counts().compute()
+
+pasthist_df.pasthistorypath.apply(lambda x: utils.get_element_from_split(x, 3, separator='/'),
+                                  meta=('x', str)).value_counts().compute()
+
+pasthist_df.pasthistorypath.apply(lambda x: utils.get_element_from_split(x, 4, separator='/'),
+                                  meta=('x', str)).value_counts().compute()
+
+pasthist_df.pasthistorypath.apply(lambda x: utils.get_element_from_split(x, 5, separator='/'),
+                                  meta=('x', str)).value_counts().compute()
+
+pasthist_df.pasthistorypath.apply(lambda x: utils.get_element_from_split(x, 6, separator='/'),
+                                  meta=('x', str)).value_counts().compute()
+
+# There are always at least 5 levels of the notes. As the first 4 ones are essentially always the same ("notes/Progress Notes/Past History/Organ Systems/") and the 5th one tends to not be very specific (only indicates which organ system it affected, when it isn't just a case of no health problems detected), it's best to preserve the 5th and isolate the remaining string as a new feature. This way, the split provides further insight to the model on similar notes.
+
+pasthist_df['pasthistorytype'] = pasthist_df.pasthistorypath.apply(lambda x: utils.get_element_from_split(x, 4, separator='/'), meta=('x', str))
+pasthist_df['pasthistorydetails'] = pasthist_df.pasthistorypath.apply(lambda x: utils.get_element_from_split(x, 5, separator='/', till_the_end=True), meta=('x', str))
+pasthist_df.head()
+
+# `pasthistoryvalue` seems to correspond to the last element of `pasthistorydetails`. Let's confirm it:
+
+pasthist_df['pasthistorydetails_last'] = pasthist_df.pasthistorydetails.map(lambda x: x.split('/')[-1])
+pasthist_df.head()
+
+# Compare columns `pasthistoryvalue` and `pasthistorydetails`'s last element:
+
+pasthist_df[pasthist_df.pasthistoryvalue != pasthist_df.pasthistorydetails_last].compute()
+
+# The previous output confirms that the newly created `pasthistorydetails` feature's last elememt (last string in the symbol separated lists) is almost exactly equal to the already existing `pasthistoryvalue` feature, with the differences that `pasthistoryvalue` takes into account the scenarios of no health problems detected and behaves correctly in strings that contain the separator symbol in them. So, we should remove `pasthistorydetails`'s last element:
+
+pasthist_df = pasthist_df.drop('pasthistorydetails_last', axis=1)
+pasthist_df.head()
+
+pasthist_df['pasthistorydetails'] = pasthist_df.pasthistorydetails.apply(lambda x: '/'.join(x.split('/')[:-1]), meta=('pasthistorydetails', str))
+pasthist_df.head()
+
+# Remove irrelevant `Not Obtainable` and `Not Performed` values:
+
+pasthist_df[pasthist_df.pasthistoryvalue == 'Not Obtainable'].pasthistorydetails.value_counts().compute()
+
+pasthist_df[pasthist_df.pasthistoryvalue == 'Not Performed'].pasthistorydetails.value_counts().compute()
+
+pasthist_df = pasthist_df[~((pasthist_df.pasthistoryvalue == 'Not Obtainable') | (pasthist_df.pasthistoryvalue == 'Not Performed'))]
+pasthist_df.head()
+
+pasthist_df.pasthistorytype.unique().compute()
+
+# Replace blank `pasthistorydetails` values:
+
+pasthist_df[pasthist_df.pasthistoryvalue == 'No Health Problems'].pasthistorydetails.value_counts().compute()
+
+pasthist_df[pasthist_df.pasthistoryvalue == 'No Health Problems'].pasthistorydetails.value_counts().compute().index
+
+pasthist_df[pasthist_df.pasthistorydetails == ''].head()
+
+pasthist_df['pasthistorydetails'] = pasthist_df.apply(lambda df: 'No Health Problems' if df['pasthistorytype'] == 'No Health Problems'
+                                                                 else df['pasthistorydetails'],
+                                                      axis=1, meta=(None, str))
+pasthist_df.head()
+
+pasthist_df[pasthist_df.pasthistorydetails == ''].compute()
+
+# Remove the now redundant `pasthistorypath` column:
+
+pasthist_df = pasthist_df.drop('pasthistorypath', axis=1)
+pasthist_df.head()
+
 # + {"toc-hr-collapsed": false, "cell_type": "markdown"}
 # ### Discretize categorical features
 #
@@ -1696,7 +1779,7 @@ pasthist_df.pasthistoryvalue.value_counts().compute()
 
 # Update list of categorical features and add those that will need embedding (features with more than 5 unique values):
 
-new_cat_feat = ['pasthistorypath', 'pasthistoryvalue']
+new_cat_feat = ['pasthistoryvalue', 'pasthistorytype', 'pasthistorydetails']
 [cat_feat.append(col) for col in new_cat_feat]
 
 cat_feat_nunique = [pasthist_df[feature].nunique().compute() for feature in new_cat_feat]
@@ -1753,7 +1836,7 @@ pasthist_df.visualize()
 
 # Check for possible multiple rows with the same unit stay ID and timestamp:
 
-pasthist_df.groupby(['patientunitstayid']).count().nlargest(columns='pasthistorypath').head()
+pasthist_df.groupby(['patientunitstayid']).count().nlargest(columns='pasthistoryvalue').head()
 
 pasthist_df[pasthist_df.patientunitstayid == 1558102].compute().head(10)
 
@@ -1768,7 +1851,7 @@ pasthist_df.head()
 
 pasthist_df.dtypes
 
-pasthist_df.groupby(['patientunitstayid']).count().nlargest(columns='pasthistorypath').head()
+pasthist_df.groupby(['patientunitstayid']).count().nlargest(columns='pasthistoryvalue').head()
 
 pasthist_df[pasthist_df.patientunitstayid == 1558102].compute().head(10)
 
