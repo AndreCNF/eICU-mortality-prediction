@@ -50,7 +50,7 @@ project_path = 'Documents/GitHub/eICU-mortality-prediction/'
 # -
 
 # Set up local cluster
-client = Client("tcp://127.0.0.1:51020")
+client = Client("tcp://127.0.0.1:56939")
 client
 
 # Upload the utils.py file, so that the Dask cluster has access to relevant auxiliary functions
@@ -2160,7 +2160,7 @@ diagn_df.diagnosisstring.map(lambda x: x.split('|')).head()
 
 diagn_df.diagnosisstring.map(lambda x: len(x.split('|'))).min().compute()
 
-# There are always at least 2 higher level diagnosis. It could be beneficial to extract those first 2 levels to separate features, so as to avoid the need tfor the model to learn similarities that are already known.
+# There are always at least 2 higher level diagnosis. It could be beneficial to extract those first 2 levels to separate features, so as to avoid the need for the model to learn similarities that are already known.
 
 diagn_df['diagnosis_type_1'] = diagn_df.diagnosisstring.apply(lambda x: utils.get_element_from_split(x, 0, separator='|'), meta=('x', str))
 diagn_df['diagnosis_disorder_2'] = diagn_df.diagnosisstring.apply(lambda x: utils.get_element_from_split(x, 1, separator='|'), meta=('x', str))
@@ -3181,4 +3181,226 @@ note_df.head()
 note_df.npartitions
 
 eICU_df = dd.merge_asof(eICU_df, note_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
+eICU_df.head()
+
+# + {"toc-hr-collapsed": true, "cell_type": "markdown"}
+# ## Treatment data
+# -
+
+# ### Read the data
+
+treat_df = dd.read_csv(f'{data_path}original/treatment.csv')
+treat_df.head()
+
+len(treat_df)
+
+treat_df.patientunitstayid.nunique().compute()
+
+treat_df.npartitions
+
+treat_df = treat_df.repartition(npartitions=30)
+
+# Get an overview of the dataframe through the `describe` method:
+
+treat_df.describe().compute().transpose()
+
+treat_df.visualize()
+
+treat_df.columns
+
+treat_df.dtypes
+
+# ### Check for missing values
+
+# + {"pixiedust": {"displayParams": {}}}
+utils.dataframe_missing_values(treat_df)
+# -
+
+# ### Remove unneeded features
+
+# Besides the usual removal of row identifier, `treatmentid`, I'm also removing `activeupondischarge`, as we don't have complete information as to when diagnosis end.
+
+treat_df = treat_df.drop(['treatmentid', 'activeupondischarge'], axis=1)
+treat_df.head()
+
+# ### Separate high level diagnosis
+
+treat_df.treatmentstring.value_counts().compute()
+
+treat_df.treatmentstring.map(lambda x: x.split('|')).head()
+
+treat_df.treatmentstring.map(lambda x: len(x.split('|'))).min().compute()
+
+treat_df.treatmentstring.map(lambda x: len(x.split('|'))).max().compute()
+
+# There are always at least 3 higher level diagnosis. It could be beneficial to extract those first 3 levels to separate features, with the last one getting values until the end of the string, so as to avoid the need for the model to learn similarities that are already known.
+
+treat_df.treatmentstring.apply(lambda x: utils.get_element_from_split(x, 0, separator='|'),
+                               meta=('x', str)).value_counts().compute()
+
+treat_df.treatmentstring.apply(lambda x: utils.get_element_from_split(x, 1, separator='|'),
+                               meta=('x', str)).value_counts().compute()
+
+treat_df.treatmentstring.apply(lambda x: utils.get_element_from_split(x, 2, separator='|'),
+                               meta=('x', str)).value_counts().compute()
+
+treat_df.treatmentstring.apply(lambda x: utils.get_element_from_split(x, 3, separator='|'),
+                               meta=('x', str)).value_counts().compute()
+
+treat_df.treatmentstring.apply(lambda x: utils.get_element_from_split(x, 4, separator='|'),
+                               meta=('x', str)).value_counts().compute()
+
+treat_df.treatmentstring.apply(lambda x: utils.get_element_from_split(x, 5, separator='|'),
+                               meta=('x', str)).value_counts().compute()
+
+# <!-- There are always 8 levels of the notes. As the first 6 ones are essentially always the same ("notes/Progress Notes/Social History / Family History/Social History/Social History/"), it's best to just preserve the 7th one and isolate the 8th in a new feature. This way, the split provides further insight to the model on similar notes. However, it's also worth taking note that the 8th level of `notepath` seems to be identical to the feature `notevalue`. We'll look more into it later. -->
+
+treat_df['treatmenttype'] = treat_df.treatmentstring.apply(lambda x: utils.get_element_from_split(x, 0, separator='|'), meta=('x', str))
+treat_df['treatmenttherapy'] = treat_df.treatmentstring.apply(lambda x: utils.get_element_from_split(x, 1, separator='|'), meta=('x', str))
+treat_df['treatmentdetails'] = treat_df.treatmentstring.apply(lambda x: utils.get_element_from_split(x, 2, separator='|', till_the_end=True), meta=('x', str))
+treat_df.head()
+
+# Remove the now redundant `treatmentstring` column:
+
+treat_df = treat_df.drop('treatmentstring', axis=1)
+treat_df.head()
+
+treat_df.treatmenttype.value_counts().compute()
+
+treat_df.treatmenttherapy.value_counts().compute()
+
+treat_df.treatmentdetails.value_counts().compute()
+
+# + {"toc-hr-collapsed": false, "cell_type": "markdown"}
+# ### Discretize categorical features
+#
+# Convert binary categorical features into simple numberings, one hot encode features with a low number of categories (in this case, 5) and enumerate sparse categorical features that will be embedded.
+# -
+
+# #### Separate and prepare features for embedding
+#
+# Identify categorical features that have more than 5 unique categories, which will go through an embedding layer afterwards, and enumerate them.
+
+# Update list of categorical features and add those that will need embedding (features with more than 5 unique values):
+
+new_cat_feat = ['treatmenttype', 'treatmenttherapy', 'treatmentdetails']
+[cat_feat.append(col) for col in new_cat_feat]
+
+cat_feat_nunique = [treat_df[feature].nunique().compute() for feature in new_cat_feat]
+cat_feat_nunique
+
+new_cat_embed_feat = []
+for i in range(len(new_cat_feat)):
+    if cat_feat_nunique[i] > 5:
+        # Add feature to the list of those that will be embedded
+        cat_embed_feat.append(new_cat_feat[i])
+        new_cat_embed_feat.append(new_cat_feat[i])
+
+treat_df[new_cat_feat].head()
+
+# + {"pixiedust": {"displayParams": {}}}
+for i in range(len(new_cat_embed_feat)):
+    feature = new_cat_embed_feat[i]
+    # Prepare for embedding, i.e. enumerate categories
+    treat_df[feature], cat_embed_feat_enum[feature] = utils.enum_categorical_feature(treat_df, feature)
+# -
+
+treat_df[new_cat_feat].head()
+
+cat_embed_feat_enum
+
+treat_df[new_cat_feat].dtypes
+
+treat_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+treat_df = client.persist(treat_df)
+
+treat_df.visualize()
+
+# ### Create the timestamp feature and sort
+
+# Create the timestamp (`ts`) feature:
+
+treat_df['ts'] = treat_df['treatmentoffset']
+treat_df = treat_df.drop('treatmentoffset', axis=1)
+treat_df.head()
+
+# Remove duplicate rows:
+
+len(treat_df)
+
+treat_df = treat_df.drop_duplicates()
+treat_df.head()
+
+len(treat_df)
+
+treat_df = treat_df.repartition(npartitions=30)
+
+# Sort by `ts` so as to be easier to merge with other dataframes later:
+
+treat_df = treat_df.set_index('ts')
+treat_df.head()
+
+treat_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+treat_df = client.persist(treat_df)
+
+treat_df.visualize()
+
+# Check for possible multiple rows with the same unit stay ID and timestamp:
+
+treat_df.reset_index().head()
+
+treat_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='treatmenttype').head()
+
+treat_df[treat_df.patientunitstayid == 1352520].compute().head(10)
+
+# We can see that there are up to 105 categories per set of `patientunitstayid` and `ts`. As such, we must join them.
+
+# ### Join rows that have the same IDs
+
+# + {"pixiedust": {"displayParams": {}}}
+treat_df = utils.join_categorical_enum(treat_df, new_cat_embed_feat)
+treat_df.head()
+# -
+
+treat_df.dtypes
+
+treat_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='treatmenttype').head()
+
+treat_df[treat_df.patientunitstayid == 1352520].compute().head(10)
+
+# Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
+
+treat_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+treat_df = client.persist(treat_df)
+
+treat_df.visualize()
+
+# ### Save the dataframe
+
+treat_df = treat_df.repartition(npartitions=30)
+
+treat_df.to_parquet(f'{data_path}cleaned/unnormalized/diagnosis.parquet')
+
+treat_df.to_parquet(f'{data_path}cleaned/normalized/diagnosis.parquet')
+
+# Confirm that everything is ok through the `describe` method:
+
+treat_df.describe().compute().transpose()
+
+# ### Join dataframes
+#
+# Merge dataframes by the unit stay, `patientunitstayid`, and the timestamp, `ts`, with a tolerence for a difference of up to 30 minutes.
+
+treat_df = dd.read_parquet(f'{data_path}cleaned/normalized/diagnosis.parquet')
+treat_df.head()
+
+treat_df.npartitions
+
+eICU_df = dd.merge_asof(eICU_df, treat_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
 eICU_df.head()
