@@ -3404,3 +3404,225 @@ treat_df.npartitions
 
 eICU_df = dd.merge_asof(eICU_df, treat_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
 eICU_df.head()
+
+# + {"toc-hr-collapsed": true, "cell_type": "markdown"}
+# ## Nurse care data
+# -
+
+# ### Read the data
+
+nursecare_df = dd.read_csv(f'{data_path}original/treatment.csv')
+nursecare_df.head()
+
+len(nursecare_df)
+
+nursecare_df.patientunitstayid.nunique().compute()
+
+nursecare_df.npartitions
+
+nursecare_df = nursecare_df.repartition(npartitions=30)
+
+# Get an overview of the dataframe through the `describe` method:
+
+nursecare_df.describe().compute().transpose()
+
+nursecare_df.visualize()
+
+nursecare_df.columns
+
+nursecare_df.dtypes
+
+# ### Check for missing values
+
+# + {"pixiedust": {"displayParams": {}}}
+utils.dataframe_missing_values(nursecare_df)
+# -
+
+# ### Remove unneeded features
+
+# Besides the usual removal of row identifier, `treatmentid`, I'm also removing `activeupondischarge`, as we don't have complete information as to when diagnosis end.
+
+nursecare_df = nursecare_df.drop(['treatmentid', 'activeupondischarge'], axis=1)
+nursecare_df.head()
+
+# ### Separate high level diagnosis
+
+nursecare_df.treatmentstring.value_counts().compute()
+
+nursecare_df.treatmentstring.map(lambda x: x.split('|')).head()
+
+nursecare_df.treatmentstring.map(lambda x: len(x.split('|'))).min().compute()
+
+nursecare_df.treatmentstring.map(lambda x: len(x.split('|'))).max().compute()
+
+# There are always at least 3 higher level diagnosis. It could be beneficial to extract those first 3 levels to separate features, with the last one getting values until the end of the string, so as to avoid the need for the model to learn similarities that are already known.
+
+nursecare_df.treatmentstring.apply(lambda x: utils.get_element_from_split(x, 0, separator='|'),
+                               meta=('x', str)).value_counts().compute()
+
+nursecare_df.treatmentstring.apply(lambda x: utils.get_element_from_split(x, 1, separator='|'),
+                               meta=('x', str)).value_counts().compute()
+
+nursecare_df.treatmentstring.apply(lambda x: utils.get_element_from_split(x, 2, separator='|'),
+                               meta=('x', str)).value_counts().compute()
+
+nursecare_df.treatmentstring.apply(lambda x: utils.get_element_from_split(x, 3, separator='|'),
+                               meta=('x', str)).value_counts().compute()
+
+nursecare_df.treatmentstring.apply(lambda x: utils.get_element_from_split(x, 4, separator='|'),
+                               meta=('x', str)).value_counts().compute()
+
+nursecare_df.treatmentstring.apply(lambda x: utils.get_element_from_split(x, 5, separator='|'),
+                               meta=('x', str)).value_counts().compute()
+
+# <!-- There are always 8 levels of the notes. As the first 6 ones are essentially always the same ("notes/Progress Notes/Social History / Family History/Social History/Social History/"), it's best to just preserve the 7th one and isolate the 8th in a new feature. This way, the split provides further insight to the model on similar notes. However, it's also worth taking note that the 8th level of `notepath` seems to be identical to the feature `notevalue`. We'll look more into it later. -->
+
+nursecare_df['treatmenttype'] = nursecare_df.treatmentstring.apply(lambda x: utils.get_element_from_split(x, 0, separator='|'), meta=('x', str))
+nursecare_df['treatmenttherapy'] = nursecare_df.treatmentstring.apply(lambda x: utils.get_element_from_split(x, 1, separator='|'), meta=('x', str))
+nursecare_df['treatmentdetails'] = nursecare_df.treatmentstring.apply(lambda x: utils.get_element_from_split(x, 2, separator='|', till_the_end=True), meta=('x', str))
+nursecare_df.head()
+
+# Remove the now redundant `treatmentstring` column:
+
+nursecare_df = nursecare_df.drop('treatmentstring', axis=1)
+nursecare_df.head()
+
+nursecare_df.treatmenttype.value_counts().compute()
+
+nursecare_df.treatmenttherapy.value_counts().compute()
+
+nursecare_df.treatmentdetails.value_counts().compute()
+
+# + {"toc-hr-collapsed": false, "cell_type": "markdown"}
+# ### Discretize categorical features
+#
+# Convert binary categorical features into simple numberings, one hot encode features with a low number of categories (in this case, 5) and enumerate sparse categorical features that will be embedded.
+# -
+
+# #### Separate and prepare features for embedding
+#
+# Identify categorical features that have more than 5 unique categories, which will go through an embedding layer afterwards, and enumerate them.
+
+# Update list of categorical features and add those that will need embedding (features with more than 5 unique values):
+
+new_cat_feat = ['treatmenttype', 'treatmenttherapy', 'treatmentdetails']
+[cat_feat.append(col) for col in new_cat_feat]
+
+cat_feat_nunique = [nursecare_df[feature].nunique().compute() for feature in new_cat_feat]
+cat_feat_nunique
+
+new_cat_embed_feat = []
+for i in range(len(new_cat_feat)):
+    if cat_feat_nunique[i] > 5:
+        # Add feature to the list of those that will be embedded
+        cat_embed_feat.append(new_cat_feat[i])
+        new_cat_embed_feat.append(new_cat_feat[i])
+
+nursecare_df[new_cat_feat].head()
+
+# + {"pixiedust": {"displayParams": {}}}
+for i in range(len(new_cat_embed_feat)):
+    feature = new_cat_embed_feat[i]
+    # Prepare for embedding, i.e. enumerate categories
+    nursecare_df[feature], cat_embed_feat_enum[feature] = utils.enum_categorical_feature(nursecare_df, feature)
+# -
+
+nursecare_df[new_cat_feat].head()
+
+cat_embed_feat_enum
+
+nursecare_df[new_cat_feat].dtypes
+
+nursecare_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+nursecare_df = client.persist(nursecare_df)
+
+nursecare_df.visualize()
+
+# ### Create the timestamp feature and sort
+
+# Create the timestamp (`ts`) feature:
+
+nursecare_df['ts'] = nursecare_df['treatmentoffset']
+nursecare_df = nursecare_df.drop('treatmentoffset', axis=1)
+nursecare_df.head()
+
+# Remove duplicate rows:
+
+len(nursecare_df)
+
+nursecare_df = nursecare_df.drop_duplicates()
+nursecare_df.head()
+
+len(nursecare_df)
+
+nursecare_df = nursecare_df.repartition(npartitions=30)
+
+# Sort by `ts` so as to be easier to merge with other dataframes later:
+
+nursecare_df = nursecare_df.set_index('ts')
+nursecare_df.head()
+
+nursecare_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+nursecare_df = client.persist(nursecare_df)
+
+nursecare_df.visualize()
+
+# Check for possible multiple rows with the same unit stay ID and timestamp:
+
+nursecare_df.reset_index().head()
+
+nursecare_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='treatmenttype').head()
+
+nursecare_df[nursecare_df.patientunitstayid == 1352520].compute().head(10)
+
+# We can see that there are up to 105 categories per set of `patientunitstayid` and `ts`. As such, we must join them.
+
+# ### Join rows that have the same IDs
+
+# + {"pixiedust": {"displayParams": {}}}
+nursecare_df = utils.join_categorical_enum(nursecare_df, new_cat_embed_feat)
+nursecare_df.head()
+# -
+
+nursecare_df.dtypes
+
+nursecare_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='treatmenttype').head()
+
+nursecare_df[nursecare_df.patientunitstayid == 1352520].compute().head(10)
+
+# Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
+
+nursecare_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+nursecare_df = client.persist(nursecare_df)
+
+nursecare_df.visualize()
+
+# ### Save the dataframe
+
+nursecare_df = nursecare_df.repartition(npartitions=30)
+
+nursecare_df.to_parquet(f'{data_path}cleaned/unnormalized/diagnosis.parquet')
+
+nursecare_df.to_parquet(f'{data_path}cleaned/normalized/diagnosis.parquet')
+
+# Confirm that everything is ok through the `describe` method:
+
+nursecare_df.describe().compute().transpose()
+
+# ### Join dataframes
+#
+# Merge dataframes by the unit stay, `patientunitstayid`, and the timestamp, `ts`, with a tolerence for a difference of up to 30 minutes.
+
+nursecare_df = dd.read_parquet(f'{data_path}cleaned/normalized/diagnosis.parquet')
+nursecare_df.head()
+
+nursecare_df.npartitions
+
+eICU_df = dd.merge_asof(eICU_df, nursecare_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
+eICU_df.head()

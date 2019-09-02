@@ -576,8 +576,40 @@ def converge_enum(df1, df2, cat_feat_name, dict1=None, dict2=None, nan_value=0,
     return data1_df, data2_df, all_data_dict
 
 
+def remove_nan_enum_from_string(x, nan_value=0):
+    '''Removes missing values (NaN) from enumeration encoded strings.
+
+    Parameters
+    ----------
+    x : string
+        Original string, with possible NaNs included.
+    nan_value : int, default 0
+        Integer number that gets assigned to NaN and NaN-like values.
+
+    Returns
+    -------
+    x : string
+        NaN removed string.
+    '''
+    # Make sure that the NaN value is represented as a string
+    nan_value = str(nan_value)
+    # Only remove NaN values if the string isn't just a single NaN value
+    if x != nan_value:
+        # Remove NaN value that might have a following encoded value
+        if f'{nan_value};' in x:
+            x = re.sub(f'{nan_value};', '', x)
+        # Remove NaN value that might be at the end of the string
+        if nan_value in x:
+            x = re.sub(nan_value, '', x)
+        # If the string got completly emptied, place a single NaN value on it
+        if x == '':
+            x = nan_value
+    return x
+
+
 def join_categorical_enum(df, cat_feat=[], id_columns=['patientunitstayid', 'ts'],
-                          cont_join_method='mean', has_timestamp=None):
+                          cont_join_method='mean', has_timestamp=None,
+                          nan_value=0, remove_listed_nan=True):
     '''Join rows that have the same identifier columns based on concatenating
     categorical encodings and on averaging continuous features.
 
@@ -598,6 +630,11 @@ def join_categorical_enum(df, cat_feat=[], id_columns=['patientunitstayid', 'ts'
         If set to True, the resulting dataframe will be sorted and set as index
         by the timestamp column (`ts`). If not specified, the method will
         automatically look for a `ts` named column in the input dataframe.
+    nan_value : int, default 0
+        Integer number that gets assigned to NaN and NaN-like values.
+    remove_listed_nan : bool, default True
+        If set to True, joined rows where non-NaN values exist have the NaN
+        values removed.
 
     Returns
     -------
@@ -620,7 +657,10 @@ def join_categorical_enum(df, cat_feat=[], id_columns=['patientunitstayid', 'ts'
         # Convert to string format
         data_df[feature] = data_df[feature].astype(str)
         # Join with other categorical enumerations on the same ID's
-        data_to_add = data_df.groupby(id_columns)[feature].apply(lambda x: "%s" % ';'.join(x)).to_frame().reset_index()
+        data_to_add = data_df.groupby(id_columns)[feature].apply(lambda x: ';'.join(x)).to_frame().reset_index()
+        if remove_listed_nan:
+            # Remove NaN values from rows with non-NaN values
+            data_to_add = data_to_add.apply(lambda x: remove_nan_enum_from_string(x, nan_value))
         if has_timestamp:
             # Sort by time `ts` and set it as index
             data_to_add = data_to_add.set_index('ts')
