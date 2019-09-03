@@ -14,6 +14,7 @@ from sklearn.metrics import roc_auc_score               # ROC AUC model performa
 import warnings                                         # Print warnings for bad practices
 import sys                                              # Identify types of exceptions
 from functools import reduce                            # Parallelize functions
+import re                                               # Methods for string editing and searching, regular expression matching operations
 
 # [TODO] Make the random seed a user option (randomly generated or user defined)
 # Random seed used in PyTorch and NumPy's random operations (such as weight initialization)
@@ -600,7 +601,7 @@ def remove_nan_enum_from_string(x, nan_value=0):
             x = re.sub(f'{nan_value};', '', x)
         # Remove NaN value that might be at the end of the string
         if nan_value in x:
-            x = re.sub(nan_value, '', x)
+            x = re.sub(f';{nan_value}', '', x)
         # If the string got completly emptied, place a single NaN value on it
         if x == '':
             x = nan_value
@@ -660,7 +661,7 @@ def join_categorical_enum(df, cat_feat=[], id_columns=['patientunitstayid', 'ts'
         data_to_add = data_df.groupby(id_columns)[feature].apply(lambda x: ';'.join(x)).to_frame().reset_index()
         if remove_listed_nan:
             # Remove NaN values from rows with non-NaN values
-            data_to_add = data_to_add.apply(lambda x: remove_nan_enum_from_string(x, nan_value))
+            data_to_add[feature] = data_to_add[feature].apply(lambda x: remove_nan_enum_from_string(x, nan_value))
         if has_timestamp:
             # Sort by time `ts` and set it as index
             data_to_add = data_to_add.set_index('ts')

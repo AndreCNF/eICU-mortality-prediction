@@ -3411,12 +3411,14 @@ eICU_df.head()
 
 # ### Read the data
 
-nursecare_df = dd.read_csv(f'{data_path}original/treatment.csv')
+nursecare_df = dd.read_csv(f'{data_path}original/nurseCare.csv')
 nursecare_df.head()
 
 len(nursecare_df)
 
 nursecare_df.patientunitstayid.nunique().compute()
+
+# Only 13052 unit stays have nurse care data. Might not be useful to include them.
 
 nursecare_df.npartitions
 
@@ -3440,58 +3442,72 @@ utils.dataframe_missing_values(nursecare_df)
 
 # ### Remove unneeded features
 
-# Besides the usual removal of row identifier, `treatmentid`, I'm also removing `activeupondischarge`, as we don't have complete information as to when diagnosis end.
+nursecare_df.celllabel.value_counts().compute()
 
-nursecare_df = nursecare_df.drop(['treatmentid', 'activeupondischarge'], axis=1)
+nursecare_df.cellattribute.value_counts().compute()
+
+nursecare_df.cellattributevalue.value_counts().compute()
+
+nursecare_df.cellattributepath.value_counts().compute()
+
+nursecare_df[nursecare_df.celllabel == 'Nutrition'].cellattributevalue.value_counts().compute()
+
+nursecare_df[nursecare_df.celllabel == 'Activity'].cellattributevalue.value_counts().compute()
+
+nursecare_df[nursecare_df.celllabel == 'Hygiene/ADLs'].cellattributevalue.value_counts().compute()
+
+nursecare_df[nursecare_df.celllabel == 'Safety'].cellattributevalue.value_counts().compute()
+
+nursecare_df[nursecare_df.celllabel == 'Treatments'].cellattributevalue.value_counts().compute()
+
+nursecare_df[nursecare_df.celllabel == 'Isolation Precautions'].cellattributevalue.value_counts().compute()
+
+nursecare_df[nursecare_df.celllabel == 'Restraints'].cellattributevalue.value_counts().compute()
+
+nursecare_df[nursecare_df.celllabel == 'Equipment'].cellattributevalue.value_counts().compute()
+
+# Besides the usual removal of row identifier, `nursecareid`, and the timestamp when data was added, `nursecareentryoffset`, I'm also removing `cellattributepath` and `cellattribute`, which have redundant info with `celllabel`.
+
+nursecare_df = nursecare_df.drop(['nursecareid', 'nursecareentryoffset',
+                                  'cellattributepath', 'cellattribute'], axis=1)
 nursecare_df.head()
 
-# ### Separate high level diagnosis
+# Additionally, some information like "Equipment" and "Restraints" seem to be unnecessary. So let's remove them:
 
-nursecare_df.treatmentstring.value_counts().compute()
+categories_to_remove = ['Safety', 'Restraints', 'Equipment', 'Airway Type',
+                        'Isolation Precautions', 'Airway Size']
 
-nursecare_df.treatmentstring.map(lambda x: x.split('|')).head()
+~(nursecare_df.celllabel.isin(categories_to_remove)).head()
 
-nursecare_df.treatmentstring.map(lambda x: len(x.split('|'))).min().compute()
-
-nursecare_df.treatmentstring.map(lambda x: len(x.split('|'))).max().compute()
-
-# There are always at least 3 higher level diagnosis. It could be beneficial to extract those first 3 levels to separate features, with the last one getting values until the end of the string, so as to avoid the need for the model to learn similarities that are already known.
-
-nursecare_df.treatmentstring.apply(lambda x: utils.get_element_from_split(x, 0, separator='|'),
-                               meta=('x', str)).value_counts().compute()
-
-nursecare_df.treatmentstring.apply(lambda x: utils.get_element_from_split(x, 1, separator='|'),
-                               meta=('x', str)).value_counts().compute()
-
-nursecare_df.treatmentstring.apply(lambda x: utils.get_element_from_split(x, 2, separator='|'),
-                               meta=('x', str)).value_counts().compute()
-
-nursecare_df.treatmentstring.apply(lambda x: utils.get_element_from_split(x, 3, separator='|'),
-                               meta=('x', str)).value_counts().compute()
-
-nursecare_df.treatmentstring.apply(lambda x: utils.get_element_from_split(x, 4, separator='|'),
-                               meta=('x', str)).value_counts().compute()
-
-nursecare_df.treatmentstring.apply(lambda x: utils.get_element_from_split(x, 5, separator='|'),
-                               meta=('x', str)).value_counts().compute()
-
-# <!-- There are always 8 levels of the notes. As the first 6 ones are essentially always the same ("notes/Progress Notes/Social History / Family History/Social History/Social History/"), it's best to just preserve the 7th one and isolate the 8th in a new feature. This way, the split provides further insight to the model on similar notes. However, it's also worth taking note that the 8th level of `notepath` seems to be identical to the feature `notevalue`. We'll look more into it later. -->
-
-nursecare_df['treatmenttype'] = nursecare_df.treatmentstring.apply(lambda x: utils.get_element_from_split(x, 0, separator='|'), meta=('x', str))
-nursecare_df['treatmenttherapy'] = nursecare_df.treatmentstring.apply(lambda x: utils.get_element_from_split(x, 1, separator='|'), meta=('x', str))
-nursecare_df['treatmentdetails'] = nursecare_df.treatmentstring.apply(lambda x: utils.get_element_from_split(x, 2, separator='|', till_the_end=True), meta=('x', str))
+nursecare_df = nursecare_df[~(nursecare_df.celllabel.isin(categories_to_remove))]
 nursecare_df.head()
 
-# Remove the now redundant `treatmentstring` column:
+# ### Convert categories to features
 
-nursecare_df = nursecare_df.drop('treatmentstring', axis=1)
+# Make the `celllabel` and `cellattributevalue` columns of type categorical:
+
+nursecare_df = nursecare_df.categorize(columns=['celllabel', 'cellattributevalue'])
+
+# Transform the `celllabel` categories and `cellattributevalue` values into separate features:
+
+# [TODO] Adapt the category_to_feature method to Dask
+nursecare_df = dd.from_pandas(utils.category_to_feature(nursecare_df.compute(), categories_feature='celllabel', values_feature='cellattributevalue', min_len=1000), npartitions=30)
 nursecare_df.head()
 
-nursecare_df.treatmenttype.value_counts().compute()
+# Now we have the categories separated into their own features, as desired.
 
-nursecare_df.treatmenttherapy.value_counts().compute()
+# Remove the old `celllabel` and `cellattributevalue` columns:
 
-nursecare_df.treatmentdetails.value_counts().compute()
+nursecare_df = nursecare_df.drop(['celllabel', 'cellattributevalue'], axis=1)
+nursecare_df.head()
+
+nursecare_df['Nutrition'].value_counts().compute()
+
+nursecare_df['Treatments'].value_counts().compute()
+
+nursecare_df['Hygiene/ADLs'].value_counts().compute()
+
+nursecare_df['Activity'].value_counts().compute()
 
 # + {"toc-hr-collapsed": false, "cell_type": "markdown"}
 # ### Discretize categorical features
@@ -3505,7 +3521,7 @@ nursecare_df.treatmentdetails.value_counts().compute()
 
 # Update list of categorical features and add those that will need embedding (features with more than 5 unique values):
 
-new_cat_feat = ['treatmenttype', 'treatmenttherapy', 'treatmentdetails']
+new_cat_feat = ['Nutrition', 'Treatments', 'Hygiene/ADLs', 'Activity']
 [cat_feat.append(col) for col in new_cat_feat]
 
 cat_feat_nunique = [nursecare_df[feature].nunique().compute() for feature in new_cat_feat]
@@ -3544,8 +3560,8 @@ nursecare_df.visualize()
 
 # Create the timestamp (`ts`) feature:
 
-nursecare_df['ts'] = nursecare_df['treatmentoffset']
-nursecare_df = nursecare_df.drop('treatmentoffset', axis=1)
+nursecare_df['ts'] = nursecare_df['nursecareoffset']
+nursecare_df = nursecare_df.drop('nursecareoffset', axis=1)
 nursecare_df.head()
 
 # Remove duplicate rows:
@@ -3575,24 +3591,25 @@ nursecare_df.visualize()
 
 nursecare_df.reset_index().head()
 
-nursecare_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='treatmenttype').head()
+nursecare_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='Nutrition').head()
 
-nursecare_df[nursecare_df.patientunitstayid == 1352520].compute().head(10)
+nursecare_df[nursecare_df.patientunitstayid == 2798325].compute().head(10)
 
-# We can see that there are up to 105 categories per set of `patientunitstayid` and `ts`. As such, we must join them.
+# We can see that there are up to 21 categories per set of `patientunitstayid` and `ts`. As such, we must join them. However, this is a different scenario than in the other cases. Since we created the features from one categorical column, it doesn't have repeated values, only different rows to indicate each of the new features' values. As such, we just need to sum the features.
 
 # ### Join rows that have the same IDs
 
 # + {"pixiedust": {"displayParams": {}}}
+# [TODO] Find a way to join rows while ignoring zeros
 nursecare_df = utils.join_categorical_enum(nursecare_df, new_cat_embed_feat)
 nursecare_df.head()
 # -
 
 nursecare_df.dtypes
 
-nursecare_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='treatmenttype').head()
+nursecare_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='Nutrition').head()
 
-nursecare_df[nursecare_df.patientunitstayid == 1352520].compute().head(10)
+nursecare_df[nursecare_df.patientunitstayid == 2798325].compute().head(10)
 
 # Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
 
@@ -3603,13 +3620,18 @@ nursecare_df = client.persist(nursecare_df)
 
 nursecare_df.visualize()
 
+# ### Rename columns
+
+nursecare_df = nursecare_df.rename(columns={'Treatments':'nurse_treatments'})
+nursecare_df.head()
+
 # ### Save the dataframe
 
 nursecare_df = nursecare_df.repartition(npartitions=30)
 
-nursecare_df.to_parquet(f'{data_path}cleaned/unnormalized/diagnosis.parquet')
+nursecare_df.to_parquet(f'{data_path}cleaned/unnormalized/nurseCare.parquet')
 
-nursecare_df.to_parquet(f'{data_path}cleaned/normalized/diagnosis.parquet')
+nursecare_df.to_parquet(f'{data_path}cleaned/normalized/nurseCare.parquet')
 
 # Confirm that everything is ok through the `describe` method:
 
@@ -3619,7 +3641,7 @@ nursecare_df.describe().compute().transpose()
 #
 # Merge dataframes by the unit stay, `patientunitstayid`, and the timestamp, `ts`, with a tolerence for a difference of up to 30 minutes.
 
-nursecare_df = dd.read_parquet(f'{data_path}cleaned/normalized/diagnosis.parquet')
+nursecare_df = dd.read_parquet(f'{data_path}cleaned/normalized/nurseCare.parquet')
 nursecare_df.head()
 
 nursecare_df.npartitions
