@@ -35,6 +35,7 @@ import numpy as np                         # NumPy to handle numeric and NaN ope
 from tqdm import tqdm_notebook             # tqdm allows to track code execution progress
 import numbers                             # numbers allows to check if data is numeric
 import utils                               # Contains auxiliary functions
+import yaml                                # Save and load YAML files
 # -
 
 # Debugging packages
@@ -79,6 +80,8 @@ patient_df = patient_df.repartition(npartitions=30)
 patient_df.npartitions
 
 len(patient_df)
+
+patient_df.patientunitstayid.nunique().compute()
 
 patient_df.patientunitstayid.value_counts().compute()
 
@@ -183,6 +186,13 @@ patient_df = client.persist(patient_df)
 
 patient_df.visualize()
 
+# #### Save enumeration encoding mapping
+#
+# Save the dictionary that maps from the original categories/strings to the new numerical encondings.
+
+stream = file('cat_embed_feat_enum.yaml', 'w')
+yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
+
 # ### Create mortality label
 #
 # Combine info from discharge location and discharge status. Using the hospital discharge data, instead of the unit, as it has a longer perspective on the patient's status. I then save a feature called "deathOffset", which has a number if the patient is dead on hospital discharge or is NaN if the patient is still alive/unknown (presumed alive if unknown). Based on this, a label can be made later on, when all the tables are combined in a single dataframe, indicating if a patient dies in the following X time, according to how faraway we want to predict.
@@ -283,6 +293,11 @@ patient_df_norm.to_parquet(f'{data_path}cleaned/normalized/patient.parquet')
 
 patient_df_norm.describe().compute().transpose()
 
+# ### Create the unifying dataframe
+
+eICU_df = patient_df
+eICU_df.head()
+
 # + {"toc-hr-collapsed": true, "cell_type": "markdown"}
 # ## Vital signs periodic data
 # -
@@ -372,6 +387,13 @@ patient_df.visualize()
 patient_df = client.persist(patient_df)
 
 patient_df.visualize()
+
+# #### Save enumeration encoding mapping
+#
+# Save the dictionary that maps from the original categories/strings to the new numerical encondings.
+
+stream = file('cat_embed_feat_enum.yaml', 'w')
+yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 
 # ### Create the timestamp feature and sort
 
@@ -586,13 +608,16 @@ vital_aprdc_df_norm.describe().compute().transpose()
 #
 # Merge dataframes by the unit stay, `patientunitstayid`, and the timestamp, `ts`, with a tolerence for a difference of up to 30 minutes.
 
-patient_df = dd.read_parquet(f'{data_path}cleaned/normalized/patient.parquet')
-patient_df.head()
-
 vital_aprdc_df = dd.read_parquet(f'{data_path}cleaned/normalized/vitalAperiodic.parquet')
 vital_aprdc_df.head()
 
-eICU_df = dd.merge_asof(patient_df, vital_aprdc_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
+vital_aprdc_df.npartitions
+
+len(vital_aprdc_df)
+
+vital_aprdc_df.patientunitstayid.nunique().compute()
+
+eICU_df = dd.merge_asof(eICU_df, vital_aprdc_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
 eICU_df.head()
 
 # + {"toc-hr-collapsed": true, "cell_type": "markdown"}
@@ -685,6 +710,13 @@ infect_df = client.persist(infect_df)
 
 infect_df.visualize()
 
+# #### Save enumeration encoding mapping
+#
+# Save the dictionary that maps from the original categories/strings to the new numerical encondings.
+
+stream = file('cat_embed_feat_enum.yaml', 'w')
+yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
+
 # ### Create the timestamp feature and sort
 
 # Create the timestamp (`ts`) feature:
@@ -774,6 +806,12 @@ infect_df_norm.describe().compute().transpose()
 
 infect_df = dd.read_parquet(f'{data_path}cleaned/normalized/carePlanInfectiousDisease.parquet')
 infect_df.head()
+
+infect_df.npartitions
+
+len(infect_df)
+
+infect_df.patientunitstayid.nunique().compute()
 
 eICU_df = dd.merge_asof(eICU_df, infect_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
 eICU_df.head()
@@ -877,6 +915,13 @@ micro_df = client.persist(micro_df)
 
 micro_df.visualize()
 
+# #### Save enumeration encoding mapping
+#
+# Save the dictionary that maps from the original categories/strings to the new numerical encondings.
+
+stream = file('cat_embed_feat_enum.yaml', 'w')
+yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
+
 # ### Create the timestamp feature and sort
 
 # Create the timestamp (`ts`) feature:
@@ -964,6 +1009,12 @@ micro_df_norm.describe().compute().transpose()
 
 micro_df = dd.read_parquet(f'{data_path}cleaned/normalized/microLab.parquet')
 micro_df.head()
+
+micro_df.npartitions
+
+len(micro_df)
+
+micro_df.patientunitstayid.nunique().compute()
 
 eICU_df = dd.merge_asof(eICU_df, micro_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
 eICU_df.head()
@@ -1177,6 +1228,12 @@ resp_care_df.to_parquet(f'{data_path}cleaned/normalized/respiratoryCare.parquet'
 resp_care_df = dd.read_parquet(f'{data_path}cleaned/normalized/respiratoryCare.parquet')
 resp_care_df.head()
 
+resp_care_df.npartitions
+
+len(resp_care_df)
+
+resp_care_df.patientunitstayid.nunique().compute()
+
 eICU_df = dd.merge_asof(eICU_df, resp_care_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
 eICU_df.head()
 
@@ -1285,6 +1342,13 @@ alrg_df = client.persist(alrg_df)
 
 alrg_df.visualize()
 
+# #### Save enumeration encoding mapping
+#
+# Save the dictionary that maps from the original categories/strings to the new numerical encondings.
+
+stream = file('cat_embed_feat_enum.yaml', 'w')
+yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
+
 # ### Create the timestamp feature and sort
 
 # Create the timestamp (`ts`) feature:
@@ -1350,7 +1414,7 @@ alrg_df = client.persist(alrg_df)
 
 alrg_df.visualize()
 
-# ### Renaming columns
+# ### Rename columns
 
 alrg_df = alrg_df.rename(columns={'drughiclseqno':'drugallergyhiclseqno'})
 alrg_df.head()
@@ -1375,6 +1439,10 @@ alrg_df = dd.read_parquet(f'{data_path}cleaned/normalized/allergy.parquet')
 alrg_df.head()
 
 alrg_df.npartitions
+
+len(alrg_df)
+
+alrg_df.patientunitstayid.nunique().compute()
 
 eICU_df = dd.merge_asof(eICU_df, alrg_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
 eICU_df.head()
@@ -1520,6 +1588,13 @@ careplangen_df = client.persist(careplangen_df)
 
 careplangen_df.visualize()
 
+# #### Save enumeration encoding mapping
+#
+# Save the dictionary that maps from the original categories/strings to the new numerical encondings.
+
+stream = file('cat_embed_feat_enum.yaml', 'w')
+yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
+
 # ### Create the timestamp feature and sort
 
 # Create the timestamp (`ts`) feature:
@@ -1583,7 +1658,7 @@ careplangen_df = client.persist(careplangen_df)
 
 careplangen_df.visualize()
 
-# ### Renaming columns
+# ### Rename columns
 #
 # Keeping the `activeupondischarge` feature so as to decide if forward fill or leave at NaN each general care plan value, when we have the full dataframe. However, we need to identify this feature's original table, general care plan, so as to not confound with other data.
 
@@ -1610,6 +1685,10 @@ careplangen_df = dd.read_parquet(f'{data_path}cleaned/normalized/carePlanGeneral
 careplangen_df.head()
 
 careplangen_df.npartitions
+
+len(careplangen_df)
+
+careplangen_df.patientunitstayid.nunique().compute()
 
 eICU_df = dd.merge_asof(eICU_df, careplangen_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
 eICU_df.head()
@@ -1814,6 +1893,13 @@ pasthist_df = client.persist(pasthist_df)
 
 pasthist_df.visualize()
 
+# #### Save enumeration encoding mapping
+#
+# Save the dictionary that maps from the original categories/strings to the new numerical encondings.
+
+stream = file('cat_embed_feat_enum.yaml', 'w')
+yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
+
 # ### Remove duplicate rows
 
 # Remove duplicate rows:
@@ -1880,6 +1966,10 @@ pasthist_df = dd.read_parquet(f'{data_path}cleaned/normalized/pastHistory.parque
 pasthist_df.head()
 
 pasthist_df.npartitions
+
+len(pasthist_df)
+
+pasthist_df.patientunitstayid.nunique().compute()
 
 eICU_df = dd.merge_asof(eICU_df, pasthist_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
 eICU_df.head()
@@ -1994,6 +2084,13 @@ infdrug_df = client.persist(infdrug_df)
 
 infdrug_df.visualize()
 
+# #### Save enumeration encoding mapping
+#
+# Save the dictionary that maps from the original categories/strings to the new numerical encondings.
+
+stream = file('cat_embed_feat_enum.yaml', 'w')
+yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
+
 # ### Create the timestamp feature and sort
 
 # Create the timestamp (`ts`) feature:
@@ -2078,7 +2175,7 @@ infdrug_df_norm = client.persist(infdrug_df_norm)
 
 infdrug_df_norm.visualize()
 
-# ### Renaming columns
+# ### Rename columns
 
 infdrug_df = infdrug_df.rename(columns={'patientweight': 'weight', 'drugname': 'infusion_drugname',
                                         'drugrate': 'infusion_drugrate'})
@@ -2108,6 +2205,12 @@ infdrug_df_norm.describe().compute().transpose()
 
 infdrug_df = dd.read_parquet(f'{data_path}cleaned/normalized/infusionDrug.parquet')
 infdrug_df.head()
+
+infdrug.npartitions
+
+len(infdrug)
+
+infdrug.patientunitstayid.nunique().compute()
 
 eICU_df = dd.merge_asof(eICU_df, infdrug_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
 eICU_df.head()
@@ -2216,6 +2319,13 @@ diagn_df = client.persist(diagn_df)
 
 diagn_df.visualize()
 
+# #### Save enumeration encoding mapping
+#
+# Save the dictionary that maps from the original categories/strings to the new numerical encondings.
+
+stream = file('cat_embed_feat_enum.yaml', 'w')
+yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
+
 # ### Create the timestamp feature and sort
 
 # Create the timestamp (`ts`) feature:
@@ -2299,6 +2409,10 @@ diagn_df = dd.read_parquet(f'{data_path}cleaned/normalized/diagnosis.parquet')
 diagn_df.head()
 
 diagn_df.npartitions
+
+len(diagn_df)
+
+diagn_df.patientunitstayid.nunique().compute()
 
 eICU_df = dd.merge_asof(eICU_df, diagn_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
 eICU_df.head()
@@ -2432,6 +2546,13 @@ admsdrug_df = client.persist(admsdrug_df)
 
 admsdrug_df.visualize()
 
+# #### Save enumeration encoding mapping
+#
+# Save the dictionary that maps from the original categories/strings to the new numerical encondings.
+
+stream = file('cat_embed_feat_enum.yaml', 'w')
+yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
+
 # ### Create the timestamp feature and sort
 
 # Create the timestamp (`ts`) feature:
@@ -2543,6 +2664,10 @@ admsdrug_df = dd.read_parquet(f'{data_path}cleaned/normalized/admissionDrug.parq
 admsdrug_df.head()
 
 admsdrug_df.npartitions
+
+len(admsdrug_df)
+
+admsdrug_df.patientunitstayid.nunique().compute()
 
 eICU_df = dd.merge_asof(eICU_df, admsdrug_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
 eICU_df.head()
@@ -2708,6 +2833,13 @@ med_df = client.persist(med_df)
 
 med_df.visualize()
 
+# #### Save enumeration encoding mapping
+#
+# Save the dictionary that maps from the original categories/strings to the new numerical encondings.
+
+stream = file('cat_embed_feat_enum.yaml', 'w')
+yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
+
 # ### Create drug stop event
 #
 # Add a timestamp corresponding to when each patient stops taking each medication.
@@ -2869,6 +3001,10 @@ med_df = dd.read_parquet(f'{data_path}cleaned/normalized/medication.parquet')
 med_df.head()
 
 med_df.npartitions
+
+len(med_df)
+
+med_df.patientunitstayid.nunique().compute()
 
 eICU_df = dd.merge_asof(eICU_df, med_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
 eICU_df.head()
@@ -3092,6 +3228,13 @@ note_df = client.persist(note_df)
 
 note_df.visualize()
 
+# #### Save enumeration encoding mapping
+#
+# Save the dictionary that maps from the original categories/strings to the new numerical encondings.
+
+stream = file('cat_embed_feat_enum.yaml', 'w')
+yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
+
 # ### Create the timestamp feature and sort
 
 # Create the timestamp (`ts`) feature:
@@ -3179,6 +3322,10 @@ note_df = dd.read_parquet(f'{data_path}cleaned/normalized/note.parquet')
 note_df.head()
 
 note_df.npartitions
+
+len(note_df)
+
+note_df.patientunitstayid.nunique().compute()
 
 eICU_df = dd.merge_asof(eICU_df, note_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
 eICU_df.head()
@@ -3318,6 +3465,13 @@ treat_df = client.persist(treat_df)
 
 treat_df.visualize()
 
+# #### Save enumeration encoding mapping
+#
+# Save the dictionary that maps from the original categories/strings to the new numerical encondings.
+
+stream = file('cat_embed_feat_enum.yaml', 'w')
+yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
+
 # ### Create the timestamp feature and sort
 
 # Create the timestamp (`ts`) feature:
@@ -3401,6 +3555,10 @@ treat_df = dd.read_parquet(f'{data_path}cleaned/normalized/diagnosis.parquet')
 treat_df.head()
 
 treat_df.npartitions
+
+len(treat_df)
+
+treat_df.patientunitstayid.nunique().compute()
 
 eICU_df = dd.merge_asof(eICU_df, treat_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
 eICU_df.head()
@@ -3556,6 +3714,13 @@ nursecare_df = client.persist(nursecare_df)
 
 nursecare_df.visualize()
 
+# #### Save enumeration encoding mapping
+#
+# Save the dictionary that maps from the original categories/strings to the new numerical encondings.
+
+stream = file('cat_embed_feat_enum.yaml', 'w')
+yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
+
 # ### Create the timestamp feature and sort
 
 # Create the timestamp (`ts`) feature:
@@ -3646,5 +3811,435 @@ nursecare_df.head()
 
 nursecare_df.npartitions
 
+len(nursecare_df)
+
+nursecare_df.patientunitstayid.nunique().compute()
+
 eICU_df = dd.merge_asof(eICU_df, nursecare_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
+eICU_df.head()
+
+# + {"toc-hr-collapsed": true, "cell_type": "markdown"}
+# ## Nurse assessment data
+# -
+
+# ### Read the data
+
+nurseassess_df = dd.read_csv(f'{data_path}original/nurseAssessment.csv')
+nurseassess_df.head()
+
+len(nurseassess_df)
+
+nurseassess_df.patientunitstayid.nunique().compute()
+
+# Only 13001 unit stays have nurse care data. Might not be useful to include them.
+
+nurseassess_df.npartitions
+
+nurseassess_df = nurseassess_df.repartition(npartitions=30)
+
+# Get an overview of the dataframe through the `describe` method:
+
+nurseassess_df.describe().compute().transpose()
+
+nurseassess_df.visualize()
+
+nurseassess_df.columns
+
+nurseassess_df.dtypes
+
+# ### Check for missing values
+
+# + {"pixiedust": {"displayParams": {}}}
+utils.dataframe_missing_values(nurseassess_df)
+# -
+
+# ### Remove unneeded features
+
+nurseassess_df.celllabel.value_counts().compute()
+
+nurseassess_df.cellattribute.value_counts().compute()
+
+nurseassess_df.cellattributevalue.value_counts().compute()
+
+nurseassess_df.cellattributepath.value_counts().compute()
+
+nurseassess_df[nurseassess_df.celllabel == 'Intervention'].cellattributevalue.value_counts().compute()
+
+nurseassess_df[nurseassess_df.celllabel == 'Neurologic'].cellattributevalue.value_counts().compute()
+
+nurseassess_df[nurseassess_df.celllabel == 'Pupils'].cellattributevalue.value_counts().compute()
+
+# Besides the usual removal of row identifier, `nurseAssessID`, and the timestamp when data was added, `nurseAssessEntryOffset`, I'm also removing `cellattributepath` and `cellattribute`, which have redundant info with `celllabel`.
+
+nurseassess_df = nurseassess_df.drop(['nurseassessid', 'nurseassessentryoffset',
+                                      'cellattributepath', 'cellattribute'], axis=1)
+nurseassess_df.head()
+
+# In this table, as it indicates what nurses assessed on a patient, it might be useful to have the very own assessment type as data. As such, we won't separate the categories into individual features, contrary to what was done in nurse care.
+
+# + {"toc-hr-collapsed": false, "cell_type": "markdown"}
+# ### Discretize categorical features
+#
+# Convert binary categorical features into simple numberings, one hot encode features with a low number of categories (in this case, 5) and enumerate sparse categorical features that will be embedded.
+# -
+
+# #### Separate and prepare features for embedding
+#
+# Identify categorical features that have more than 5 unique categories, which will go through an embedding layer afterwards, and enumerate them.
+
+# Update list of categorical features and add those that will need embedding (features with more than 5 unique values):
+
+new_cat_feat = ['celllabel', 'cellattributevalue']
+[cat_feat.append(col) for col in new_cat_feat]
+
+cat_feat_nunique = [nurseassess_df[feature].nunique().compute() for feature in new_cat_feat]
+cat_feat_nunique
+
+new_cat_embed_feat = []
+for i in range(len(new_cat_feat)):
+    if cat_feat_nunique[i] > 5:
+        # Add feature to the list of those that will be embedded
+        cat_embed_feat.append(new_cat_feat[i])
+        new_cat_embed_feat.append(new_cat_feat[i])
+
+nurseassess_df[new_cat_feat].head()
+
+# + {"pixiedust": {"displayParams": {}}}
+for i in range(len(new_cat_embed_feat)):
+    feature = new_cat_embed_feat[i]
+    # Prepare for embedding, i.e. enumerate categories
+    nurseassess_df[feature], cat_embed_feat_enum[feature] = utils.enum_categorical_feature(nurseassess_df, feature)
+# -
+
+nurseassess_df[new_cat_feat].head()
+
+cat_embed_feat_enum
+
+nurseassess_df[new_cat_feat].dtypes
+
+nurseassess_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+nurseassess_df = client.persist(nurseassess_df)
+
+nurseassess_df.visualize()
+
+# #### Save enumeration encoding mapping
+#
+# Save the dictionary that maps from the original categories/strings to the new numerical encondings.
+
+stream = file('cat_embed_feat_enum.yaml', 'w')
+yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
+
+# ### Create the timestamp feature and sort
+
+# Create the timestamp (`ts`) feature:
+
+nurseassess_df['ts'] = nurseassess_df['nurseassessoffset']
+nurseassess_df = nurseassess_df.drop('nurseassessoffset', axis=1)
+nurseassess_df.head()
+
+# Remove duplicate rows:
+
+len(nurseassess_df)
+
+nurseassess_df = nurseassess_df.drop_duplicates()
+nurseassess_df.head()
+
+len(nurseassess_df)
+
+nurseassess_df = nurseassess_df.repartition(npartitions=30)
+
+# Sort by `ts` so as to be easier to merge with other dataframes later:
+
+nurseassess_df = nurseassess_df.set_index('ts')
+nurseassess_df.head()
+
+nurseassess_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+nurseassess_df = client.persist(nurseassess_df)
+
+nurseassess_df.visualize()
+
+# Check for possible multiple rows with the same unit stay ID and timestamp:
+
+nurseassess_df.reset_index().head()
+
+nurseassess_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='celllabel').head()
+
+nurseassess_df[nurseassess_df.patientunitstayid == 2553254].compute().head(10)
+
+# We can see that there are up to 80 categories per set of `patientunitstayid` and `ts`. As such, we must join them.
+
+# ### Join rows that have the same IDs
+
+# + {"pixiedust": {"displayParams": {}}}
+nurseassess_df = utils.join_categorical_enum(nurseassess_df, new_cat_embed_feat)
+nurseassess_df.head()
+# -
+
+nurseassess_df.dtypes
+
+nurseassess_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='celllabel').head()
+
+nurseassess_df[nurseassess_df.patientunitstayid == 2553254].compute().head(10)
+
+# Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
+
+nurseassess_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+nurseassess_df = client.persist(nurseassess_df)
+
+nurseassess_df.visualize()
+
+# ### Rename columns
+
+nurseassess_df = nurseassess_df.rename(columns={'celllabel':'nurse_assess_label',
+                                                'cellattributevalue':'nurse_assess_value'})
+nurseassess_df.head()
+
+# ### Save the dataframe
+
+nurseassess_df = nurseassess_df.repartition(npartitions=30)
+
+nurseassess_df.to_parquet(f'{data_path}cleaned/unnormalized/nurseAssessment.parquet')
+
+nurseassess_df.to_parquet(f'{data_path}cleaned/normalized/nurseAssessment.parquet')
+
+# Confirm that everything is ok through the `describe` method:
+
+nurseassess_df.describe().compute().transpose()
+
+# ### Join dataframes
+#
+# Merge dataframes by the unit stay, `patientunitstayid`, and the timestamp, `ts`, with a tolerence for a difference of up to 30 minutes.
+
+nurseassess_df = dd.read_parquet(f'{data_path}cleaned/normalized/nurseAssessment.parquet')
+nurseassess_df.head()
+
+nurseassess_df.npartitions
+
+len(nurseassess_df)
+
+nurseassess_df.patientunitstayid.nunique().compute()
+
+eICU_df = dd.merge_asof(eICU_df, nurseassess_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
+eICU_df.head()
+
+# + {"toc-hr-collapsed": true, "cell_type": "markdown"}
+# ## Nurse charting data
+# -
+
+# ### Read the data
+
+nursechart_df = dd.read_csv(f'{data_path}original/nurseCharting.csv')
+nursechart_df.head()
+
+len(nursechart_df)
+
+nursechart_df.patientunitstayid.nunique().compute()
+
+nursechart_df.npartitions
+
+nursechart_df = nursechart_df.repartition(npartitions=30)
+
+# Get an overview of the dataframe through the `describe` method:
+
+nursechart_df.describe().compute().transpose()
+
+nursechart_df.visualize()
+
+nursechart_df.columns
+
+nursechart_df.dtypes
+
+# ### Check for missing values
+
+# + {"pixiedust": {"displayParams": {}}}
+utils.dataframe_missing_values(nursechart_df)
+# -
+
+# ### Remove unneeded features
+
+nursechart_df.nursingchartcelltypecat.value_counts().compute()
+
+nursechart_df.nursingchartcelltypevallabel.value_counts().compute()
+
+nursechart_df.nursingchartcelltypevalname.value_counts().compute()
+
+nursechart_df.nursingchartvalue.value_counts().compute()
+
+nursechart_df[nursechart_df.nursingchartcelltypecat == 'Vital Signs'].nursingchartcelltypevallabel.value_counts().compute()
+
+nursechart_df[nursechart_df.nursingchartcelltypecat == 'Scores'].nursingchartcelltypevallabel.value_counts().compute()
+
+nursechart_df[nursechart_df.nursingchartcelltypecat == 'Other Vital Signs and Infusions'].nursingchartcelltypevallabel.value_counts().compute()
+
+nursechart_df[nursechart_df.nursingchartcelltypecat == 'Vital Signs and Infusions'].nursingchartcelltypevallabel.value_counts().compute()
+
+nursechart_df[nursechart_df.nursingchartcelltypecat == 'Invasive'].nursingchartcelltypevallabel.value_counts().compute()
+
+nursechart_df[nursechart_df.nursingchartcelltypecat == 'SVO2'].nursingchartcelltypevallabel.value_counts().compute()
+
+nursechart_df[nursechart_df.nursingchartcelltypecat == 'ECG'].nursingchartcelltypevallabel.value_counts().compute()
+
+# Besides the usual removal of row identifier, `nurseAssessID`, and the timestamp when data was added, `nurseAssessEntryOffset`, I'm also removing `nursingchartcelltypevalname` and `cellattribute`, which have redundant info with `nursingchartcelltypecat`.
+
+nursechart_df = nursechart_df.drop(['nursechartid', 'nursechartentryoffset',
+                                      'nursingchartcelltypevalname', 'nursingchartcelltypevallabel'], axis=1)
+nursechart_df.head()
+
+# In this table, as it indicates what nurses assessed on a patient, it might be useful to have the very own assessment type as data. As such, we won't separate the categories into individual features, contrary to what was done in nurse care.
+
+# + {"toc-hr-collapsed": false, "cell_type": "markdown"}
+# ### Discretize categorical features
+#
+# Convert binary categorical features into simple numberings, one hot encode features with a low number of categories (in this case, 5) and enumerate sparse categorical features that will be embedded.
+# -
+
+# #### Separate and prepare features for embedding
+#
+# Identify categorical features that have more than 5 unique categories, which will go through an embedding layer afterwards, and enumerate them.
+
+# Update list of categorical features and add those that will need embedding (features with more than 5 unique values):
+
+new_cat_feat = ['nursingchartcelltypecat', 'nursingchartvalue']
+[cat_feat.append(col) for col in new_cat_feat]
+
+cat_feat_nunique = [nursechart_df[feature].nunique().compute() for feature in new_cat_feat]
+cat_feat_nunique
+
+new_cat_embed_feat = []
+for i in range(len(new_cat_feat)):
+    if cat_feat_nunique[i] > 5:
+        # Add feature to the list of those that will be embedded
+        cat_embed_feat.append(new_cat_feat[i])
+        new_cat_embed_feat.append(new_cat_feat[i])
+
+nursechart_df[new_cat_feat].head()
+
+# + {"pixiedust": {"displayParams": {}}}
+for i in range(len(new_cat_embed_feat)):
+    feature = new_cat_embed_feat[i]
+    # Prepare for embedding, i.e. enumerate categories
+    nursechart_df[feature], cat_embed_feat_enum[feature] = utils.enum_categorical_feature(nursechart_df, feature)
+# -
+
+nursechart_df[new_cat_feat].head()
+
+cat_embed_feat_enum
+
+nursechart_df[new_cat_feat].dtypes
+
+nursechart_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+nursechart_df = client.persist(nursechart_df)
+
+nursechart_df.visualize()
+
+# #### Save enumeration encoding mapping
+#
+# Save the dictionary that maps from the original categories/strings to the new numerical encondings.
+
+stream = file('cat_embed_feat_enum.yaml', 'w')
+yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
+
+# ### Create the timestamp feature and sort
+
+# Create the timestamp (`ts`) feature:
+
+nursechart_df['ts'] = nursechart_df['nursechartoffset']
+nursechart_df = nursechart_df.drop('nursechartoffset', axis=1)
+nursechart_df.head()
+
+# Remove duplicate rows:
+
+len(nursechart_df)
+
+nursechart_df = nursechart_df.drop_duplicates()
+nursechart_df.head()
+
+len(nursechart_df)
+
+nursechart_df = nursechart_df.repartition(npartitions=30)
+
+# Sort by `ts` so as to be easier to merge with other dataframes later:
+
+nursechart_df = nursechart_df.set_index('ts')
+nursechart_df.head()
+
+nursechart_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+nursechart_df = client.persist(nursechart_df)
+
+nursechart_df.visualize()
+
+# Check for possible multiple rows with the same unit stay ID and timestamp:
+
+nursechart_df.reset_index().head()
+
+nursechart_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='nursingchartcelltypecat').head()
+
+nursechart_df[nursechart_df.patientunitstayid == 2553254].compute().head(10)
+
+# We can see that there are up to 80 categories per set of `patientunitstayid` and `ts`. As such, we must join them.
+
+# ### Join rows that have the same IDs
+
+# + {"pixiedust": {"displayParams": {}}}
+nursechart_df = utils.join_categorical_enum(nursechart_df, new_cat_embed_feat)
+nursechart_df.head()
+# -
+
+nursechart_df.dtypes
+
+nursechart_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='nursingchartcelltypecat').head()
+
+nursechart_df[nursechart_df.patientunitstayid == 2553254].compute().head(10)
+
+# Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
+
+nursechart_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+nursechart_df = client.persist(nursechart_df)
+
+nursechart_df.visualize()
+
+# ### Rename columns
+
+nursechart_df = nursechart_df.rename(columns={'nursingchartcelltypecat':'nurse_assess_label',
+                                                'nursingchartvalue':'nurse_assess_value'})
+nursechart_df.head()
+
+# ### Save the dataframe
+
+nursechart_df = nursechart_df.repartition(npartitions=30)
+
+nursechart_df.to_parquet(f'{data_path}cleaned/unnormalized/nurseCharting.parquet')
+
+nursechart_df.to_parquet(f'{data_path}cleaned/normalized/nurseCharting.parquet')
+
+# Confirm that everything is ok through the `describe` method:
+
+nursechart_df.describe().compute().transpose()
+
+# ### Join dataframes
+#
+# Merge dataframes by the unit stay, `patientunitstayid`, and the timestamp, `ts`, with a tolerence for a difference of up to 30 minutes.
+
+nursechart_df = dd.read_parquet(f'{data_path}cleaned/normalized/nurseCharting.parquet')
+nursechart_df.head()
+
+nursechart_df.npartitions
+
+len(nursechart_df)
+
+nursechart_df.patientunitstayid.nunique().compute()
+
+eICU_df = dd.merge_asof(eICU_df, nursechart_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
 eICU_df.head()
