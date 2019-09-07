@@ -24,6 +24,9 @@ graphviz = "^0.11.1"
 distributed = "^2.2"
 fastparquet = "^0.3.2"
 pyyaml = "^5.1"
+
+[tool.poetry.dev-dependencies]
+pylint = "^2.3"
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
