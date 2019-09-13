@@ -1,15 +1,18 @@
-from comet_ml import Experiment                         # Comet.ml can log training metrics, parameters, do version control and parameter optimization
-import torch                                            # PyTorch to create and apply deep learning models
 import pandas as pd                                     # Pandas to handle the data in dataframes
 import numpy as np                                      # NumPy to handle numeric and NaN operations
 import numbers                                          # numbers allows to check if data is numeric
 import warnings                                         # Print warnings for bad practices
 import utils                                            # Generic and useful methods
 
-# Random seed used in PyTorch and NumPy's random operations (such as weight initialization)
+# Random seed used in NumPy's random operations
 random_seed = utils.random_seed
-np.random.seed(random_seed)
-torch.manual_seed(random_seed)
+
+if isinstance(random_seed, int):
+    # Set user specified random seed
+    np.random.seed(random_seed)
+else:
+    # Set completely random seed from utils
+    np.random.set_state(random_seed)
 
 # Ignore Dask's 'meta' warning
 warnings.filterwarnings("ignore", message="`meta` is not specified, inferred from partial data. Please provide `meta` if the result is unexpected.")

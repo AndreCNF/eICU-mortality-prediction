@@ -7,12 +7,19 @@ import sys                                              # Identify types of exce
 from NeuralNetwork import NeuralNetwork                 # Import the neural network model class
 from sklearn.metrics import roc_auc_score               # ROC AUC model performance metric
 import utils                                            # Generic and useful methods
-import padding                                          # Padding and variable sequence lenght related methods
+import padding                                          # Padding and variable sequence length related methods
 
 # Random seed used in PyTorch and NumPy's random operations (such as weight initialization)
 random_seed = utils.random_seed
-np.random.seed(random_seed)
-torch.manual_seed(random_seed)
+
+if isinstance(random_seed, int):
+    # Set user specified random seed
+    np.random.seed(random_seed)
+    torch.manual_seed(random_seed)
+else:
+    # Set completely random seed from utils
+    np.random.set_state(random_seed)
+    torch.manual_seed(random_seed[1][0])
 
 # Ignore Dask's 'meta' warning
 warnings.filterwarnings("ignore", message="`meta` is not specified, inferred from partial data. Please provide `meta` if the result is unexpected.")

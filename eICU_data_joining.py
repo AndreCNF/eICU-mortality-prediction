@@ -29,14 +29,24 @@ import dask.dataframe as dd                # Dask to handle big data in datafram
 import pandas as pd                        # Pandas to load the data initially
 from dask.distributed import Client        # Dask scheduler
 from dask.diagnostics import ProgressBar   # Dask progress bar
-import re                                  # re to do regex searches in string data
 import os                                  # os handles directory/workspace changes
 import numpy as np                         # NumPy to handle numeric and NaN operations
-from tqdm import tqdm_notebook             # tqdm allows to track code execution progress
-import numbers                             # numbers allows to check if data is numeric
-import utils                               # Contains auxiliary functions
 import yaml                                # Save and load YAML files
+import utils                               # Contains auxiliary functions
 # -
+
+# Set the random seed for reproducibility
+
+utils.set_random_seed(0)
+
+# Import the remaining custom packages
+
+import search_explore                      # Methods to search and explore data
+import data_processing                     # Data processing and dataframe operations
+import embedding                           # Embedding and encoding related methods
+# import padding                             # Padding and variable sequence length related methods
+# import machine_learning                    # Common and generic machine learning related methods
+# import deep_learning                       # Common and generic deep learning related methods
 
 # Debugging packages
 import pixiedust                           # Debugging in Jupyter Notebook cells
@@ -56,7 +66,12 @@ client
 
 # Upload the utils.py file, so that the Dask cluster has access to relevant auxiliary functions
 client.upload_file(f'{project_path}NeuralNetwork.py')
-client.upload_file(f'{project_path}utils.py')
+client.upload_file(f'{project_path}search_explore.py')
+client.upload_file(f'{project_path}data_processing.py')
+client.upload_file(f'{project_path}embedding.py')
+# client.upload_file(f'{project_path}padding.py')
+# client.upload_file(f'{project_path}machine_learning.py')
+# client.upload_file(f'{project_path}deep_learning.py')
 
 client.run(os.getcwd)
 
@@ -98,7 +113,7 @@ patient_df.dtypes
 # ### Check for missing values
 
 # + {"pixiedust": {"displayParams": {}}}
-utils.dataframe_missing_values(patient_df)
+search_explore.dataframe_missing_values(patient_df)
 # -
 
 # ### Remove unneeded features
@@ -171,7 +186,7 @@ patient_df[new_cat_feat].head()
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
     # Prepare for embedding, i.e. enumerate categories
-    patient_df[feature], cat_embed_feat_enum[feature] = utils.enum_categorical_feature(patient_df, feature)
+    patient_df[feature], cat_embed_feat_enum[feature] = embedding.enum_categorical_feature(patient_df, feature)
 
 patient_df[new_cat_feat].head()
 
@@ -282,8 +297,8 @@ new_cat_feat
 patient_df.head(npartitions=patient_df.npartitions)
 
 # + {"pixiedust": {"displayParams": {}}}
-patient_df_norm = utils.normalize_data(patient_df, embed_columns=new_cat_feat,
-                                       id_columns=['patientunitstayid', 'deathoffset'])
+patient_df_norm = data_processing.normalize_data(patient_df, embed_columns=new_cat_feat,
+                                                 id_columns=['patientunitstayid', 'deathoffset'])
 patient_df_norm.head(6, npartitions=patient_df.npartitions)
 # -
 
@@ -324,7 +339,7 @@ vital_prdc_df.dtypes
 # ### Check for missing values
 
 # + {"pixiedust": {"displayParams": {}}}
-utils.dataframe_missing_values(patient_df)
+search_explore.dataframe_missing_values(patient_df)
 # -
 
 # ### Remove unneeded features
@@ -373,7 +388,7 @@ patient_df[new_cat_feat].head()
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
     # Prepare for embedding, i.e. enumerate categories
-    patient_df[feature], cat_embed_feat_enum[feature] = utils.enum_categorical_feature(patient_df, feature)
+    patient_df[feature], cat_embed_feat_enum[feature] = embedding.enum_categorical_feature(patient_df, feature)
 
 patient_df[new_cat_feat].head()
 
@@ -439,7 +454,7 @@ micro_df[micro_df.patientunitstayid == 3069495].compute().head(20)
 # ### Join rows that have the same IDs
 
 # + {"pixiedust": {"displayParams": {}}}
-micro_df = utils.join_categorical_enum(micro_df, new_cat_embed_feat)
+micro_df = embedding.join_categorical_enum(micro_df, new_cat_embed_feat)
 micro_df.head()
 # -
 
@@ -465,8 +480,8 @@ micro_df.visualize()
 patient_df.to_parquet(f'{data_path}cleaned/unnormalized/patient.parquet')
 
 # + {"pixiedust": {"displayParams": {}}}
-patient_df_norm = utils.normalize_data(patient_df, embed_columns=new_cat_feat,
-                                       id_columns=['patientunitstayid', 'ts', 'deathoffset'])
+patient_df_norm = data_processing.normalize_data(patient_df, embed_columns=new_cat_feat,
+                                                 id_columns=['patientunitstayid', 'ts', 'deathoffset'])
 patient_df_norm.head(6)
 # -
 
@@ -519,7 +534,7 @@ vital_aprdc_df.dtypes
 # ### Check for missing values
 
 # + {"pixiedust": {"displayParams": {}}}
-utils.dataframe_missing_values(vital_aprdc_df)
+search_explore.dataframe_missing_values(vital_aprdc_df)
 # -
 
 # ### Remove unneeded features
@@ -567,7 +582,7 @@ vital_aprdc_df[micro_df.patientunitstayid == 3069495].compute().head(20)
 # ### Join rows that have the same IDs
 
 # + {"pixiedust": {"displayParams": {}}}
-micro_df = utils.join_categorical_enum(micro_df, new_cat_embed_feat)
+micro_df = embedding.join_categorical_enum(micro_df, new_cat_embed_feat)
 micro_df.head()
 # -
 
@@ -593,8 +608,8 @@ micro_df.visualize()
 vital_aprdc_df.to_parquet(f'{data_path}cleaned/unnormalized/vitalAperiodic.parquet')
 
 # + {"pixiedust": {"displayParams": {}}}
-vital_aprdc_df_norm = utils.normalize_data(vital_aprdc_df,
-                                           id_columns=['patientunitstayid', 'ts'])
+vital_aprdc_df_norm = data_processing.normalize_data(vital_aprdc_df,
+                                                     id_columns=['patientunitstayid', 'ts'])
 vital_aprdc_df_norm.head(6)
 # -
 
@@ -656,7 +671,7 @@ infect_df.dtypes
 # ### Check for missing values
 
 # + {"pixiedust": {"displayParams": {}}}
-utils.dataframe_missing_values(infect_df)
+search_explore.dataframe_missing_values(infect_df)
 # -
 
 # ### Remove unneeded features
@@ -695,7 +710,7 @@ infect_df[new_cat_feat].head()
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
     # Prepare for embedding, i.e. enumerate categories
-    infect_df[feature], cat_embed_feat_enum[feature] = utils.enum_categorical_feature(infect_df, feature)
+    infect_df[feature], cat_embed_feat_enum[feature] = embedding.enum_categorical_feature(infect_df, feature)
 
 infect_df[new_cat_feat].head()
 
@@ -763,7 +778,7 @@ infect_df[infect_df.patientunitstayid == 3049689].compute().head(20)
 # ### Join rows that have the same IDs
 
 # + {"pixiedust": {"displayParams": {}}}
-infect_df = utils.join_categorical_enum(infect_df, new_cat_embed_feat)
+infect_df = embedding.join_categorical_enum(infect_df, new_cat_embed_feat)
 infect_df.head()
 # -
 
@@ -789,8 +804,8 @@ infect_df.visualize()
 infect_df.to_parquet(f'{data_path}cleaned/unnormalized/carePlanInfectiousDisease.parquet')
 
 # + {"pixiedust": {"displayParams": {}}}
-infect_df_norm = utils.normalize_data(infect_df, embed_columns=new_cat_feat,
-                                      id_columns=['patientunitstayid'])
+infect_df_norm = data_processing.normalize_data(infect_df, embed_columns=new_cat_feat,
+                                                id_columns=['patientunitstayid'])
 infect_df_norm.head(6)
 # -
 
@@ -848,7 +863,7 @@ micro_df.dtypes
 # ### Check for missing values
 
 # + {"pixiedust": {"displayParams": {}}}
-utils.dataframe_missing_values(micro_df)
+search_explore.dataframe_missing_values(micro_df)
 # -
 
 # ### Remove unneeded features
@@ -899,7 +914,7 @@ micro_df[new_cat_feat].head()
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
     # Prepare for embedding, i.e. enumerate categories
-    micro_df[feature], cat_embed_feat_enum[feature] = utils.enum_categorical_feature(micro_df, feature)
+    micro_df[feature], cat_embed_feat_enum[feature] = embedding.enum_categorical_feature(micro_df, feature)
 # -
 
 micro_df[new_cat_feat].head()
@@ -966,7 +981,7 @@ micro_df[micro_df.patientunitstayid == 3069495].compute().head(20)
 # ### Join rows that have the same IDs
 
 # + {"pixiedust": {"displayParams": {}}}
-micro_df = utils.join_categorical_enum(micro_df, new_cat_embed_feat)
+micro_df = embedding.join_categorical_enum(micro_df, new_cat_embed_feat)
 micro_df.head()
 # -
 
@@ -992,8 +1007,8 @@ micro_df.visualize()
 micro_df.to_parquet(f'{data_path}cleaned/unnormalized/microLab.parquet')
 
 # + {"pixiedust": {"displayParams": {}}}
-micro_df_norm = utils.normalize_data(micro_df, embed_columns=new_cat_feat,
-                                     id_columns=['patientunitstayid'])
+micro_df_norm = data_processing.normalize_data(micro_df, embed_columns=new_cat_feat,
+                                               id_columns=['patientunitstayid'])
 micro_df_norm.head(6)
 # -
 
@@ -1058,7 +1073,7 @@ resp_care_df.dtypes
 # ### Check for missing values
 
 # + {"pixiedust": {"displayParams": {}}}
-utils.dataframe_missing_values(resp_care_df)
+search_explore.dataframe_missing_values(resp_care_df)
 # -
 
 # ### Remove unneeded features
@@ -1117,7 +1132,7 @@ resp_care_df[resp_care_df.patientunitstayid == 3348331].compute().head(20)
 # There are no errors of having the start vent timestamp later than the end vent timestamp.
 
 # + {"pixiedust": {"displayParams": {}}}
-resp_care_df = utils.join_categorical_enum(resp_care_df, cont_join_method='min')
+resp_care_df = embedding.join_categorical_enum(resp_care_df, cont_join_method='min')
 resp_care_df.head()
 # -
 
@@ -1267,7 +1282,7 @@ alrg_df.dtypes
 # ### Check for missing values
 
 # + {"pixiedust": {"displayParams": {}}}
-utils.dataframe_missing_values(alrg_df)
+search_explore.dataframe_missing_values(alrg_df)
 # -
 
 # ### Remove unneeded features
@@ -1322,7 +1337,7 @@ for i in range(len(new_cat_embed_feat)):
     if feature == 'drughiclseqno':
         continue
     # Prepare for embedding, i.e. enumerate categories
-    alrg_df[feature], cat_embed_feat_enum[feature] = utils.enum_categorical_feature(alrg_df, feature)
+    alrg_df[feature], cat_embed_feat_enum[feature] = embedding.enum_categorical_feature(alrg_df, feature)
 # -
 
 # Fill missing values of the drug data with 0, so as to prepare for embedding:
@@ -1395,7 +1410,7 @@ alrg_df[alrg_df.patientunitstayid == 3197554].compute().head(10)
 # Even after removing duplicates rows, there are still some that have different information for the same ID and timestamp. We have to concatenate the categorical enumerations.
 
 # + {"pixiedust": {"displayParams": {}}}
-alrg_df = utils.join_categorical_enum(alrg_df, new_cat_embed_feat)
+alrg_df = embedding.join_categorical_enum(alrg_df, new_cat_embed_feat)
 alrg_df.head()
 # -
 
@@ -1480,7 +1495,7 @@ careplangen_df.dtypes
 # ### Check for missing values
 
 # + {"pixiedust": {"displayParams": {}}}
-utils.dataframe_missing_values(careplangen_df)
+search_explore.dataframe_missing_values(careplangen_df)
 # -
 
 # ### Remove unneeded features
@@ -1572,7 +1587,7 @@ careplangen_df[new_cat_feat].head()
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
     # Prepare for embedding, i.e. enumerate categories
-    careplangen_df[feature], cat_embed_feat_enum[feature] = utils.enum_categorical_feature(careplangen_df, feature)
+    careplangen_df[feature], cat_embed_feat_enum[feature] = embedding.enum_categorical_feature(careplangen_df, feature)
 # -
 
 careplangen_df[new_cat_feat].head()
@@ -1639,7 +1654,7 @@ careplangen_df[careplangen_df.patientunitstayid == 3138123].compute().head(10)
 # ### Join rows that have the same IDs
 
 # + {"pixiedust": {"displayParams": {}}}
-careplangen_df = utils.join_categorical_enum(careplangen_df, new_cat_embed_feat)
+careplangen_df = embedding.join_categorical_enum(careplangen_df, new_cat_embed_feat)
 careplangen_df.head()
 # -
 
@@ -1723,7 +1738,7 @@ pasthist_df.dtypes
 # ### Check for missing values
 
 # + {"pixiedust": {"displayParams": {}}}
-utils.dataframe_missing_values(pasthist_df)
+search_explore.dataframe_missing_values(pasthist_df)
 # -
 
 # ### Remove unneeded features
@@ -1771,31 +1786,31 @@ pasthist_df.pasthistorypath.map(lambda x: len(x.split('/'))).min().compute()
 
 pasthist_df.pasthistorypath.map(lambda x: len(x.split('/'))).max().compute()
 
-pasthist_df.pasthistorypath.apply(lambda x: utils.get_element_from_split(x, 0, separator='/'),
+pasthist_df.pasthistorypath.apply(lambda x: search_explore.get_element_from_split(x, 0, separator='/'),
                                   meta=('x', str)).value_counts().compute()
 
-pasthist_df.pasthistorypath.apply(lambda x: utils.get_element_from_split(x, 1, separator='/'),
+pasthist_df.pasthistorypath.apply(lambda x: search_explore.get_element_from_split(x, 1, separator='/'),
                                   meta=('x', str)).value_counts().compute()
 
-pasthist_df.pasthistorypath.apply(lambda x: utils.get_element_from_split(x, 2, separator='/'),
+pasthist_df.pasthistorypath.apply(lambda x: search_explore.get_element_from_split(x, 2, separator='/'),
                                   meta=('x', str)).value_counts().compute()
 
-pasthist_df.pasthistorypath.apply(lambda x: utils.get_element_from_split(x, 3, separator='/'),
+pasthist_df.pasthistorypath.apply(lambda x: search_explore.get_element_from_split(x, 3, separator='/'),
                                   meta=('x', str)).value_counts().compute()
 
-pasthist_df.pasthistorypath.apply(lambda x: utils.get_element_from_split(x, 4, separator='/'),
+pasthist_df.pasthistorypath.apply(lambda x: search_explore.get_element_from_split(x, 4, separator='/'),
                                   meta=('x', str)).value_counts().compute()
 
-pasthist_df.pasthistorypath.apply(lambda x: utils.get_element_from_split(x, 5, separator='/'),
+pasthist_df.pasthistorypath.apply(lambda x: search_explore.get_element_from_split(x, 5, separator='/'),
                                   meta=('x', str)).value_counts().compute()
 
-pasthist_df.pasthistorypath.apply(lambda x: utils.get_element_from_split(x, 6, separator='/'),
+pasthist_df.pasthistorypath.apply(lambda x: search_explore.get_element_from_split(x, 6, separator='/'),
                                   meta=('x', str)).value_counts().compute()
 
 # There are always at least 5 levels of the notes. As the first 4 ones are essentially always the same ("notes/Progress Notes/Past History/Organ Systems/") and the 5th one tends to not be very specific (only indicates which organ system it affected, when it isn't just a case of no health problems detected), it's best to preserve the 5th and isolate the remaining string as a new feature. This way, the split provides further insight to the model on similar notes.
 
-pasthist_df['pasthistorytype'] = pasthist_df.pasthistorypath.apply(lambda x: utils.get_element_from_split(x, 4, separator='/'), meta=('x', str))
-pasthist_df['pasthistorydetails'] = pasthist_df.pasthistorypath.apply(lambda x: utils.get_element_from_split(x, 5, separator='/', till_the_end=True), meta=('x', str))
+pasthist_df['pasthistorytype'] = pasthist_df.pasthistorypath.apply(lambda x: search_explore.get_element_from_split(x, 4, separator='/'), meta=('x', str))
+pasthist_df['pasthistorydetails'] = pasthist_df.pasthistorypath.apply(lambda x: search_explore.get_element_from_split(x, 5, separator='/', till_the_end=True), meta=('x', str))
 pasthist_df.head()
 
 # `pasthistoryvalue` seems to correspond to the last element of `pasthistorydetails`. Let's confirm it:
@@ -1877,7 +1892,7 @@ pasthist_df[new_cat_feat].head()
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
     # Prepare for embedding, i.e. enumerate categories
-    pasthist_df[feature], cat_embed_feat_enum[feature] = utils.enum_categorical_feature(pasthist_df, feature)
+    pasthist_df[feature], cat_embed_feat_enum[feature] = embedding.enum_categorical_feature(pasthist_df, feature)
 # -
 
 pasthist_df[new_cat_feat].head()
@@ -1931,7 +1946,7 @@ pasthist_df[pasthist_df.patientunitstayid == 1558102].compute().head(10)
 # ### Join rows that have the same IDs
 
 # + {"pixiedust": {"displayParams": {}}}
-pasthist_df = utils.join_categorical_enum(pasthist_df, new_cat_embed_feat, id_columns=['patientunitstayid'])
+pasthist_df = embedding.join_categorical_enum(pasthist_df, new_cat_embed_feat, id_columns=['patientunitstayid'])
 pasthist_df.head()
 # -
 
@@ -2004,7 +2019,7 @@ infdrug_df.dtypes
 # ### Check for missing values
 
 # + {"pixiedust": {"displayParams": {}}}
-utils.dataframe_missing_values(infdrug_df)
+search_explore.dataframe_missing_values(infdrug_df)
 # -
 
 # ### Remove unneeded features
@@ -2068,7 +2083,7 @@ infdrug_df[new_cat_feat].head()
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
     # Prepare for embedding, i.e. enumerate categories
-    infdrug_df[feature], cat_embed_feat_enum[feature] = utils.enum_categorical_feature(infdrug_df, feature)
+    infdrug_df[feature], cat_embed_feat_enum[feature] = embedding.enum_categorical_feature(infdrug_df, feature)
 # -
 
 infdrug_df[new_cat_feat].head()
@@ -2101,7 +2116,7 @@ infdrug_df.head()
 
 # Standardize drug names:
 
-infdrug_df = utils.clean_naming(infdrug_df, 'drugname')
+infdrug_df = data_processing.clean_naming(infdrug_df, 'drugname')
 infdrug_df.head()
 
 # Remove duplicate rows:
@@ -2138,9 +2153,9 @@ infdrug_df[infdrug_df.patientunitstayid == 1785711].compute().head(20)
 # ### Normalize data
 
 # + {"pixiedust": {"displayParams": {}}}
-infdrug_df_norm = utils.normalize_data(infdrug_df,
-                                       columns_to_normalize=['patientweight'],
-                                       columns_to_normalize_cat=[('drugname', 'drugrate')])
+infdrug_df_norm = data_processing.normalize_data(infdrug_df,
+                                                 columns_to_normalize=['patientweight'],
+                                                 columns_to_normalize_cat=[('drugname', 'drugrate')])
 infdrug_df_norm.head()
 # -
 
@@ -2156,7 +2171,7 @@ infdrug_df_norm.patientweight.value_counts().compute()
 # ### Join rows that have the same IDs
 
 # + {"pixiedust": {"displayParams": {}}}
-infdrug_df_norm = utils.join_categorical_enum(infdrug_df_norm, new_cat_embed_feat)
+infdrug_df_norm = embedding.join_categorical_enum(infdrug_df_norm, new_cat_embed_feat)
 infdrug_df_norm.head()
 # -
 
@@ -2245,7 +2260,7 @@ diagn_df.dtypes
 # ### Check for missing values
 
 # + {"pixiedust": {"displayParams": {}}}
-utils.dataframe_missing_values(diagn_df)
+search_explore.dataframe_missing_values(diagn_df)
 # -
 
 # ### Remove unneeded features
@@ -2265,9 +2280,9 @@ diagn_df.diagnosisstring.map(lambda x: len(x.split('|'))).min().compute()
 
 # There are always at least 2 higher level diagnosis. It could be beneficial to extract those first 2 levels to separate features, so as to avoid the need for the model to learn similarities that are already known.
 
-diagn_df['diagnosis_type_1'] = diagn_df.diagnosisstring.apply(lambda x: utils.get_element_from_split(x, 0, separator='|'), meta=('x', str))
-diagn_df['diagnosis_disorder_2'] = diagn_df.diagnosisstring.apply(lambda x: utils.get_element_from_split(x, 1, separator='|'), meta=('x', str))
-diagn_df['diagnosis_detailed_3'] = diagn_df.diagnosisstring.apply(lambda x: utils.get_element_from_split(x, 2, separator='|', till_the_end=True), meta=('x', str))
+diagn_df['diagnosis_type_1'] = diagn_df.diagnosisstring.apply(lambda x: search_explore.get_element_from_split(x, 0, separator='|'), meta=('x', str))
+diagn_df['diagnosis_disorder_2'] = diagn_df.diagnosisstring.apply(lambda x: search_explore.get_element_from_split(x, 1, separator='|'), meta=('x', str))
+diagn_df['diagnosis_detailed_3'] = diagn_df.diagnosisstring.apply(lambda x: search_explore.get_element_from_split(x, 2, separator='|', till_the_end=True), meta=('x', str))
 # Remove now redundant `diagnosisstring` feature
 diagn_df = diagn_df.drop('diagnosisstring', axis=1)
 diagn_df.head()
@@ -2303,7 +2318,7 @@ diagn_df[new_cat_feat].head()
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
     # Prepare for embedding, i.e. enumerate categories
-    diagn_df[feature], cat_embed_feat_enum[feature] = utils.enum_categorical_feature(diagn_df, feature)
+    diagn_df[feature], cat_embed_feat_enum[feature] = embedding.enum_categorical_feature(diagn_df, feature)
 # -
 
 diagn_df[new_cat_feat].head()
@@ -2370,7 +2385,7 @@ diagn_df[diagn_df.patientunitstayid == 3089982].compute().head(10)
 # ### Join rows that have the same IDs
 
 # + {"pixiedust": {"displayParams": {}}}
-diagn_df = utils.join_categorical_enum(diagn_df, new_cat_embed_feat)
+diagn_df = embedding.join_categorical_enum(diagn_df, new_cat_embed_feat)
 diagn_df.head()
 # -
 
@@ -2449,7 +2464,7 @@ admsdrug_df.dtypes
 # ### Check for missing values
 
 # + {"pixiedust": {"displayParams": {}}}
-utils.dataframe_missing_values(admsdrug_df)
+search_explore.dataframe_missing_values(admsdrug_df)
 # -
 
 # ### Remove unneeded features
@@ -2492,7 +2507,7 @@ admsdrug_df.drugadmitfrequency = admsdrug_df.drugadmitfrequency.replace(' ', np.
 admsdrug_df.head()
 
 # + {"pixiedust": {"displayParams": {}}}
-utils.dataframe_missing_values(admsdrug_df)
+search_explore.dataframe_missing_values(admsdrug_df)
 
 # + {"toc-hr-collapsed": false, "cell_type": "markdown"}
 # ### Discretize categorical features
@@ -2530,7 +2545,7 @@ for i in range(len(new_cat_embed_feat)):
     if feature == 'drughiclseqno':
         continue
     # Prepare for embedding, i.e. enumerate categories
-    admsdrug_df[feature], cat_embed_feat_enum[feature] = utils.enum_categorical_feature(admsdrug_df, feature)
+    admsdrug_df[feature], cat_embed_feat_enum[feature] = embedding.enum_categorical_feature(admsdrug_df, feature)
 # -
 
 admsdrug_df[new_cat_feat].head()
@@ -2598,8 +2613,8 @@ admsdrug_df_norm = admsdrug_df.reset_index()
 admsdrug_df_norm.head()
 
 # + {"pixiedust": {"displayParams": {}}}
-admsdrug_df_norm = utils.normalize_data(admsdrug_df_norm, columns_to_normalize=False,
-                                        columns_to_normalize_cat=[(['drughiclseqno', 'drugunit'], 'drugdosage')])
+admsdrug_df_norm = data_processing.normalize_data(admsdrug_df_norm, columns_to_normalize=False,
+                                                  columns_to_normalize_cat=[(['drughiclseqno', 'drugunit'], 'drugdosage')])
 admsdrug_df_norm.head()
 # -
 
@@ -2625,7 +2640,7 @@ admsdrug_df_norm.visualize()
 # Even after removing duplicates rows, there are still some that have different information for the same ID and timestamp. We have to concatenate the categorical enumerations.
 
 # + {"pixiedust": {"displayParams": {}}}
-admsdrug_df_norm = utils.join_categorical_enum(admsdrug_df_norm, new_cat_embed_feat)
+admsdrug_df_norm = embedding.join_categorical_enum(admsdrug_df_norm, new_cat_embed_feat)
 admsdrug_df_norm.head()
 # -
 
@@ -2704,7 +2719,7 @@ med_df.dtypes
 # ### Check for missing values
 
 # + {"pixiedust": {"displayParams": {}}}
-utils.dataframe_missing_values(med_df)
+search_explore.dataframe_missing_values(med_df)
 # -
 
 # ### Remove unneeded features
@@ -2747,7 +2762,7 @@ med_df = client.persist(med_df)
 med_df.visualize()
 
 # + {"pixiedust": {"displayParams": {}}}
-utils.dataframe_missing_values(med_df)
+search_explore.dataframe_missing_values(med_df)
 # -
 
 # ### Separating units from dosage
@@ -2766,7 +2781,7 @@ med_df.head()
 
 # Get the dosage and unit values for each row:
 
-med_df[['drugdosage', 'drugunit']] = med_df.apply(utils.set_dosage_and_units, axis=1, result_type='expand')
+med_df[['drugdosage', 'drugunit']] = med_df.apply(data_processing.set_dosage_and_units, axis=1, result_type='expand')
 med_df.head()
 
 # Remove the now unneeded `dosage` column:
@@ -2817,7 +2832,7 @@ for i in range(len(new_cat_embed_feat)):
     if feature == 'drughiclseqno':
         continue
     # Prepare for embedding, i.e. enumerate categories
-    med_df[feature], cat_embed_feat_enum[feature] = utils.enum_categorical_feature(med_df, feature)
+    med_df[feature], cat_embed_feat_enum[feature] = embedding.enum_categorical_feature(med_df, feature)
 # -
 
 med_df[new_cat_feat].head()
@@ -2922,8 +2937,8 @@ med_df_norm = med_df.reset_index()
 med_df_norm.head()
 
 # + {"pixiedust": {"displayParams": {}}}
-med_df_norm = utils.normalize_data(med_df_norm, columns_to_normalize=False,
-                                   columns_to_normalize_cat=[(['drughiclseqno', 'drugunit'], 'drugdosage')])
+med_df_norm = data_processing.normalize_data(med_df_norm, columns_to_normalize=False,
+                                             columns_to_normalize_cat=[(['drughiclseqno', 'drugunit'], 'drugdosage')])
 med_df_norm.head()
 # -
 
@@ -2951,7 +2966,7 @@ med_df_norm.visualize()
 list(set(med_df_norm.columns) - set(new_cat_embed_feat) - set(['patientunitstayid', 'ts']))
 
 # + {"pixiedust": {"displayParams": {}}}
-med_df_norm = utils.join_categorical_enum(med_df_norm, new_cat_embed_feat)
+med_df_norm = embedding.join_categorical_enum(med_df_norm, new_cat_embed_feat)
 med_df_norm.head()
 # -
 
@@ -3039,7 +3054,7 @@ note_df.dtypes
 # ### Check for missing values
 
 # + {"pixiedust": {"displayParams": {}}}
-utils.dataframe_missing_values(note_df)
+search_explore.dataframe_missing_values(note_df)
 # -
 
 # ### Remove unneeded features
@@ -3067,9 +3082,9 @@ len(note_df)
 
 category_types_to_remove = ['obtain', 'print', 'copies', 'options']
 
-utils.find_row_contains_word(note_df, feature='notepath', words=category_types_to_remove).value_counts().compute()
+search_explore.find_row_contains_word(note_df, feature='notepath', words=category_types_to_remove).value_counts().compute()
 
-note_df = note_df[~utils.find_row_contains_word(note_df, feature='notepath', words=category_types_to_remove)]
+note_df = note_df[~search_explore.find_row_contains_word(note_df, feature='notepath', words=category_types_to_remove)]
 note_df.head()
 
 len(note_df)
@@ -3095,33 +3110,33 @@ note_df.notepath.map(lambda x: len(x.split('/'))).min().compute()
 
 note_df.notepath.map(lambda x: len(x.split('/'))).max().compute()
 
-note_df.notepath.apply(lambda x: utils.get_element_from_split(x, 1, separator='/'),
+note_df.notepath.apply(lambda x: search_explore.get_element_from_split(x, 1, separator='/'),
                        meta=('x', str)).value_counts().compute()
 
-note_df.notepath.apply(lambda x: utils.get_element_from_split(x, 2, separator='/'),
+note_df.notepath.apply(lambda x: search_explore.get_element_from_split(x, 2, separator='/'),
                        meta=('x', str)).value_counts().compute()
 
-note_df.notepath.apply(lambda x: utils.get_element_from_split(x, 3, separator='/'),
+note_df.notepath.apply(lambda x: search_explore.get_element_from_split(x, 3, separator='/'),
                        meta=('x', str)).value_counts().compute()
 
-note_df.notepath.apply(lambda x: utils.get_element_from_split(x, 4, separator='/'),
+note_df.notepath.apply(lambda x: search_explore.get_element_from_split(x, 4, separator='/'),
                        meta=('x', str)).value_counts().compute()
 
-note_df.notepath.apply(lambda x: utils.get_element_from_split(x, 5, separator='/'),
+note_df.notepath.apply(lambda x: search_explore.get_element_from_split(x, 5, separator='/'),
                        meta=('x', str)).value_counts().compute()
 
-note_df.notepath.apply(lambda x: utils.get_element_from_split(x, 6, separator='/'),
+note_df.notepath.apply(lambda x: search_explore.get_element_from_split(x, 6, separator='/'),
                        meta=('x', str)).value_counts().compute()
 
-note_df.notepath.apply(lambda x: utils.get_element_from_split(x, 7, separator='/'),
+note_df.notepath.apply(lambda x: search_explore.get_element_from_split(x, 7, separator='/'),
                        meta=('x', str)).value_counts().compute()
 
 note_df.notevalue.value_counts().compute()
 
 # There are always 8 levels of the notes. As the first 6 ones are essentially always the same ("notes/Progress Notes/Social History / Family History/Social History/Social History/"), it's best to just preserve the 7th one and isolate the 8th in a new feature. This way, the split provides further insight to the model on similar notes. However, it's also worth taking note that the 8th level of `notepath` seems to be identical to the feature `notevalue`. We'll look more into it later.
 
-note_df['notetopic'] = note_df.notepath.apply(lambda x: utils.get_element_from_split(x, 6, separator='/'), meta=('x', str))
-note_df['notedetails'] = note_df.notepath.apply(lambda x: utils.get_element_from_split(x, 7, separator='/'), meta=('x', str))
+note_df['notetopic'] = note_df.notepath.apply(lambda x: search_explore.get_element_from_split(x, 6, separator='/'), meta=('x', str))
+note_df['notedetails'] = note_df.notepath.apply(lambda x: search_explore.get_element_from_split(x, 7, separator='/'), meta=('x', str))
 note_df.head()
 
 # Remove the now redundant `notepath` column:
@@ -3161,7 +3176,7 @@ note_df = note_df.categorize(columns=['notetopic', 'notevalue'])
 # Transform the `notetopic` categories and `notevalue` values into separate features:
 
 # [TODO] Adapt the category_to_feature method to Dask
-note_df = dd.from_pandas(utils.category_to_feature(note_df.compute(), categories_feature='notetopic', values_feature='notevalue', min_len=1000), npartitions=30)
+note_df = dd.from_pandas(data_processing.category_to_feature(note_df.compute(), categories_feature='notetopic', values_feature='notevalue', min_len=1000), npartitions=30)
 note_df.head()
 
 # Now we have the categories separated into their own features, as desired. Notice also how categories `Bleeding Disorders` and `Recent Travel` weren't added, as they appeared in less than the specified minimum of 1000 rows.
@@ -3212,7 +3227,7 @@ note_df[new_cat_feat].head()
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
     # Prepare for embedding, i.e. enumerate categories
-    note_df[feature], cat_embed_feat_enum[feature] = utils.enum_categorical_feature(note_df, feature)
+    note_df[feature], cat_embed_feat_enum[feature] = embedding.enum_categorical_feature(note_df, feature)
 # -
 
 note_df[new_cat_feat].head()
@@ -3281,7 +3296,7 @@ note_df[note_df.patientunitstayid == 3052175].compute().head(10)
 # ### Join rows that have the same IDs
 
 # + {"pixiedust": {"displayParams": {}}}
-note_df = utils.join_categorical_enum(note_df, cont_join_method='max')
+note_df = embedding.join_categorical_enum(note_df, cont_join_method='max')
 note_df.head()
 # -
 
@@ -3360,7 +3375,7 @@ treat_df.dtypes
 # ### Check for missing values
 
 # + {"pixiedust": {"displayParams": {}}}
-utils.dataframe_missing_values(treat_df)
+search_explore.dataframe_missing_values(treat_df)
 # -
 
 # ### Remove unneeded features
@@ -3382,29 +3397,29 @@ treat_df.treatmentstring.map(lambda x: len(x.split('|'))).max().compute()
 
 # There are always at least 3 higher level diagnosis. It could be beneficial to extract those first 3 levels to separate features, with the last one getting values until the end of the string, so as to avoid the need for the model to learn similarities that are already known.
 
-treat_df.treatmentstring.apply(lambda x: utils.get_element_from_split(x, 0, separator='|'),
+treat_df.treatmentstring.apply(lambda x: search_explore.get_element_from_split(x, 0, separator='|'),
                                meta=('x', str)).value_counts().compute()
 
-treat_df.treatmentstring.apply(lambda x: utils.get_element_from_split(x, 1, separator='|'),
+treat_df.treatmentstring.apply(lambda x: search_explore.get_element_from_split(x, 1, separator='|'),
                                meta=('x', str)).value_counts().compute()
 
-treat_df.treatmentstring.apply(lambda x: utils.get_element_from_split(x, 2, separator='|'),
+treat_df.treatmentstring.apply(lambda x: search_explore.get_element_from_split(x, 2, separator='|'),
                                meta=('x', str)).value_counts().compute()
 
-treat_df.treatmentstring.apply(lambda x: utils.get_element_from_split(x, 3, separator='|'),
+treat_df.treatmentstring.apply(lambda x: search_explore.get_element_from_split(x, 3, separator='|'),
                                meta=('x', str)).value_counts().compute()
 
-treat_df.treatmentstring.apply(lambda x: utils.get_element_from_split(x, 4, separator='|'),
+treat_df.treatmentstring.apply(lambda x: search_explore.get_element_from_split(x, 4, separator='|'),
                                meta=('x', str)).value_counts().compute()
 
-treat_df.treatmentstring.apply(lambda x: utils.get_element_from_split(x, 5, separator='|'),
+treat_df.treatmentstring.apply(lambda x: search_explore.get_element_from_split(x, 5, separator='|'),
                                meta=('x', str)).value_counts().compute()
 
 # <!-- There are always 8 levels of the notes. As the first 6 ones are essentially always the same ("notes/Progress Notes/Social History / Family History/Social History/Social History/"), it's best to just preserve the 7th one and isolate the 8th in a new feature. This way, the split provides further insight to the model on similar notes. However, it's also worth taking note that the 8th level of `notepath` seems to be identical to the feature `notevalue`. We'll look more into it later. -->
 
-treat_df['treatmenttype'] = treat_df.treatmentstring.apply(lambda x: utils.get_element_from_split(x, 0, separator='|'), meta=('x', str))
-treat_df['treatmenttherapy'] = treat_df.treatmentstring.apply(lambda x: utils.get_element_from_split(x, 1, separator='|'), meta=('x', str))
-treat_df['treatmentdetails'] = treat_df.treatmentstring.apply(lambda x: utils.get_element_from_split(x, 2, separator='|', till_the_end=True), meta=('x', str))
+treat_df['treatmenttype'] = treat_df.treatmentstring.apply(lambda x: search_explore.get_element_from_split(x, 0, separator='|'), meta=('x', str))
+treat_df['treatmenttherapy'] = treat_df.treatmentstring.apply(lambda x: search_explore.get_element_from_split(x, 1, separator='|'), meta=('x', str))
+treat_df['treatmentdetails'] = treat_df.treatmentstring.apply(lambda x: search_explore.get_element_from_split(x, 2, separator='|', till_the_end=True), meta=('x', str))
 treat_df.head()
 
 # Remove the now redundant `treatmentstring` column:
@@ -3449,7 +3464,7 @@ treat_df[new_cat_feat].head()
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
     # Prepare for embedding, i.e. enumerate categories
-    treat_df[feature], cat_embed_feat_enum[feature] = utils.enum_categorical_feature(treat_df, feature)
+    treat_df[feature], cat_embed_feat_enum[feature] = embedding.enum_categorical_feature(treat_df, feature)
 # -
 
 treat_df[new_cat_feat].head()
@@ -3516,7 +3531,7 @@ treat_df[treat_df.patientunitstayid == 1352520].compute().head(10)
 # ### Join rows that have the same IDs
 
 # + {"pixiedust": {"displayParams": {}}}
-treat_df = utils.join_categorical_enum(treat_df, new_cat_embed_feat)
+treat_df = embedding.join_categorical_enum(treat_df, new_cat_embed_feat)
 treat_df.head()
 # -
 
@@ -3595,7 +3610,7 @@ nursecare_df.dtypes
 # ### Check for missing values
 
 # + {"pixiedust": {"displayParams": {}}}
-utils.dataframe_missing_values(nursecare_df)
+search_explore.dataframe_missing_values(nursecare_df)
 # -
 
 # ### Remove unneeded features
@@ -3649,7 +3664,7 @@ nursecare_df = nursecare_df.categorize(columns=['celllabel', 'cellattributevalue
 # Transform the `celllabel` categories and `cellattributevalue` values into separate features:
 
 # [TODO] Adapt the category_to_feature method to Dask
-nursecare_df = dd.from_pandas(utils.category_to_feature(nursecare_df.compute(), categories_feature='celllabel', values_feature='cellattributevalue', min_len=1000), npartitions=30)
+nursecare_df = dd.from_pandas(data_processing.category_to_feature(nursecare_df.compute(), categories_feature='celllabel', values_feature='cellattributevalue', min_len=1000), npartitions=30)
 nursecare_df.head()
 
 # Now we have the categories separated into their own features, as desired.
@@ -3698,7 +3713,7 @@ nursecare_df[new_cat_feat].head()
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
     # Prepare for embedding, i.e. enumerate categories
-    nursecare_df[feature], cat_embed_feat_enum[feature] = utils.enum_categorical_feature(nursecare_df, feature)
+    nursecare_df[feature], cat_embed_feat_enum[feature] = embedding.enum_categorical_feature(nursecare_df, feature)
 # -
 
 nursecare_df[new_cat_feat].head()
@@ -3766,7 +3781,7 @@ nursecare_df[nursecare_df.patientunitstayid == 2798325].compute().head(10)
 
 # + {"pixiedust": {"displayParams": {}}}
 # [TODO] Find a way to join rows while ignoring zeros
-nursecare_df = utils.join_categorical_enum(nursecare_df, new_cat_embed_feat)
+nursecare_df = embedding.join_categorical_enum(nursecare_df, new_cat_embed_feat)
 nursecare_df.head()
 # -
 
@@ -3850,7 +3865,7 @@ nurseassess_df.dtypes
 # ### Check for missing values
 
 # + {"pixiedust": {"displayParams": {}}}
-utils.dataframe_missing_values(nurseassess_df)
+search_explore.dataframe_missing_values(nurseassess_df)
 # -
 
 # ### Remove unneeded features
@@ -3908,7 +3923,7 @@ nurseassess_df[new_cat_feat].head()
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
     # Prepare for embedding, i.e. enumerate categories
-    nurseassess_df[feature], cat_embed_feat_enum[feature] = utils.enum_categorical_feature(nurseassess_df, feature)
+    nurseassess_df[feature], cat_embed_feat_enum[feature] = embedding.enum_categorical_feature(nurseassess_df, feature)
 # -
 
 nurseassess_df[new_cat_feat].head()
@@ -3975,7 +3990,7 @@ nurseassess_df[nurseassess_df.patientunitstayid == 2553254].compute().head(10)
 # ### Join rows that have the same IDs
 
 # + {"pixiedust": {"displayParams": {}}}
-nurseassess_df = utils.join_categorical_enum(nurseassess_df, new_cat_embed_feat)
+nurseassess_df = embedding.join_categorical_enum(nurseassess_df, new_cat_embed_feat)
 nurseassess_df.head()
 # -
 
@@ -4058,7 +4073,7 @@ nursechart_df.dtypes
 # ### Check for missing values
 
 # + {"pixiedust": {"displayParams": {}}}
-utils.dataframe_missing_values(nursechart_df)
+search_explore.dataframe_missing_values(nursechart_df)
 # -
 
 # ### Remove unneeded features
@@ -4088,7 +4103,7 @@ nursechart_df[nursechart_df.nursingchartcelltypecat == 'ECG'].nursingchartcellty
 # Besides the usual removal of row identifier, `nurseAssessID`, and the timestamp when data was added, `nurseAssessEntryOffset`, I'm also removing `nursingchartcelltypevalname` and `cellattribute`, which have redundant info with `nursingchartcelltypecat`.
 
 nursechart_df = nursechart_df.drop(['nursechartid', 'nursechartentryoffset',
-                                      'nursingchartcelltypevalname', 'nursingchartcelltypevallabel'], axis=1)
+                                    'nursingchartcelltypevalname', 'nursingchartcelltypevallabel'], axis=1)
 nursechart_df.head()
 
 # In this table, as it indicates what nurses assessed on a patient, it might be useful to have the very own assessment type as data. As such, we won't separate the categories into individual features, contrary to what was done in nurse care.
@@ -4124,7 +4139,7 @@ nursechart_df[new_cat_feat].head()
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
     # Prepare for embedding, i.e. enumerate categories
-    nursechart_df[feature], cat_embed_feat_enum[feature] = utils.enum_categorical_feature(nursechart_df, feature)
+    nursechart_df[feature], cat_embed_feat_enum[feature] = embedding.enum_categorical_feature(nursechart_df, feature)
 # -
 
 nursechart_df[new_cat_feat].head()
@@ -4191,7 +4206,7 @@ nursechart_df[nursechart_df.patientunitstayid == 2553254].compute().head(10)
 # ### Join rows that have the same IDs
 
 # + {"pixiedust": {"displayParams": {}}}
-nursechart_df = utils.join_categorical_enum(nursechart_df, new_cat_embed_feat)
+nursechart_df = embedding.join_categorical_enum(nursechart_df, new_cat_embed_feat)
 nursechart_df.head()
 # -
 

@@ -27,6 +27,7 @@ def set_random_seed(num):
     -------
     None
     '''
+    global random_seed
     random_seed = num
     np.random.seed(random_seed)
     torch.manual_seed(random_seed)
