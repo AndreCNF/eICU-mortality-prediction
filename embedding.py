@@ -53,15 +53,7 @@ def create_enum_dict(unique_values, nan_value=0):
     # Search for NaN-like categories
     for key, val in enum_dict.items():
         if type(key) is str:
-            # Considering the possibility of just 3 more random characters in NaN-like strings
-            if ('other' in key.lower() and len(key) < 9) \
-            or ('unknown' in key.lower() and len(key) < 10) \
-            or ('null' in key.lower() and len(key) < 7) \
-            or ('nan' in key.lower() and len(key) < 6) \
-            or all([char == ' ' for char in key]) \
-            or all([char == '_' for char in key]) \
-            or ('not obtainable' in key.lower()) \
-            or ('not obtained' in key.lower()):
+            if utils.is_string_nan(key):
                 # Move NaN-like key to nan_value
                 enum_dict[key] = nan_value
         elif isinstance(key, numbers.Number):

@@ -57,6 +57,8 @@ os.chdir("../../..")
 
 # Path to the CSV dataset files
 data_path = 'Documents/Datasets/Thesis/eICU/uncompressed/'
+
+# Path to the code files
 project_path = 'Documents/GitHub/eICU-mortality-prediction/'
 # -
 
@@ -64,7 +66,7 @@ project_path = 'Documents/GitHub/eICU-mortality-prediction/'
 client = Client("tcp://127.0.0.1:56939")
 client
 
-# Upload the utils.py file, so that the Dask cluster has access to relevant auxiliary functions
+# Upload the custom methods files, so that the Dask cluster has access to relevant auxiliary functions
 client.upload_file(f'{project_path}NeuralNetwork.py')
 client.upload_file(f'{project_path}search_explore.py')
 client.upload_file(f'{project_path}data_processing.py')

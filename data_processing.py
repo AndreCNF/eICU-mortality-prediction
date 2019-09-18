@@ -55,7 +55,59 @@ def get_clean_label(orig_label, clean_labels, column_name=None):
         return 'missing_value'
 
 
-def clean_naming(df, column):
+def standardize_missing_values(x):
+    '''Apply function to be used in replacing missing value representations with
+    the standard NumPy NaN value.
+
+    Parameters
+    ----------
+    x : str, int or float
+        Value to be analyzed and replaced with NaN, if it has a missing value
+        representation.
+
+    Returns
+    -------
+    x : str, int or float
+        Corrected value, with standardized missing value representation.
+    '''
+    if type(x) is str:
+        if utils.is_string_nan(x):
+            return np.nan
+        else:
+            return x
+    else:
+        return x
+
+
+def standardize_missing_values_df(df, see_progress=True):
+    '''Replace all elements in a dataframe that have a missing value
+    representation with the standard NumPy NaN value.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame or dask.DataFrame
+        Dataframe to be analyzed and have its content replaced with NaN,
+        wherever a missing value representation is found.
+    see_progress : bool, default True
+        If set to True, a progress bar will show up indicating the execution
+        of the normalization calculations.
+
+    Returns
+    -------
+    df : pandas.DataFrame or dask.DataFrame
+        Corrected dataframe, with standardized missing value representation.
+    '''
+    for feature in utils.iterations_loop(df.columns, see_progress=see_progress):
+        if 'dask' in str(type(df)):
+            df[feature] = df[feature].apply(standardize_missing_values, meta=df[feature]._meta.dtypes)
+        elif 'pandas' in str(type(df)):
+            df[feature] = df[feature].apply(standardize_missing_values)
+        else:
+            raise Exception(f'ERROR: Input \'df\' should either be a pandas dataframe or a dask dataframe, not type {type(df)}.')
+    return df
+
+
+def clean_naming(df, column, clean_missing_values=True):
     '''Change categorical values to only have lower case letters and underscores.
 
     Parameters
@@ -75,10 +127,14 @@ def clean_naming(df, column):
         df[column] = df[column].map(lambda x: str(x).lower().replace('  ', '') \
                                                             .replace(' ', '_') \
                                                             .replace(',', '_and'), meta=('x', str))
+        if clean_missing_values:
+            df[column] = df[column].apply(standardize_missing_values, meta=df[column]._meta.dtypes)
     else:
         df[column] = df[column].map(lambda x: str(x).lower().replace('  ', '') \
                                                             .replace(' ', '_') \
                                                             .replace(',', '_and'))
+        if clean_missing_values:
+            df[column] = df[column].apply(standardize_missing_values)
     return df
 
 
