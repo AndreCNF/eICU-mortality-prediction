@@ -1022,3 +1022,264 @@ def set_dosage_and_units(df, orig_column='dosage'):
             return dosage, unit
     except:
         return dosage, unit
+
+
+def signal_idx_derivative(s, time_scale='seconds', periods=1):
+    '''Creates a series that contains the signal's index derivative, with the
+    same divisions (if needed) as the original data and on the desired time
+    scale.
+
+    Parameters
+    ----------
+    s : pandas.Series or dask.Series
+        Series which will be analyzed for outlier detection.
+    time_scale : bool, default 'seconds'
+        How to calculate derivatives, either with respect to the index values,
+        on the time scale of 'seconds', 'minutes', 'hours', 'days', 'months' or
+        'years', or just sequentially, just getting the difference between
+        consecutive values, 'False'. Only used if parameter 'signal' isn't set
+        to 'value'.
+    periods : int, default 1
+        Defines the steps to take when calculating the derivative. When set to 1,
+        it performs a normal backwards derivative. When set to 1, it performs a
+        normal forwards derivative.
+
+    Returns
+    -------
+    s_idx : pandas.Series or dask.Series
+        Index derivative signal, on the desired time scale.
+    '''
+    # Calculate the signal index's derivative
+    s_idx = s.index.to_series().diff()
+    if 'dask' in str(type(s_idx)):
+        # Make the new derivative have the same divisions as the original signal
+        s_idx = s_idx.to_frame().rename(columns={s.index.name:'tmp_val'}).reset_index() \
+                     .set_index(s.index.name, sorted=True, divisions=s.divisions).tmp_val
+    # Convert derivative to the desired time scale
+    if time_scale == 'seconds':
+        s_idx = s_idx.dt.seconds
+    elif time_scale == 'minutes':
+        s_idx = s_idx.dt.seconds / 60
+    elif time_scale == 'hours':
+        s_idx = s_idx.dt.seconds / 3600
+    elif time_scale == 'days':
+        s_idx = s_idx.dt.seconds / 86400
+    elif time_scale == 'months':
+        s_idx = s_idx.dt.seconds / 2592000
+    return s_idx
+
+
+def threshold_outlier_detect(s, max_thrs=None, min_thrs=None, threshold_type='absolute',
+                             signal_type='value', time_scale='seconds',
+                             derivate_direction='backwards'):
+    '''Detects outliers based on predetermined thresholds.
+
+    Parameters
+    ----------
+    s : pandas.Series or dask.Series
+        Series which will be analyzed for outlier detection.
+    max_thrs : int or float, default None
+        Maximum threshold, i.e. no normal value can be larger than this
+        threshold, in the signal (or its n-order derivative) that we're
+        analyzing.
+    min_thrs : int or float, default None
+        Minimum threshold, i.e. no normal value can be smaller than this
+        threshold, in the signal (or its n-order derivative) that we're
+        analyzing.
+    threshold_type : string, default 'absolute'
+        Determines if we're using threshold values with respect to the original
+        scale of values, 'absolute', relative to the signal's mean, 'mean' or
+        'average', to the median, 'median' or to the standard deviation, 'std'.
+        As such, the possible settings are ['absolute', 'mean', 'average',
+        'median', 'std'].
+    signal_type : string, default 'value'
+        Sets if we're analyzing the original signal value, 'value', its first
+        derivative, 'derivative' or 'speed', or its second derivative, 'second
+        derivative' or 'acceleration'. As such, the possible settings are
+        ['value', 'derivative', 'speed', 'second derivative', 'acceleration'].
+    time_scale : string or bool, default 'seconds'
+        How to calculate derivatives, either with respect to the index values,
+        on the time scale of 'seconds', 'minutes', 'hours', 'days', 'months' or
+        'years', or just sequentially, just getting the difference between
+        consecutive values, 'False'. Only used if parameter 'signal' isn't set
+        to 'value'.
+    derivate_direction : string, default 'backwards'
+        The direction in which we calculate the derivative, either comparing to
+        previous values, 'backwards', or to the next values, 'forwards'. As such,
+        the possible settings are ['backwards', 'forwards']. Only used if
+        parameter 'signal' isn't set to 'value'.
+
+    Returns
+    -------
+    outlier_s : pandas.Series or dask.Series
+        Boolean series indicating where the detected outliers are.
+    '''
+    if signal_type.lower() == 'value':
+        signal = s
+    elif signal_type.lower() == 'derivative' or signal_type.lower() == 'speed':
+        if derivate_direction.lower() == 'backwards':
+            periods = 1
+        elif derivate_direction.lower() == 'forwards':
+            periods = -1
+        else:
+            raise Exception(f'ERROR: Invalid derivative direction. It must either be \'backwards\' or \'forwards\', not {derivate_direction}.')
+        # Calculate the difference between consecutive values
+        signal = s.diff(periods)
+        if time_scale:
+            # Derivate by the index values
+            signal = signal / signal_idx_derivative(signal, time_scale, periods)
+    elif signal_type.lower() == 'second derivative' or \
+         signal_type.lower() == 'acceleration':
+        if derivate_direction.lower() == 'backwards':
+            periods = 1
+        elif derivate_direction.lower() == 'forwards':
+            periods = -1
+        else:
+            raise Exception(f'ERROR: Invalid derivative direction. It must either be \'backwards\' or \'forwards\', not {derivate_direction}.')
+        # Calculate the difference between consecutive values
+        signal = s.diff(periods).diff(periods)
+        if time_scale:
+            # Derivate by the index values
+            signal = signal / signal_idx_derivative(signal, time_scale, periods)
+    else:
+        raise Exception('ERROR: Invalid signal type. It must be \'value\', \'derivative\', \'speed\', \'second derivative\' or \'acceleration\', not {signal}.')
+
+    if threshold_type.lower() == 'absolute':
+        signal = signal
+    elif threshold_type.lower() == 'mean' or threshold_type.lower() == 'average':
+        signal_mean = signal.mean()
+        if 'dask' in str(type(signal)):
+            # Make sure that the value is computed, in case we're using Dask
+            signal_mean = signal_mean.compute()
+        # Normalize by the average value
+        signal = signal / signal_mean
+    elif threshold_type.lower() == 'median':
+        if 'dask' in str(type(signal)):
+            # Make sure that the value is computed, in case we're using Dask
+            signal_median = signal.compute().median()
+        else:
+            signal_median = signal.median()
+        # Normalize by the median value
+        signal = signal / signal_median
+    elif threshold_type.lower() == 'std':
+        signal_mean = signal.mean()
+        signal_std = signal.std()
+        if 'dask' in str(type(signal)):
+            # Make sure that the values are computed, in case we're using Dask
+            signal_mean = signal_mean.compute()
+            signal_std = signal_std.compute()
+        # Normalize by the average and standard deviation values
+        signal = (signal - signal_mean) / signal_std
+    else:
+        raise Exception('ERROR: Invalid value type. It must be \'absolute\', \'mean\', \'average\', \'median\' or \'std\', not {threshold_type}.')
+
+    # Search for outliers based on the given thresholds
+    if max_thrs and min_thrs:
+        outlier_s = (signal > max_thrs) | (signal < min_thrs)
+    elif max_thrs:
+        outlier_s = signal > max_thrs
+    elif max_thrs:
+        outlier_s = signal < min_thrs
+    else:
+        raise Exception('ERROR: At least a maximum or a minimum threshold must be set. Otherwise, no outlier will ever be detected.')
+
+    return outlier_s
+
+
+def slopes_outlier_detect(s, max_thrs=4, bidir_sens=0.5, threshold_type='std',
+                          time_scale='seconds', only_bir=False):
+    '''Detects outliers based on large variations on the signal's derivatives,
+    either in one direction or on both at the same time.
+
+    Parameters
+    ----------
+    s : pandas.Series or dask.Series
+        Series which will be analyzed for outlier detection.
+    max_thrs : int or float
+        Maximum threshold, i.e. no point can have a magnitude derivative value
+        deviate more than this threshold, in the signal that we're analyzing.
+    bidir_sens : float, default 0.5
+        Dictates how much more sensitive the algorithm is when a deviation (i.e.
+        large variation) is found on both sides of the data point / both
+        directions of the derivative. In other words, it's a factor that will be
+        multiplied by the usual one-directional threshold (`max_thrs`), from which
+        the resulting value will be used as the bidirectional threshold.
+    threshold_type : string, default 'std'
+        Determines if we're using threshold values with respect to the original
+        scale of derivative values, 'absolute', relative to the derivative's
+        mean, 'mean' or 'average', to the median, 'median' or to the standard
+        deviation, 'std'. As such, the possible settings are ['absolute', 'mean',
+        'average', 'median', 'std'].
+    time_scale : string or bool, default 'seconds'
+        How to calculate derivatives, either with respect to the index values,
+        on the time scale of 'seconds', 'minutes', 'hours', 'days', 'months' or
+        'years', or just sequentially, just getting the difference between
+        consecutive values, 'False'. Only used if parameter 'signal' isn't set
+        to 'value'.
+    only_bir : bool, default False
+        If set to True, the algorithm will only check for data points that have
+        large derivatives on both directions.
+
+    Returns
+    -------
+    outlier_s : pandas.Series or dask.Series
+        Boolean series indicating where the detected outliers are.
+    '''
+    # Calculate the difference between consecutive values
+    bckwrds_deriv = s.diff()
+    frwrds_deriv = s.diff(-1)
+    if time_scale:
+        # Derivate by the index values
+        bckwrds_deriv = bckwrds_deriv / signal_idx_derivative(bckwrds_deriv, time_scale, periods=1)
+        frwrds_deriv = frwrds_deriv / signal_idx_derivative(frwrds_deriv, time_scale, periods=-1)
+
+    if threshold_type.lower() == 'absolute':
+        bckwrds_deriv = bckwrds_deriv
+        frwrds_deriv = frwrds_deriv
+    elif threshold_type.lower() == 'mean' or threshold_type.lower() == 'average':
+        bckwrds_deriv_mean = bckwrds_deriv.mean()
+        frwrds_deriv_mean = frwrds_deriv.mean()
+        if 'dask' in str(type(bckwrds_deriv)):
+            # Make sure that the value is computed, in case we're using Dask
+            bckwrds_deriv_mean = bckwrds_deriv_mean.compute()
+            frwrds_deriv_mean = frwrds_deriv_mean.compute()
+        # Normalize by the average value
+        bckwrds_deriv = bckwrds_deriv / bckwrds_deriv_mean
+        frwrds_deriv = frwrds_deriv / frwrds_deriv_mean
+    elif threshold_type.lower() == 'median':
+        bckwrds_deriv_median = bckwrds_deriv.median()
+        frwrds_deriv_median = frwrds_deriv.median()
+        if 'dask' in str(type(bckwrds_deriv)):
+            # Make sure that the value is computed, in case we're using Dask
+            bckwrds_deriv_median = bckwrds_deriv_median.compute()
+            frwrds_deriv_median = frwrds_deriv_median.compute()
+        # Normalize by the median value
+        bckwrds_deriv = bckwrds_deriv / bckwrds_deriv_median
+        frwrds_deriv = frwrds_deriv / frwrds_deriv_median
+    elif threshold_type.lower() == 'std':
+        bckwrds_deriv_mean = bckwrds_deriv.mean()
+        frwrds_deriv_mean = frwrds_deriv.mean()
+        bckwrds_deriv_std = bckwrds_deriv.std()
+        frwrds_deriv_std = frwrds_deriv.std()
+        if 'dask' in str(type(bckwrds_deriv)):
+            # Make sure that the values are computed, in case we're using Dask
+            bckwrds_deriv_mean = bckwrds_deriv_mean.compute()
+            frwrds_deriv_mean = frwrds_deriv_mean.compute()
+            bckwrds_deriv_std = bckwrds_deriv_std.compute()
+            frwrds_deriv_std = frwrds_deriv_std.compute()
+        # Normalize by the average and standard deviation values
+        bckwrds_deriv = (bckwrds_deriv - bckwrds_deriv_mean) / bckwrds_deriv_std
+        frwrds_deriv = (frwrds_deriv - frwrds_deriv_mean) / frwrds_deriv_std
+    else:
+        raise Exception('ERROR: Invalid value type. It must be \'absolute\', \'mean\', \'average\', \'median\' or \'std\', not {threshold_type}.')
+
+    # Bidirectional threshold, to be used when observing both directions of the derivative
+    bidir_max = bidir_sens * max_thrs
+    if only_bir:
+        # Search for outliers on both derivatives at the same time, always on their respective magnitudes
+        outlier_s = (bckwrds_deriv.abs() > bidir_max) & (frwrds_deriv.abs() > bidir_max)
+    else:
+        # Search for outliers on each individual derivative, followed by both at the same time with a lower threshold, always on their respective magnitudes
+        outlier_s = (bckwrds_deriv.abs() > max_thrs) | (frwrds_deriv.abs() > max_thrs) | \
+                    ((bckwrds_deriv.abs() > bidir_max) & (frwrds_deriv.abs() > bidir_max))
+    return outlier_s

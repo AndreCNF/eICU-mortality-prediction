@@ -22,3 +22,4 @@ sandbox/dask-worker-space/global.lock
 sandbox/dask-worker-space/purge.lock
 sandbox/.ipynb_checkpoints/encoding-and-joining-rows-checkpoint.ipynb
 .vscode/settings.json
+sandbox/.ipynb_checkpoints/outlier-detection-experiments-checkpoint.ipynb
