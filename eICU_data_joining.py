@@ -207,7 +207,7 @@ patient_df.visualize()
 #
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
-stream = file('cat_embed_feat_enum.yaml', 'w')
+stream = open('cat_embed_feat_enum.yaml', 'w')
 yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 
 # ### Create mortality label
@@ -409,7 +409,7 @@ patient_df.visualize()
 #
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
-stream = file('cat_embed_feat_enum.yaml', 'w')
+stream = open('cat_embed_feat_enum.yaml', 'w')
 yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 
 # ### Create the timestamp feature and sort
@@ -731,7 +731,7 @@ infect_df.visualize()
 #
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
-stream = file('cat_embed_feat_enum.yaml', 'w')
+stream = open('cat_embed_feat_enum.yaml', 'w')
 yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 
 # ### Create the timestamp feature and sort
@@ -936,7 +936,7 @@ micro_df.visualize()
 #
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
-stream = file('cat_embed_feat_enum.yaml', 'w')
+stream = open('cat_embed_feat_enum.yaml', 'w')
 yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 
 # ### Create the timestamp feature and sort
@@ -1363,7 +1363,7 @@ alrg_df.visualize()
 #
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
-stream = file('cat_embed_feat_enum.yaml', 'w')
+stream = open('cat_embed_feat_enum.yaml', 'w')
 yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 
 # ### Create the timestamp feature and sort
@@ -1609,7 +1609,7 @@ careplangen_df.visualize()
 #
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
-stream = file('cat_embed_feat_enum.yaml', 'w')
+stream = open('cat_embed_feat_enum.yaml', 'w')
 yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 
 # ### Create the timestamp feature and sort
@@ -1914,7 +1914,7 @@ pasthist_df.visualize()
 #
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
-stream = file('cat_embed_feat_enum.yaml', 'w')
+stream = open('cat_embed_feat_enum.yaml', 'w')
 yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 
 # ### Remove duplicate rows
@@ -2105,7 +2105,7 @@ infdrug_df.visualize()
 #
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
-stream = file('cat_embed_feat_enum.yaml', 'w')
+stream = open('cat_embed_feat_enum.yaml', 'w')
 yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 
 # ### Create the timestamp feature and sort
@@ -2340,7 +2340,7 @@ diagn_df.visualize()
 #
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
-stream = file('cat_embed_feat_enum.yaml', 'w')
+stream = open('cat_embed_feat_enum.yaml', 'w')
 yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 
 # ### Create the timestamp feature and sort
@@ -2567,7 +2567,7 @@ admsdrug_df.visualize()
 #
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
-stream = file('cat_embed_feat_enum.yaml', 'w')
+stream = open('cat_embed_feat_enum.yaml', 'w')
 yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 
 # ### Create the timestamp feature and sort
@@ -2854,7 +2854,7 @@ med_df.visualize()
 #
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
-stream = file('cat_embed_feat_enum.yaml', 'w')
+stream = open('cat_embed_feat_enum.yaml', 'w')
 yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 
 # ### Create drug stop event
@@ -3249,7 +3249,7 @@ note_df.visualize()
 #
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
-stream = file('cat_embed_feat_enum.yaml', 'w')
+stream = open('cat_embed_feat_enum.yaml', 'w')
 yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 
 # ### Create the timestamp feature and sort
@@ -3486,7 +3486,7 @@ treat_df.visualize()
 #
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
-stream = file('cat_embed_feat_enum.yaml', 'w')
+stream = open('cat_embed_feat_enum.yaml', 'w')
 yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 
 # ### Create the timestamp feature and sort
@@ -3735,7 +3735,7 @@ nursecare_df.visualize()
 #
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
-stream = file('cat_embed_feat_enum.yaml', 'w')
+stream = open('cat_embed_feat_enum.yaml', 'w')
 yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 
 # ### Create the timestamp feature and sort
@@ -3886,13 +3886,62 @@ nurseassess_df[nurseassess_df.celllabel == 'Neurologic'].cellattributevalue.valu
 
 nurseassess_df[nurseassess_df.celllabel == 'Pupils'].cellattributevalue.value_counts().compute()
 
-# Besides the usual removal of row identifier, `nurseAssessID`, and the timestamp when data was added, `nurseAssessEntryOffset`, I'm also removing `cellattributepath` and `cellattribute`, which have redundant info with `celllabel`.
+nurseassess_df[nurseassess_df.celllabel == 'Edema'].cellattributevalue.value_counts().compute()
+
+nurseassess_df[nurseassess_df.celllabel == 'Secretions'].cellattributevalue.value_counts().compute()
+
+nurseassess_df[nurseassess_df.celllabel == 'Cough'].cellattributevalue.value_counts().compute()
+
+nurseassess_df[nurseassess_df.celllabel == 'Neurologic'].cellattribute.value_counts().compute()
+
+nurseassess_df[nurseassess_df.celllabel == 'Pupils'].cellattribute.value_counts().compute()
+
+nurseassess_df[nurseassess_df.celllabel == 'Secretions'].cellattribute.value_counts().compute()
+
+nurseassess_df[nurseassess_df.celllabel == 'Cough'].cellattribute.value_counts().compute()
+
+# Besides the usual removal of row identifier, `nurseAssessID`, and the timestamp when data was added, `nurseAssessEntryOffset`, I'm also removing `cellattributepath` and `cellattribute`, which have redundant info with `celllabel`. Regarding data categories, I'm only keeping `Neurologic`, `Pupils`, `Secretions` and `Cough`, as the remaining ones either don't add much value, have too little data or are redundant with data from other tables.
 
 nurseassess_df = nurseassess_df.drop(['nurseassessid', 'nurseassessentryoffset',
                                       'cellattributepath', 'cellattribute'], axis=1)
 nurseassess_df.head()
 
-# In this table, as it indicates what nurses assessed on a patient, it might be useful to have the very own assessment type as data. As such, we won't separate the categories into individual features, contrary to what was done in nurse care.
+categories_to_keep = ['Neurologic', 'Pupils', 'Secretions', 'Cough']
+
+nurseassess_df.celllabel.isin(categories_to_keep).head()
+
+nurseassess_df = nurseassess_df[nurseassess_df.celllabel.isin(categories_to_keep)]
+nurseassess_df.head()
+
+# ### Convert categories to features
+
+# Make the `celllabel` and `cellattributevalue` columns of type categorical:
+
+nurseassess_df = nurseassess_df.categorize(columns=['celllabel', 'cellattributevalue'])
+
+nurseassess_df.head()
+
+# Transform the `celllabel` categories and `cellattributevalue` values into separate features:
+
+# [TODO] Adapt the category_to_feature method to Dask
+# [TODO] There seems to be something wrong with this "category_to_feature" method, rewriting the `cellattributevalue` column.
+nurseassess_df = dd.from_pandas(data_processing.category_to_feature(nurseassess_df.compute(), categories_feature='celllabel', values_feature='cellattributevalue', min_len=1000), npartitions=30)
+nurseassess_df.head()
+
+# Now we have the categories separated into their own features, as desired.
+
+# Remove the old `celllabel` and `cellattributevalue` columns:
+
+nurseassess_df = nurseassess_df.drop(['celllabel', 'cellattributevalue'], axis=1)
+nurseassess_df.head()
+
+nurseassess_df['Neurologic'].value_counts().compute()
+
+nurseassess_df['Pupils'].value_counts().compute()
+
+nurseassess_df['Secretions'].value_counts().compute()
+
+nurseassess_df['Cough'].value_counts().compute()
 
 # + {"toc-hr-collapsed": false, "cell_type": "markdown"}
 # ### Discretize categorical features
@@ -3945,7 +3994,7 @@ nurseassess_df.visualize()
 #
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
-stream = file('cat_embed_feat_enum.yaml', 'w')
+stream = open('cat_embed_feat_enum.yaml', 'w')
 yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 
 # ### Create the timestamp feature and sort
@@ -4102,6 +4151,30 @@ nursechart_df[nursechart_df.nursingchartcelltypecat == 'SVO2'].nursingchartcellt
 
 nursechart_df[nursechart_df.nursingchartcelltypecat == 'ECG'].nursingchartcelltypevallabel.value_counts().compute()
 
+nursechart_df[nursechart_df.nursingchartcelltypevalname == 'Pain Score'].nursingchartcelltypevallabel.value_counts().compute()
+
+nursechart_df[nursechart_df.nursingchartcelltypevalname == 'Pain Score'].nursingchartvalue.value_counts().compute()
+
+nursechart_df[nursechart_df.nursingchartcelltypevallabel == 'Pain Assessment'].nursingchartcelltypevalname.value_counts().compute()
+
+nursechart_df[nursechart_df.nursingchartcelltypevallabel == 'Pain Assessment'].nursingchartvalue.value_counts().compute()
+
+nursechart_df[nursechart_df.nursingchartcelltypevallabel == 'Pain Present'].nursingchartcelltypevalname.value_counts().compute()
+
+nursechart_df[nursechart_df.nursingchartcelltypevallabel == 'Pain Present'].nursingchartvalue.value_counts().compute()
+
+nursechart_df[nursechart_df.nursingchartcelltypevallabel == 'Glasgow coma score'].nursingchartcelltypevalname.value_counts().compute()
+
+nursechart_df[nursechart_df.nursingchartcelltypevallabel == 'Glasgow coma score'].nursingchartvalue.value_counts().compute()
+
+nursechart_df[nursechart_df.nursingchartcelltypevalname == 'GCS Total'].nursingchartcelltypevallabel.value_counts().compute()
+
+nursechart_df[nursechart_df.nursingchartcelltypevalname == 'GCS Total'].nursingchartvalue.value_counts().compute()
+
+nursechart_df[nursechart_df.nursingchartcelltypevallabel == 'Score (Glasgow Coma Scale)'].nursingchartcelltypevalname.value_counts().compute()
+
+nursechart_df[nursechart_df.nursingchartcelltypevallabel == 'Score (Glasgow Coma Scale)'].nursingchartvalue.value_counts().compute()
+
 # Besides the usual removal of row identifier, `nurseAssessID`, and the timestamp when data was added, `nurseAssessEntryOffset`, I'm also removing `nursingchartcelltypevalname` and `cellattribute`, which have redundant info with `nursingchartcelltypecat`.
 
 nursechart_df = nursechart_df.drop(['nursechartid', 'nursechartentryoffset',
@@ -4161,7 +4234,7 @@ nursechart_df.visualize()
 #
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
-stream = file('cat_embed_feat_enum.yaml', 'w')
+stream = open('cat_embed_feat_enum.yaml', 'w')
 yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 
 # ### Create the timestamp feature and sort
