@@ -220,14 +220,14 @@ def model_inference(model, seq_len_dict, dataloader=None, data=None, metrics=['l
         unpadded_scores = torch.masked_select(scores, mask.byte())      # Completely remove the padded values from the scores using the mask
         pred = torch.round(unpadded_scores)                             # Get the predictions
 
-        if output_rounded:
+        if output_rounded is True:
             # Get the predicted classes
             output = pred.int()
         else:
             # Get the model scores (class probabilities)
             output = unpadded_scores
 
-        if seq_final_outputs:
+        if seq_final_outputs is True:
             # Only get the outputs retrieved at the sequences' end
             # Cumulative sequence lengths
             final_seq_idx = np.cumsum(x_lengths) - 1
@@ -292,14 +292,14 @@ def model_inference(model, seq_len_dict, dataloader=None, data=None, metrics=['l
             unpadded_scores = torch.masked_select(scores, mask.byte())      # Completely remove the padded values from the scores using the mask
             pred = torch.round(unpadded_scores)                             # Get the predictions
 
-            if output_rounded:
+            if output_rounded is True:
                 # Get the predicted classes
                 output = torch.cat([output, pred.int()])
             else:
                 # Get the model scores (class probabilities)
                 output = torch.cat([output.float(), unpadded_scores])
 
-            if seq_final_outputs:
+            if seq_final_outputs is True:
                 # Indeces at the end of each sequence
                 final_seq_idx = [n_subject*features.shape[1]+x_lengths[n_subject]-1 for n_subject in range(features.shape[0])]
 
@@ -449,7 +449,7 @@ def train(model, train_dataloader, val_dataloader, test_dataloader, seq_len_dict
         If get_val_loss_min is set to True, the method also returns the minimum
         validation loss found during training.
     '''
-    if log_comet_ml:
+    if log_comet_ml is True:
         if experiment is None:
             # Create a new Comet.ml experiment
             experiment = Experiment(api_key=comet_ml_api_key, project_name=comet_ml_project_name, workspace=comet_ml_workspace)
@@ -488,7 +488,7 @@ def train(model, train_dataloader, val_dataloader, test_dataloader, seq_len_dict
                 model.train()                                                   # Activate dropout to train the model
                 optimizer.zero_grad()                                           # Clear the gradients of all optimized variables
 
-                if train_on_gpu:
+                if train_on_gpu is True:
                     features, labels = features.cuda(), labels.cuda()           # Move data to GPU
 
                 features, labels = features.float(), labels.float()             # Make the data have type float instead of double, as it would cause problems
@@ -577,7 +577,7 @@ def train(model, train_dataloader, val_dataloader, test_dataloader, seq_len_dict
                                   'state_dict': model.state_dict()}
                     torch.save(checkpoint, model_filename)
 
-                    if log_comet_ml and comet_ml_save_model:
+                    if log_comet_ml is True and comet_ml_save_model is True:
                         # Upload the model to Comet.ml
                         experiment.log_asset(file_data=model_filename, overwrite=True)
 
@@ -586,7 +586,7 @@ def train(model, train_dataloader, val_dataloader, test_dataloader, seq_len_dict
             train_acc = train_acc / len(train_dataloader)
             train_auc = train_auc / len(train_dataloader)
 
-            if log_comet_ml:
+            if log_comet_ml is True:
                 # Log metrics to Comet.ml
                 experiment.log_metric("train_loss", train_loss, step=epoch)
                 experiment.log_metric("train_acc", train_acc, step=epoch)
@@ -604,7 +604,7 @@ def train(model, train_dataloader, val_dataloader, test_dataloader, seq_len_dict
             warnings.warn(f'There was a problem doing training epoch {epoch}. Ending training.')
 
     try:
-        if do_test and model_filename is not None:
+        if do_test is True and model_filename is not None:
             # Load the model with the best validation performance
             model = load_checkpoint(model_filename)
 
@@ -615,11 +615,11 @@ def train(model, train_dataloader, val_dataloader, test_dataloader, seq_len_dict
     except:
         warnings.warn(f'Inference failed due to {sys.exc_info()[0]}. Skipping evaluation on test set.')
 
-    if log_comet_ml:
+    if log_comet_ml is True:
         # Only report that the experiment completed successfully if it finished the training without errors
         experiment.log_other("completed", True)
 
-    if get_val_loss_min:
+    if get_val_loss_min is True:
         # Also return the minimum validation loss alongside the corresponding model
         return model, val_loss_min.item()
 

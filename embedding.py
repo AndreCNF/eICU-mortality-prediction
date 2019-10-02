@@ -80,9 +80,9 @@ def enum_categorical_feature(df, feature, nan_value=0, clean_name=True,
         If set to True, the method assumes that the feature is of type string
         and it will make sure that all the feature's values are in lower case,
         to reduce duplicate information.
-    unique_values : list of strings, default None
-        Specifies all the unique values present in the categorical feature.
-        If not specified, the method will look for them in the dataframe.
+    apply_on_df : bool, default True
+        If set to True, the original column of the dataframe will be converted
+        to the new enumeration encoding.
 
     Returns
     -------
@@ -93,7 +93,7 @@ def enum_categorical_feature(df, feature, nan_value=0, clean_name=True,
         Dictionary containing the mapping between the original categorical values
         and the numbering obtained.
     '''
-    if clean_name:
+    if clean_name is True:
         # Clean the column's string values to have the same, standard format
         df = data_processing.clean_naming(df, feature)
     # Get the unique values of the cateforical feature
@@ -103,7 +103,7 @@ def enum_categorical_feature(df, feature, nan_value=0, clean_name=True,
         unique_values = unique_values.compute()
     # Enumerate the unique values in the categorical feature and put them in a dictionary
     enum_dict = create_enum_dict(unique_values)
-    if not apply_on_df:
+    if apply_on_df is False:
         return enum_dict
     else:
         # Create a series from the enumerations of the original feature's categories
@@ -114,7 +114,7 @@ def enum_categorical_feature(df, feature, nan_value=0, clean_name=True,
         return enum_series, enum_dict
 
 
-def enum_category_conversion(df, enum_column, enum_dict, enum_to_category=None):
+def enum_category_conversion(df, enum_column, enum_dict, enum_to_category=True):
     '''Convert between enumerated encodings and their respective categories'
     names, in either direction.
 
@@ -129,7 +129,7 @@ def enum_category_conversion(df, enum_column, enum_dict, enum_to_category=None):
     enum_dict : dict
         Dictionary containing the category names that correspond to each
         enumeration number.
-    enum_to_category : bool, default None
+    enum_to_category : bool, default True
         Indicator on which the user can specify if the conversion is from
         numerical encodings to string categories names (True) or vice-versa
         (False). By default, it's not defined (None) and the method infers the
@@ -145,15 +145,15 @@ def enum_category_conversion(df, enum_column, enum_dict, enum_to_category=None):
     # Separate the enumerations
     enums = str(df[enum_column]).split(';')
     # Check what direction the conversion is being done
-    if not enum_to_category:
+    if enum_to_category is False:
         # If all the keys are integers, then we're converting from enumerations to category names;
         # otherwise, it's the opposite direction
         enum_to_category = all([isinstance(item, int) for item in list(enum_dict.keys())])
-    # Get the individual categories names
-    if enum_to_category:
-        categories = [enum_dict[int(n)] for n in enums]
-    else:
+        # Get the individual categories names
         categories = [str(enum_dict[str(n)]) for n in enums]
+    else:
+        # Get the individual categories names
+        categories = [enum_dict[int(n)] for n in enums]
     # Join the categories by a ';' separator
     categories = ';'.join(categories)
     return categories
@@ -204,7 +204,7 @@ def converge_enum(df1, df2, cat_feat_name, dict1=None, dict2=None, nan_value=0,
     # Make copies to avoid potentially unwanted inplace changes
     data1_df = df1.copy()
     data2_df = df2.copy()
-    if dict1 and dict2:
+    if dict1 is not None and dict2 is not None:
         data1_dict = dict1.copy()
         data2_dict = dict2.copy()
     else:
@@ -225,7 +225,7 @@ def converge_enum(df1, df2, cat_feat_name, dict1=None, dict2=None, nan_value=0,
     # Combine all the unique categories into one single list
     all_categories = set(data1_categories + data2_categories)
     all_categories.remove('nan')
-    if sort:
+    if sort is True:
         all_categories = list(all_categories)
         all_categories.sort()
     # Create a new dictionary for the combined categories
@@ -233,21 +233,21 @@ def converge_enum(df1, df2, cat_feat_name, dict1=None, dict2=None, nan_value=0,
     all_data_dict['nan'] = nan_value
     # Revert the feature of each dataframe to its original categories strings
     data1_df[cat_feat_name] = data1_df.apply(lambda df: enum_category_conversion(df, enum_column=cat_feat_name,
-                                                                                       enum_dict=data1_dict_inv,
-                                                                                       enum_to_category=True),
+                                                                                 enum_dict=data1_dict_inv,
+                                                                                 enum_to_category=True),
                                              axis=1, meta=('df', str))
     data2_df[cat_feat_name] = data2_df.apply(lambda df: enum_category_conversion(df, enum_column=cat_feat_name,
-                                                                                       enum_dict=data2_dict_inv,
-                                                                                       enum_to_category=True),
+                                                                                 enum_dict=data2_dict_inv,
+                                                                                 enum_to_category=True),
                                              axis=1, meta=('df', str))
     # Convert the features' values into the new enumeration
     data1_df[cat_feat_name] = data1_df.apply(lambda df: enum_category_conversion(df, enum_column=cat_feat_name,
-                                                                                       enum_dict=all_data_dict,
-                                                                                       enum_to_category=False),
+                                                                                 enum_dict=all_data_dict,
+                                                                                 enum_to_category=False),
                                              axis=1, meta=('df', str))
     data2_df[cat_feat_name] = data2_df.apply(lambda df: enum_category_conversion(df, enum_column=cat_feat_name,
-                                                                                       enum_dict=all_data_dict,
-                                                                                       enum_to_category=False),
+                                                                                 enum_dict=all_data_dict,
+                                                                                 enum_to_category=False),
                                              axis=1, meta=('df', str))
     return data1_df, data2_df, all_data_dict
 
@@ -334,10 +334,10 @@ def join_categorical_enum(df, cat_feat=[], id_columns=['patientunitstayid', 'ts'
         data_df[feature] = data_df[feature].astype(str)
         # Join with other categorical enumerations on the same ID's
         data_to_add = data_df.groupby(id_columns)[feature].apply(lambda x: ';'.join(x)).to_frame().reset_index()
-        if remove_listed_nan:
+        if remove_listed_nan is True:
             # Remove NaN values from rows with non-NaN values
             data_to_add[feature] = data_to_add[feature].apply(lambda x: remove_nan_enum_from_string(x, nan_value))
-        if has_timestamp:
+        if has_timestamp is True:
             # Sort by time `ts` and set it as index
             data_to_add = data_to_add.set_index('ts')
         # Add to the list of dataframes that will be merged
@@ -352,7 +352,7 @@ def join_categorical_enum(df, cat_feat=[], id_columns=['patientunitstayid', 'ts'
             data_to_add = data_df.groupby(id_columns)[feature].min().to_frame().reset_index()
         elif cont_join_method.lower() == 'max':
             data_to_add = data_df.groupby(id_columns)[feature].max().to_frame().reset_index()
-        if has_timestamp:
+        if has_timestamp is True:
             # Sort by time `ts` and set it as index
             data_to_add = data_to_add.set_index('ts')
         # Add to the list of dataframes that will be merged

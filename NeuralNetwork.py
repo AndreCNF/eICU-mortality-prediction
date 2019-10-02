@@ -2,6 +2,8 @@ import torch                            # PyTorch to create and apply deep learn
 from torch import nn, optim             # nn for neural network layers and optim for training optimizers
 from torch.nn import functional as F    # Module containing several activation functions
 
+# [TODO] Create new classes for each model type and add options to include
+# variants such as embedding, time decay, regularization learning, etc
 class NeuralNetwork(nn.Module):
     def __init__(self, n_inputs, n_hidden, n_outputs, n_layers, p_dropout):
         super().__init__()
@@ -53,7 +55,7 @@ class NeuralNetwork(nn.Module):
         # Classification scores after applying the fully connected layers and softmax
         output = torch.sigmoid(self.fc(flat_lstm_output))
 
-        if get_hidden_state:
+        if get_hidden_state is True:
             return output, self.hidden
         else:
             return output
@@ -107,7 +109,7 @@ class NeuralNetwork(nn.Module):
         # Check if GPU is available
         train_on_gpu = torch.cuda.is_available()
 
-        if train_on_gpu:
+        if train_on_gpu is True:
             hidden = (weight.new(self.n_layers, batch_size, self.n_hidden).zero_().cuda(),
                       weight.new(self.n_layers, batch_size, self.n_hidden).zero_().cuda())
         else:

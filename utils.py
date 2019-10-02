@@ -117,18 +117,18 @@ def is_string_nan(x):
         value representation or False if it doesn't.
     '''
     # Considering the possibility of just 3 more random characters in NaN-like strings
-    if ('other' in x.lower() and len(x) < 9) \
-    or ('null' in x.lower() and len(x) < 7) \
-    or ('nan' in x.lower() and len(x) < 6) \
-    or ('discrepancy' in x.lower() and len(x) < 14) \
-    or all([char == ' ' for char in x]) \
-    or all([char == '_' for char in x]) \
-    or ('unknown' in x.lower()) \
-    or ('not obtainable' in x.lower()) \
-    or ('not obtained' in x.lower()) \
-    or ('not applicable' in x.lower()) \
-    or ('not available' in x.lower()) \
-    or ('not evaluated' in x.lower()):
+    if (('other' in x.lower() and len(x) < 9)
+        or ('null' in x.lower() and len(x) < 7)
+        or ('nan' in x.lower() and len(x) < 6)
+        or ('discrepancy' in x.lower() and len(x) < 14)
+        or all([char == ' ' for char in x])
+        or all([char == '_' for char in x])
+        or ('unknown' in x.lower())
+        or ('not obtainable' in x.lower())
+        or ('not obtained' in x.lower())
+        or ('not applicable' in x.lower())
+        or ('not available' in x.lower())
+        or ('not evaluated' in x.lower())):
         return True
     else:
         return False
@@ -145,7 +145,7 @@ def in_ipynb():
 
 def iterations_loop(x, see_progress=True):
     '''Determine if a progress bar is shown or not.'''
-    if see_progress:
+    if see_progress is True:
         # Use a progress bar
         return tqdm(x)
     else:

@@ -148,7 +148,7 @@ def find_row_contains_word(df, feature, words):
         feature contains any of the words that the user is looking for.'''
     row_contains_word = None
     if not df[feature].dtype == 'object':
-        raise Exception(f'ERROR: The specified feature should have type \'object\', not type {df[feature].dtype}.')
+        raise Exception(f'ERROR: The specified feature should have type "object", not type {df[feature].dtype}.')
     if any([not isinstance(word, str) for word in words]):
         raise Exception('ERROR: All words in the specified words list should be strings.')
     if 'dask' in str(type(df)):
@@ -181,7 +181,7 @@ def get_element(x, n, till_the_end=False):
         Returns the n'th element of the list or NaN if it's not found.
     '''
     try:
-        if till_the_end:
+        if till_the_end is True:
             return x[n:]
         else:
             return x[n]
@@ -215,7 +215,7 @@ def get_element_from_split(orig_string, n, separator='|', till_the_end=False):
     split_list = orig_string.split(separator)
     # Get the n'th element of the list
     n_element = get_element(split_list, n, till_the_end)
-    if till_the_end:
+    if till_the_end is True:
         # Rejoin the elements of the list by their separator
         n_element = separator.join(n_element)
     return n_element

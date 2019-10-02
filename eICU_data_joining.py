@@ -83,10 +83,6 @@ cat_feat = []                              # List of categorical features
 cat_embed_feat = []                        # List of categorical features that will be embedded
 cat_embed_feat_enum = dict()               # Dictionary of the enumerations of the categorical features that will be embedded
 
-# + {"toc-hr-collapsed": true, "cell_type": "markdown"}
-# ## Patient data
-# -
-
 # ### Read the data
 
 patient_df = dd.read_csv(f'{data_path}original/patient.csv')
@@ -3835,7 +3831,7 @@ nursecare_df.patientunitstayid.nunique().compute()
 eICU_df = dd.merge_asof(eICU_df, nursecare_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
 eICU_df.head()
 
-# + {"toc-hr-collapsed": true, "cell_type": "markdown"}
+# + {"toc-hr-collapsed": false, "cell_type": "markdown"}
 # ## Nurse assessment data
 # -
 
@@ -3924,7 +3920,6 @@ nurseassess_df.head()
 # Transform the `celllabel` categories and `cellattributevalue` values into separate features:
 
 # [TODO] Adapt the category_to_feature method to Dask
-# [TODO] There seems to be something wrong with this "category_to_feature" method, rewriting the `cellattributevalue` column.
 nurseassess_df = dd.from_pandas(data_processing.category_to_feature(nurseassess_df.compute(), categories_feature='celllabel', values_feature='cellattributevalue', min_len=1000), npartitions=30)
 nurseassess_df.head()
 
@@ -3955,7 +3950,7 @@ nurseassess_df['Cough'].value_counts().compute()
 
 # Update list of categorical features and add those that will need embedding (features with more than 5 unique values):
 
-new_cat_feat = ['celllabel', 'cellattributevalue']
+new_cat_feat = ['Pupils', 'Neurologic', 'Secretions', 'Cough']
 [cat_feat.append(col) for col in new_cat_feat]
 
 cat_feat_nunique = [nurseassess_df[feature].nunique().compute() for feature in new_cat_feat]
@@ -4032,7 +4027,7 @@ nurseassess_df.visualize()
 
 nurseassess_df.reset_index().head()
 
-nurseassess_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='celllabel').head()
+nurseassess_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='Cough').head()
 
 nurseassess_df[nurseassess_df.patientunitstayid == 2553254].compute().head(10)
 
@@ -4047,7 +4042,7 @@ nurseassess_df.head()
 
 nurseassess_df.dtypes
 
-nurseassess_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='celllabel').head()
+nurseassess_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='Cough').head()
 
 nurseassess_df[nurseassess_df.patientunitstayid == 2553254].compute().head(10)
 
@@ -4059,12 +4054,6 @@ nurseassess_df.visualize()
 nurseassess_df = client.persist(nurseassess_df)
 
 nurseassess_df.visualize()
-
-# ### Rename columns
-
-nurseassess_df = nurseassess_df.rename(columns={'celllabel':'nurse_assess_label',
-                                                'cellattributevalue':'nurse_assess_value'})
-nurseassess_df.head()
 
 # ### Save the dataframe
 
@@ -4163,6 +4152,8 @@ nursechart_df[nursechart_df.nursingchartcelltypevallabel == 'Pain Present'].nurs
 
 nursechart_df[nursechart_df.nursingchartcelltypevallabel == 'Pain Present'].nursingchartvalue.value_counts().compute()
 
+# Regarding patient's pain information, the only label that seems to be relevant is `Pain Score`. However, it's important to note that this score has different possible measurement systems (`Pain Assessment`). Due to this, we will only consider the most frequent pain scale (`WDL`). `Pain Present` has less information and, as such, is less relevant.
+
 nursechart_df[nursechart_df.nursingchartcelltypevallabel == 'Glasgow coma score'].nursingchartcelltypevalname.value_counts().compute()
 
 nursechart_df[nursechart_df.nursingchartcelltypevallabel == 'Glasgow coma score'].nursingchartvalue.value_counts().compute()
@@ -4175,13 +4166,123 @@ nursechart_df[nursechart_df.nursingchartcelltypevallabel == 'Score (Glasgow Coma
 
 nursechart_df[nursechart_df.nursingchartcelltypevallabel == 'Score (Glasgow Coma Scale)'].nursingchartvalue.value_counts().compute()
 
-# Besides the usual removal of row identifier, `nurseAssessID`, and the timestamp when data was added, `nurseAssessEntryOffset`, I'm also removing `nursingchartcelltypevalname` and `cellattribute`, which have redundant info with `nursingchartcelltypecat`.
+# Labels `GCS Total` and `Score (Glasgow Coma Scale)` should be merged, as they represent exactly the same thing.
 
-nursechart_df = nursechart_df.drop(['nursechartid', 'nursechartentryoffset',
-                                    'nursingchartcelltypevalname', 'nursingchartcelltypevallabel'], axis=1)
+nursechart_df[nursechart_df.nursingchartcelltypevallabel == 'SEDATION SCORE'].nursingchartcelltypevalname.value_counts().compute()
+
+nursechart_df[nursechart_df.nursingchartcelltypevallabel == 'SEDATION SCORE'].nursingchartvalue.value_counts().compute()
+
+nursechart_df[nursechart_df.nursingchartcelltypevallabel == 'Sedation Scale/Score/Goal'].nursingchartcelltypevalname.value_counts().compute()
+
+nursechart_df[nursechart_df.nursingchartcelltypevallabel == 'Sedation Scale/Score/Goal'].nursingchartvalue.value_counts().compute()
+
+nursechart_df[nursechart_df.nursingchartcelltypevalname == 'Sedation Score'].nursingchartvalue.value_counts().compute()
+
+nursechart_df[nursechart_df.nursingchartcelltypevalname == 'Sedation Scale'].nursingchartvalue.value_counts().compute()
+
+nursechart_df[nursechart_df.nursingchartcelltypevallabel == 'Delirium Scale/Score'].nursingchartcelltypevalname.value_counts().compute()
+
+nursechart_df[nursechart_df.nursingchartcelltypevallabel == 'Delirium Scale/Score'].nursingchartvalue.value_counts().compute()
+
+nursechart_df[nursechart_df.nursingchartcelltypevalname == 'Delirium Score'].nursingchartvalue.value_counts().compute()
+
+nursechart_df[nursechart_df.nursingchartcelltypevalname == 'Delirium Scale'].nursingchartvalue.value_counts().compute()
+
+# Sedation and delirium scores could be interesting features, however they are presented in different scales, like in pain score, which don't seem to be directly convertable between them. Due to this, we will only consider the most frequent scale for each case (`RASS` and `CAM-ICU`, respectively).
+
+nursechart_df[nursechart_df.nursingchartcelltypevallabel == 'Best Motor Response'].nursingchartcelltypevalname.value_counts().compute()
+
+nursechart_df[nursechart_df.nursingchartcelltypevallabel == 'Best Motor Response'].nursingchartvalue.value_counts().compute()
+
+# These "Best ___ Response" features are subparts of the total Glasgow Coma Score calculation. Because of that, and for having less data, they will be discarded.
+
+nursechart_df[nursechart_df.nursingchartcelltypevallabel == 'Gastrointestinal Assessment'].nursingchartcelltypevalname.value_counts().compute()
+
+nursechart_df[nursechart_df.nursingchartcelltypevallabel == 'Gastrointestinal Assessment'].nursingchartvalue.value_counts().compute()
+
+nursechart_df[nursechart_df.nursingchartcelltypevallabel == 'Genitourinary Assessment'].nursingchartcelltypevalname.value_counts().compute()
+
+nursechart_df[nursechart_df.nursingchartcelltypevallabel == 'Genitourinary Assessment'].nursingchartvalue.value_counts().compute()
+
+nursechart_df[nursechart_df.nursingchartcelltypevallabel == 'Integumentary Assessment'].nursingchartcelltypevalname.value_counts().compute()
+
+nursechart_df[nursechart_df.nursingchartcelltypevallabel == 'Integumentary Assessment'].nursingchartvalue.value_counts().compute()
+
+# Some other information, like these gastrointestinal, genitourinary and integumentary domains, could be relevant to add. The problem is that we only seem to have acccess to how they were measured (i.e. their scale) and not the real values.
+
+# Besides the usual removal of row identifier, `nurseAssessID`, and the timestamp when data was added, `nurseAssessEntryOffset`, I'm also removing all labels and names except those that relate to pain, coma, sedation and delirium scores. Furthermore, `nursingchartcelltypecat` doesn't add much relevant info either, so it will be removed.
+
+nursechart_df = nursechart_df.drop(['nursingchartid', 'nursingchartentryoffset', 'nursingchartcelltypecat'], axis=1)
 nursechart_df.head()
 
-# In this table, as it indicates what nurses assessed on a patient, it might be useful to have the very own assessment type as data. As such, we won't separate the categories into individual features, contrary to what was done in nurse care.
+labels_to_keep = ['Glasgow coma score', 'Score (Glasgow Coma Scale)',
+                  'Sedation Scale/Score/Goal', 'Delirium Scale/Score']
+
+nursechart_df = nursechart_df[nursechart_df.nursingchartcelltypevallabel.isin(labels_to_keep)]
+nursechart_df.head()
+
+names_to_keep = ['Pain Score', 'GCS Total', 'Value', 'Sedation Score',
+                 'Sedation Scale', 'Delirium Score', 'Delirium Scale']
+
+nursechart_df = nursechart_df[nursechart_df.nursingchartcelltypevalname.isin(names_to_keep)]
+nursechart_df.head()
+
+# ### Convert categories to features
+
+# Make the `nursingchartcelltypevallabel` and `nursingchartcelltypevalname` columns of type categorical:
+
+nursechart_df = nursechart_df.categorize(columns=['nursingchartcelltypevallabel', 'nursingchartcelltypevalname'])
+
+nursechart_df.head()
+
+# Transform the `nursingchartcelltypevallabel` categories and `nursingchartvalue` values into separate features:
+
+# [TODO] Adapt the category_to_feature method to Dask
+nursechart_df = dd.from_pandas(data_processing.category_to_feature(nursechart_df.compute(), categories_feature='nursingchartcelltypevallabel', values_feature='nursingchartvalue', min_len=1000), npartitions=30)
+nursechart_df.head()
+
+# Transform the `nursingchartcelltypevalname` categories and `nursingchartvalue` values into separate features:
+
+# [TODO] Adapt the category_to_feature method to Dask
+nursechart_df = dd.from_pandas(data_processing.category_to_feature(nursechart_df.compute(), categories_feature='nursingchartcelltypevalname', values_feature='nursingchartvalue', min_len=1000), npartitions=30)
+nursechart_df.head()
+
+# Now we have the categories separated into their own features, as desired.
+
+# Remove the old `nursingchartcelltypevallabel`, `nursingchartcelltypevalname` and `nursingchartvalue` columns:
+
+nursechart_df = nursechart_df.drop(['nursingchartcelltypevallabel', 'nursingchartcelltypevalname', 'nursingchartvalue'], axis=1)
+nursechart_df.head()
+
+nursechart_df['Pain Score'].value_counts().compute()
+
+# ### Filter the most common measurement scales
+#
+# Only keep data thats is in the same, most common measurement scale.
+
+nursechart_df = nursechart_df[((nursechart_df['Pain Assessment'] == 'WDL')
+                               | (nursechart_df['Sedation Scale'] == 'RASS')
+                               | (nursechart_df['Delirium Scale'] == 'CAM-ICU'))]
+nursechart_df.head()
+
+
+# Merge Glasgow coma score columns:
+
+def set_glc(df):
+    if np.isnan(df['GLC Total']):
+        return df['Score (Glasgow Coma Scale)']
+    else:
+        return df['GLC Total']
+
+
+nursechart_df['glasgow_coma_score'] = nursechart_df.apply(lambda df: set_glc(df), axis=1)
+nursechart_df.head()
+
+# Drop unneeded columns:
+
+nursechart_df = nursechart_df.drop(['Pain Assessment', 'GLC Total', 'Score (Glasgow Coma Scale)',
+                                    'Value', 'Sedation Scale', 'Delirium Scale'], axis=1)
+nursechart_df.head()
 
 # + {"toc-hr-collapsed": false, "cell_type": "markdown"}
 # ### Discretize categorical features

@@ -119,7 +119,7 @@ def sort_by_seq_len(data, seq_len_dict, labels=None, id_column=0):
 
     is_sorted = all(x_lengths[i] >= x_lengths[i+1] for i in range(len(x_lengths)-1))
 
-    if is_sorted:
+    if is_sorted is True:
         # Do nothing if it's already sorted
         sorted_data = data
         sorted_labels = labels

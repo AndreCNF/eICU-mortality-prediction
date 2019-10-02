@@ -64,7 +64,7 @@ def create_train_sets(dataset, test_train_ratio=0.2, validation_ratio=0.1, batch
     dataset_size = len(dataset)
     indices = list(range(dataset_size))
     test_split = int(np.floor(test_train_ratio * dataset_size))
-    if shuffle_dataset:
+    if shuffle_dataset is True:
         if type(random_seed) is int:
             np.random.seed(random_seed)
         elif type(random_seed) is tuple:
@@ -77,7 +77,7 @@ def create_train_sets(dataset, test_train_ratio=0.2, validation_ratio=0.1, batch
     # Create data indices for training and validation splits
     train_dataset_size = len(train_indices)
     val_split = int(np.floor(validation_ratio * train_dataset_size))
-    if shuffle_dataset:
+    if shuffle_dataset is True:
         np.random.shuffle(train_indices)
     train_indices, val_indices = train_indices[val_split:], train_indices[:val_split]
 
@@ -91,7 +91,7 @@ def create_train_sets(dataset, test_train_ratio=0.2, validation_ratio=0.1, batch
     val_dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, sampler=val_sampler)
     test_dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, sampler=test_sampler)
 
-    if get_indeces:
+    if get_indeces is True:
         # Return the data loaders and the indices of the sets
         return train_dataloader, val_dataloader, test_dataloader, train_indices, val_indices, test_indices
     else:

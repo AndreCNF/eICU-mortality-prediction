@@ -103,7 +103,7 @@ def standardize_missing_values_df(df, see_progress=True):
         elif 'pandas' in str(type(df)):
             df[feature] = df[feature].apply(standardize_missing_values)
         else:
-            raise Exception(f'ERROR: Input \'df\' should either be a pandas dataframe or a dask dataframe, not type {type(df)}.')
+            raise Exception(f'ERROR: Input "df" should either be a pandas dataframe or a dask dataframe, not type {type(df)}.')
     return df
 
 
@@ -117,6 +117,9 @@ def clean_naming(df, column, clean_missing_values=True):
     column : string
         Name of the dataframe's column which needs to have its string values
         standardized.
+    clean_missing_values : bool, default True
+        If set to True, the algorithm will search for missing value
+        representations and replace them with the standard, NumPy NaN value.
 
     Returns
     -------
@@ -124,16 +127,16 @@ def clean_naming(df, column, clean_missing_values=True):
         Dataframe with its string column already cleaned.
     '''
     if 'dask' in str(type(df)):
-        df[column] = df[column].map(lambda x: str(x).lower().replace('  ', '') \
-                                                            .replace(' ', '_') \
-                                                            .replace(',', '_and'), meta=('x', str))
-        if clean_missing_values:
+        df[column] = (df[column].map(lambda x: str(x).lower().replace('  ', '')
+                                                             .replace(' ', '_')
+                                                             .replace(',', '_and'), meta=('x', str)))
+        if clean_missing_values is True:
             df[column] = df[column].apply(standardize_missing_values, meta=df[column]._meta.dtypes)
     else:
-        df[column] = df[column].map(lambda x: str(x).lower().replace('  ', '') \
-                                                            .replace(' ', '_') \
-                                                            .replace(',', '_and'))
-        if clean_missing_values:
+        df[column] = (df[column].map(lambda x: str(x).lower().replace('  ', '')
+                                                             .replace(' ', '_')
+                                                             .replace(',', '_and')))
+        if clean_missing_values is True:
             df[column] = df[column].apply(standardize_missing_values)
     return df
 
@@ -188,11 +191,11 @@ def one_hot_encoding_dataframe(df, columns, clean_name=True, has_nan=False,
         if col not in df.columns:
             raise Exception('ERROR: Column name not found in the dataframe.')
 
-        if has_nan:
+        if has_nan is True:
             # Fill NaN with "missing_value" name
             data[col] = data[col].fillna(value='missing_value')
 
-        if clean_name:
+        if clean_name is True:
             # Clean the column's string values to have the same, standard format
             data = clean_naming(data, col)
 
@@ -202,7 +205,7 @@ def one_hot_encoding_dataframe(df, columns, clean_name=True, has_nan=False,
     if 'dask' in str(type(data)):
         data = data.categorize(columns)
 
-    if get_new_column_names:
+    if get_new_column_names is True:
         # Find the previously existing column names
         old_column_names = data.columns
 
@@ -212,7 +215,7 @@ def one_hot_encoding_dataframe(df, columns, clean_name=True, has_nan=False,
     else:
         ohe_df = pd.get_dummies(data, columns=columns)
 
-    if join_rows:
+    if join_rows is True:
         # Columns which are one hot encoded
         ohe_columns = search_explore.list_one_hot_encoded_columns(ohe_df)
 
@@ -223,7 +226,7 @@ def one_hot_encoding_dataframe(df, columns, clean_name=True, has_nan=False,
         # (there might be duplicates which cause values bigger than 1)
         ohe_df.loc[:, ohe_columns] = ohe_df[ohe_columns].clip(upper=1)
 
-    if get_new_column_names:
+    if get_new_column_names is True:
         # Find the new column names and output them
         new_column_names = list(set(ohe_df.columns) - set(old_column_names))
         return ohe_df, new_column_names
@@ -264,7 +267,7 @@ def category_to_feature(df, categories_feature, values_feature, min_len=None):
         categories = categories.compute()
     # Create a feature for each category
     for category in categories:
-        if min_len:
+        if min_len is not None:
             # Check if the current category has enough data to be worth it to convert to a feature
             if len(data_df[data_df[categories_feature] == category]) < min_len:
                 # Ignore the current category
@@ -348,16 +351,17 @@ def apply_zscore_norm(value, df=None, mean=None, std=None, categories_means=None
     '''
     if not isinstance(value, numbers.Number):
         raise Exception(f'ERROR: Input value should be a number, not an object of type {type(value)}.')
-    if mean and std:
+    if mean is not None and std is not None:
         return (value - mean) / std
-    elif df and categories_means and categories_stds and groupby_columns:
+    elif df is not None and categories_means is not None
+         and categories_stds is not None and groupby_columns is not None:
         try:
             if isinstance(groupby_columns, list):
-                return (value - categories_means[tuple(df[groupby_columns])]) / \
-                       categories_stds[tuple(df[groupby_columns])]
+                return ((value - categories_means[tuple(df[groupby_columns])])
+                        / categories_stds[tuple(df[groupby_columns])])
             else:
-                return (value - categories_means[df[groupby_columns]]) / \
-                       categories_stds[df[groupby_columns]]
+                return ((value - categories_means[df[groupby_columns]])
+                        / categories_stds[df[groupby_columns]])
         except:
             warnings.warn(f'Couldn\'t manage to find the mean and standard deviation values for the groupby columns {groupby_columns} with values {tuple(df[groupby_columns])}.')
             return np.nan
@@ -402,11 +406,11 @@ def apply_minmax_norm(value, df=None, min=None, max=None, categories_mins=None,
     elif df and categories_mins and categories_maxs and groupby_columns:
         try:
             if isinstance(groupby_columns, list):
-                return (value - categories_mins[tuple(df[groupby_columns])]) / \
-                       (categories_maxs[tuple(df[groupby_columns])] - categories_mins[tuple(df[groupby_columns])])
+                return ((value - categories_mins[tuple(df[groupby_columns])])
+                        / (categories_maxs[tuple(df[groupby_columns])] - categories_mins[tuple(df[groupby_columns])]))
             else:
-                return (value - categories_mins[df[groupby_columns]]) / \
-                       (categories_maxs[df[groupby_columns]] - categories_mins[df[groupby_columns]])
+                return ((value - categories_mins[df[groupby_columns]])
+                        / (categories_maxs[df[groupby_columns]] - categories_mins[df[groupby_columns]]))
         except:
             warnings.warn(f'Couldn\'t manage to find the mean and standard deviation values for the groupby columns {groupby_columns} with values {tuple(df[groupby_columns])}.')
             return np.nan
@@ -447,17 +451,18 @@ def apply_zscore_denorm(value, df=None, mean=None, std=None, categories_means=No
     '''
     if not isinstance(value, numbers.Number):
         raise Exception(f'ERROR: Input value should be a number, not an object of type {type(value)}.')
-    if mean and std:
+    if mean is not None and std is not None:
         return value * std + mean
-    elif df and categories_means and categories_stds and groupby_columns:
+    elif df is not None and categories_means is not None
+         and categories_stds is not None and groupby_columns is not None:
         try:
             if isinstance(groupby_columns, list):
-                return value * categories_stds[tuple(df[groupby_columns])] \
-                       + categories_means[tuple(df[groupby_columns])]
+                return (value * categories_stds[tuple(df[groupby_columns])]
+                        + categories_means[tuple(df[groupby_columns])])
 
             else:
-                return value * categories_stds[df[groupby_columns]] + \
-                       categories_means[df[groupby_columns]]
+                return (value * categories_stds[df[groupby_columns]]
+                        + categories_means[df[groupby_columns]])
         except:
             warnings.warn(f'Couldn\'t manage to find the mean and standard deviation values for the groupby columns {groupby_columns} with values {tuple(df[groupby_columns])}.')
             return np.nan
@@ -497,16 +502,19 @@ def apply_minmax_denorm(value, df=None, min=None, max=None, categories_mins=None
     '''
     if not isinstance(value, numbers.Number):
         raise Exception(f'ERROR: Input value should be a number, not an object of type {type(value)}.')
-    if min and max:
+    if min is not None and max is not None:
         return value * (max - min) + min
-    elif df and categories_mins and categories_maxs and groupby_columns:
+    elif df is not None and categories_mins is not None
+         and categories_maxs is not None and groupby_columns is not None:
         try:
             if isinstance(groupby_columns, list):
-                return value * (categories_maxs[tuple(df[groupby_columns])] - categories_mins[tuple(df[groupby_columns])]) + \
-                       categories_mins[tuple(df[groupby_columns])]
+                return (value * (categories_maxs[tuple(df[groupby_columns])]
+                        - categories_mins[tuple(df[groupby_columns])])
+                        + categories_mins[tuple(df[groupby_columns])])
             else:
-                return value * (categories_maxs[df[groupby_columns]] - categories_mins[df[groupby_columns]]) + \
-                       categories_mins[df[groupby_columns]]
+                return (value * (categories_maxs[df[groupby_columns]]
+                        - categories_mins[df[groupby_columns]])
+                        + categories_mins[df[groupby_columns]])
         except:
             warnings.warn(f'Couldn\'t manage to find the mean and standard deviation values for the groupby columns {groupby_columns} with values {tuple(df[groupby_columns])}.')
             return np.nan
@@ -578,24 +586,24 @@ def normalize_data(df, data=None, id_columns=['patientunitstayid', 'ts'],
         # List of all columns in the dataframe, except the ID columns
         [columns_to_normalize.remove(col) for col in id_columns]
 
-        if embed_columns:
+        if embed_columns is not None:
             # Prevent all features that will be embedded from being normalized
             [columns_to_normalize.remove(col) for col in embed_columns]
 
         # List of binary or one hot encoded columns
         binary_cols = search_explore.list_one_hot_encoded_columns(df[columns_to_normalize])
 
-        if binary_cols:
+        if binary_cols is not None:
             # Prevent binary features from being normalized
             [columns_to_normalize.remove(col) for col in binary_cols]
 
-        if not columns_to_normalize:
+        if columns_to_normalize is None:
             print('No columns to normalize, returning the original dataframe.')
             return df
 
     if type(normalization_method) is not str:
         raise ValueError('Argument normalization_method should be a string. Available options \
-                         are \'z-score\' and \'min-max\'.')
+                         are "z-score" and "min-max".')
 
     if normalization_method.lower() == 'z-score':
         if columns_to_normalize is not False:
@@ -622,7 +630,7 @@ def normalize_data(df, data=None, id_columns=['patientunitstayid', 'ts'],
                 for col in utils.iterations_loop(columns_to_normalize, see_progress=see_progress):
                     data[col] = (data[col] - column_means[col]) / column_stds[col]
 
-            if columns_to_normalize_cat:
+            if columns_to_normalize_cat is not None:
                 print(f'z-score normalizing columns {columns_to_normalize_cat} by their associated categories...')
                 for col_tuple in utils.iterations_loop(columns_to_normalize_cat, see_progress=see_progress):
                     # Calculate the means and standard deviations
@@ -662,8 +670,8 @@ def normalize_data(df, data=None, id_columns=['patientunitstayid', 'ts'],
                 # Normalize the right columns
                 print(f'z-score normalizing columns {columns_to_normalize}...')
                 for col in utils.iterations_loop(tensor_columns_to_normalize, see_progress=see_progress):
-                    data[:, :, col] = (data[:, :, col] - column_means[idx_to_name[col]]) / \
-                                      column_stds[idx_to_name[col]]
+                    data[:, :, col] = ((data[:, :, col] - column_means[idx_to_name[col]])
+                                       / column_stds[idx_to_name[col]])
 
     elif normalization_method.lower() == 'min-max':
         if columns_to_normalize is not False:
@@ -687,10 +695,10 @@ def normalize_data(df, data=None, id_columns=['patientunitstayid', 'ts'],
                 # Normalize the right columns
                 print(f'min-max normalizing columns {columns_to_normalize}...')
                 for col in utils.iterations_loop(columns_to_normalize, see_progress=see_progress):
-                    data[col] = (data[col] - column_mins[col]) / \
-                                (column_maxs[col] - column_mins[col])
+                    data[col] = ((data[col] - column_mins[col])
+                                 / (column_maxs[col] - column_mins[col]))
 
-            if columns_to_normalize_cat:
+            if columns_to_normalize_cat is not None:
                 print(f'min-max normalizing columns {columns_to_normalize_cat} by their associated categories...')
                 for col_tuple in columns_to_normalize_cat:
                     # Calculate the means and standard deviations
@@ -730,12 +738,12 @@ def normalize_data(df, data=None, id_columns=['patientunitstayid', 'ts'],
                 # Normalize the right columns
                 print(f'min-max normalizing columns {columns_to_normalize}...')
                 for col in utils.iterations_loop(tensor_columns_to_normalize, see_progress=see_progress):
-                    data[:, :, col] = (data[:, :, col] - column_mins[idx_to_name[col]]) / \
-                                      (column_maxs[idx_to_name[col]] - column_mins[idx_to_name[col]])
+                    data[:, :, col] = ((data[:, :, col] - column_mins[idx_to_name[col]])
+                                       / (column_maxs[idx_to_name[col]] - column_mins[idx_to_name[col]]))
 
     else:
         raise ValueError(f'{normalization_method} isn\'t a valid normalization method. Available options \
-                         are \'z-score\' and \'min-max\'.')
+                         are "z-score" and "min-max".')
 
     return data
 
@@ -804,24 +812,24 @@ def denormalize_data(df, data=None, id_columns=['patientunitstayid', 'ts'],
         # List of all columns in the dataframe, except the ID columns
         [columns_to_denormalize.remove(col) for col in id_columns]
 
-        if embed_columns:
+        if embed_columns is not None:
             # Prevent all features that will be embedded from being denormalized
             [columns_to_denormalize.remove(col) for col in embed_columns]
 
         # List of binary or one hot encoded columns
         binary_cols = search_explore.list_one_hot_encoded_columns(df[columns_to_denormalize])
 
-        if binary_cols:
+        if binary_cols is not None:
             # Prevent binary features from being denormalized
             [columns_to_denormalize.remove(col) for col in binary_cols]
 
-        if not columns_to_denormalize:
+        if columns_to_denormalize is None:
             print('No columns to denormalize, returning the original dataframe.')
             return df
 
     if type(denormalization_method) is not str:
         raise ValueError('Argument denormalization_method should be a string. Available options \
-                         are \'z-score\' and \'min-max\'.')
+                         are "z-score" and "min-max".')
 
     if denormalization_method.lower() == 'z-score':
         if columns_to_denormalize is not False:
@@ -848,7 +856,7 @@ def denormalize_data(df, data=None, id_columns=['patientunitstayid', 'ts'],
                 for col in utils.iterations_loop(columns_to_denormalize, see_progress=see_progress):
                     data[col] = data[col] * column_stds[col] + column_means[col]
 
-            if columns_to_denormalize_cat:
+            if columns_to_denormalize_cat is not None:
                 print(f'z-score normalizing columns {columns_to_denormalize_cat} by their associated categories...')
                 for col_tuple in utils.iterations_loop(columns_to_denormalize_cat, see_progress=see_progress):
                     # Calculate the means and standard deviations
@@ -888,8 +896,8 @@ def denormalize_data(df, data=None, id_columns=['patientunitstayid', 'ts'],
                 # Normalize the right columns
                 print(f'z-score normalizing columns {columns_to_denormalize}...')
                 for col in utils.iterations_loop(tensor_columns_to_denormalize, see_progress=see_progress):
-                    data[:, :, col] = data[:, :, col] * column_stds[idx_to_name[col]] + \
-                                      column_means[idx_to_name[col]]
+                    data[:, :, col] = (data[:, :, col] * column_stds[idx_to_name[col]]
+                                       + column_means[idx_to_name[col]])
 
     elif denormalization_method.lower() == 'min-max':
         if columns_to_denormalize is not False:
@@ -913,10 +921,10 @@ def denormalize_data(df, data=None, id_columns=['patientunitstayid', 'ts'],
                 # Normalize the right columns
                 print(f'min-max normalizing columns {columns_to_denormalize}...')
                 for col in utils.iterations_loop(columns_to_denormalize, see_progress=see_progress):
-                    data[col] = data[col] * (column_maxs[col] - column_mins[col]) + \
-                                column_mins[col]
+                    data[col] = (data[col] * (column_maxs[col] - column_mins[col])
+                                 + column_mins[col])
 
-            if columns_to_denormalize_cat:
+            if columns_to_denormalize_cat is not None:
                 print(f'min-max normalizing columns {columns_to_denormalize_cat} by their associated categories...')
                 for col_tuple in columns_to_denormalize_cat:
                     # Calculate the means and standard deviations
@@ -956,12 +964,12 @@ def denormalize_data(df, data=None, id_columns=['patientunitstayid', 'ts'],
                 # Normalize the right columns
                 print(f'min-max normalizing columns {columns_to_denormalize}...')
                 for col in utils.iterations_loop(tensor_columns_to_denormalize, see_progress=see_progress):
-                    data[:, :, col] = data[:, :, col] * (column_maxs[idx_to_name[col]] - column_mins[idx_to_name[col]]) + \
-                                      column_mins[idx_to_name[col]]
+                    data[:, :, col] = (data[:, :, col] * (column_maxs[idx_to_name[col]] - column_mins[idx_to_name[col]])
+                                       + column_mins[idx_to_name[col]])
 
     else:
         raise ValueError(f'{denormalization_method} isn\'t a valid denormalization method. Available options \
-                         are \'z-score\' and \'min-max\'.')
+                         are "z-score" and "min-max".')
 
     return data
 
@@ -1053,8 +1061,10 @@ def signal_idx_derivative(s, time_scale='seconds', periods=1):
     s_idx = s.index.to_series().diff()
     if 'dask' in str(type(s_idx)):
         # Make the new derivative have the same divisions as the original signal
-        s_idx = s_idx.to_frame().rename(columns={s.index.name:'tmp_val'}).reset_index() \
-                     .set_index(s.index.name, sorted=True, divisions=s.divisions).tmp_val
+        s_idx = (s_idx.to_frame().rename(columns={s.index.name:'tmp_val'})
+                      .reset_index()
+                      .set_index(s.index.name, sorted=True, divisions=s.divisions)
+                      .tmp_val)
     # Convert derivative to the desired time scale
     if time_scale == 'seconds':
         s_idx = s_idx.dt.seconds
@@ -1122,27 +1132,27 @@ def threshold_outlier_detect(s, max_thrs=None, min_thrs=None, threshold_type='ab
         elif derivate_direction.lower() == 'forwards':
             periods = -1
         else:
-            raise Exception(f'ERROR: Invalid derivative direction. It must either be \'backwards\' or \'forwards\', not {derivate_direction}.')
+            raise Exception(f'ERROR: Invalid derivative direction. It must either be "backwards" or "forwards", not {derivate_direction}.')
         # Calculate the difference between consecutive values
         signal = s.diff(periods)
-        if time_scale:
+        if time_scale is not None:
             # Derivate by the index values
             signal = signal / signal_idx_derivative(signal, time_scale, periods)
-    elif signal_type.lower() == 'second derivative' or \
-         signal_type.lower() == 'acceleration':
+    elif (signal_type.lower() == 'second derivative'
+          or signal_type.lower() == 'acceleration'):
         if derivate_direction.lower() == 'backwards':
             periods = 1
         elif derivate_direction.lower() == 'forwards':
             periods = -1
         else:
-            raise Exception(f'ERROR: Invalid derivative direction. It must either be \'backwards\' or \'forwards\', not {derivate_direction}.')
+            raise Exception(f'ERROR: Invalid derivative direction. It must either be "backwards" or "forwards", not {derivate_direction}.')
         # Calculate the difference between consecutive values
         signal = s.diff(periods).diff(periods)
-        if time_scale:
+        if time_scale is not None:
             # Derivate by the index values
             signal = signal / signal_idx_derivative(signal, time_scale, periods)
     else:
-        raise Exception('ERROR: Invalid signal type. It must be \'value\', \'derivative\', \'speed\', \'second derivative\' or \'acceleration\', not {signal}.')
+        raise Exception('ERROR: Invalid signal type. It must be "value", "derivative", "speed", "second derivative" or "acceleration", not {signal}.')
 
     if threshold_type.lower() == 'absolute':
         signal = signal
@@ -1171,14 +1181,14 @@ def threshold_outlier_detect(s, max_thrs=None, min_thrs=None, threshold_type='ab
         # Normalize by the average and standard deviation values
         signal = (signal - signal_mean) / signal_std
     else:
-        raise Exception('ERROR: Invalid value type. It must be \'absolute\', \'mean\', \'average\', \'median\' or \'std\', not {threshold_type}.')
+        raise Exception('ERROR: Invalid value type. It must be "absolute", "mean", "average", "median" or "std", not {threshold_type}.')
 
     # Search for outliers based on the given thresholds
-    if max_thrs and min_thrs:
+    if max_thrs is not None and min_thrs is not None:
         outlier_s = (signal > max_thrs) | (signal < min_thrs)
-    elif max_thrs:
+    elif max_thrs is not None:
         outlier_s = signal > max_thrs
-    elif max_thrs:
+    elif min_thrs is not None:
         outlier_s = signal < min_thrs
     else:
         raise Exception('ERROR: At least a maximum or a minimum threshold must be set. Otherwise, no outlier will ever be detected.')
@@ -1228,7 +1238,7 @@ def slopes_outlier_detect(s, max_thrs=4, bidir_sens=0.5, threshold_type='std',
     # Calculate the difference between consecutive values
     bckwrds_deriv = s.diff()
     frwrds_deriv = s.diff(-1)
-    if time_scale:
+    if time_scale is not None:
         # Derivate by the index values
         bckwrds_deriv = bckwrds_deriv / signal_idx_derivative(bckwrds_deriv, time_scale, periods=1)
         frwrds_deriv = frwrds_deriv / signal_idx_derivative(frwrds_deriv, time_scale, periods=-1)
@@ -1271,15 +1281,15 @@ def slopes_outlier_detect(s, max_thrs=4, bidir_sens=0.5, threshold_type='std',
         bckwrds_deriv = (bckwrds_deriv - bckwrds_deriv_mean) / bckwrds_deriv_std
         frwrds_deriv = (frwrds_deriv - frwrds_deriv_mean) / frwrds_deriv_std
     else:
-        raise Exception('ERROR: Invalid value type. It must be \'absolute\', \'mean\', \'average\', \'median\' or \'std\', not {threshold_type}.')
+        raise Exception('ERROR: Invalid value type. It must be "absolute", "mean", "average", "median" or "std", not {threshold_type}.')
 
     # Bidirectional threshold, to be used when observing both directions of the derivative
     bidir_max = bidir_sens * max_thrs
-    if only_bir:
+    if only_bir is True:
         # Search for outliers on both derivatives at the same time, always on their respective magnitudes
         outlier_s = (bckwrds_deriv.abs() > bidir_max) & (frwrds_deriv.abs() > bidir_max)
     else:
         # Search for outliers on each individual derivative, followed by both at the same time with a lower threshold, always on their respective magnitudes
-        outlier_s = (bckwrds_deriv.abs() > max_thrs) | (frwrds_deriv.abs() > max_thrs) | \
-                    ((bckwrds_deriv.abs() > bidir_max) & (frwrds_deriv.abs() > bidir_max))
+        outlier_s = ((bckwrds_deriv.abs() > max_thrs) | (frwrds_deriv.abs() > max_thrs)
+                     | ((bckwrds_deriv.abs() > bidir_max) & (frwrds_deriv.abs() > bidir_max)))
     return outlier_s
