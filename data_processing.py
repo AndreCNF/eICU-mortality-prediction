@@ -278,6 +278,49 @@ def category_to_feature(df, categories_feature, values_feature, min_len=None):
     return data_df
 
 
+def category_to_feature_big_data(df, categories_feature, values_feature,
+                                 min_len=None, see_progress=True):
+    '''Convert a categorical column and its corresponding values column into
+    new features, one for each category. Optimized for very big Dask dataframes,
+    which can't be processed as a whole Pandas dataframe.
+
+    Parameters
+    ----------
+    df : dask.DataFrame
+        Dataframe on which to add the new features.
+    categories_feature : string
+        Name of the feature that contains the categories that will be converted
+        to individual features.
+    values_feature : string
+        Name of the feature that has each category's corresponding value, which
+        may or may not be a category on its own (e.g. it could be numeric values).
+    min_len : int, default None
+        If defined, only the categories that appear on at least `min_len` rows
+        are converted to features.
+    see_progress : bool, default True
+        If set to True, a progress bar will show up indicating the execution
+        of the normalization calculations.
+
+    Returns
+    -------
+    data_df : dask.DataFrame
+        Dataframe with the newly created features.
+    '''
+    # Create a list with Pandas dataframe versions of each partition of the
+    # original Dask dataframe
+    df_list = []
+    for n in utils.iterations_loop(range(df.npartitions), see_progress=see_progress):
+        # Process each partition separately in Pandas
+        tmp_df = df.get_partition(n).compute()
+        tmp_df = category_to_feature(tmp_df, categories_feature=categories_feature,
+                                     values_feature=values_feature, min_len=min_len)
+        df_list.append(tmp_df)
+    # Rejoin all the partitions into a Dask dataframe with the same number of
+    # partitions it originally had
+    data_df = dd.from_pandas(pd.concat(df_list, sort=False), npartitions=df.npartitions)
+    return data_df
+
+
 def remove_rows_unmatched_key(df, key, columns):
     '''Remove rows corresponding to the keys that weren't in the dataframe merged at the right.
 
@@ -362,7 +405,7 @@ def apply_zscore_norm(value, df=None, mean=None, std=None, categories_means=None
             else:
                 return ((value - categories_means[df[groupby_columns]])
                         / categories_stds[df[groupby_columns]])
-        except:
+        except Exception:
             warnings.warn(f'Couldn\'t manage to find the mean and standard deviation values for the groupby columns {groupby_columns} with values {tuple(df[groupby_columns])}.')
             return np.nan
     else:
@@ -411,7 +454,7 @@ def apply_minmax_norm(value, df=None, min=None, max=None, categories_mins=None,
             else:
                 return ((value - categories_mins[df[groupby_columns]])
                         / (categories_maxs[df[groupby_columns]] - categories_mins[df[groupby_columns]]))
-        except:
+        except Exception:
             warnings.warn(f'Couldn\'t manage to find the mean and standard deviation values for the groupby columns {groupby_columns} with values {tuple(df[groupby_columns])}.')
             return np.nan
     else:
@@ -463,7 +506,7 @@ def apply_zscore_denorm(value, df=None, mean=None, std=None, categories_means=No
             else:
                 return (value * categories_stds[df[groupby_columns]]
                         + categories_means[df[groupby_columns]])
-        except:
+        except Exception:
             warnings.warn(f'Couldn\'t manage to find the mean and standard deviation values for the groupby columns {groupby_columns} with values {tuple(df[groupby_columns])}.')
             return np.nan
     else:
@@ -515,7 +558,7 @@ def apply_minmax_denorm(value, df=None, min=None, max=None, categories_mins=None
                 return (value * (categories_maxs[df[groupby_columns]]
                         - categories_mins[df[groupby_columns]])
                         + categories_mins[df[groupby_columns]])
-        except:
+        except Exception:
             warnings.warn(f'Couldn\'t manage to find the mean and standard deviation values for the groupby columns {groupby_columns} with values {tuple(df[groupby_columns])}.')
             return np.nan
     else:
@@ -1017,7 +1060,7 @@ def set_dosage_and_units(df, orig_column='dosage'):
         if len(x) == 2:
             try:
                 x[0] = float(x[0])
-            except:
+            except Exception:
                 return dosage, unit
             if is_definitely_string(x[1]):
                 # Add correctly formated dosage and unit values
@@ -1028,7 +1071,7 @@ def set_dosage_and_units(df, orig_column='dosage'):
                 return dosage, unit
         else:
             return dosage, unit
-    except:
+    except Exception:
         return dosage, unit
 
 

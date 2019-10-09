@@ -322,7 +322,8 @@ def join_categorical_enum(df, cat_feat=[], id_columns=['patientunitstayid', 'ts'
     data_df = df.copy()
     # Define a list of dataframes
     df_list = []
-    # See if there is a timestamp column on the dataframe
+    # See if there is a timestamp column on the dataframe (only considering as a
+    # timestamp column those that are named 'ts')
     if has_timestamp is None:
         if 'ts' in id_columns:
             has_timestamp = True
@@ -345,7 +346,8 @@ def join_categorical_enum(df, cat_feat=[], id_columns=['patientunitstayid', 'ts'
     remaining_feat = list(set(data_df.columns) - set(cat_feat) - set(id_columns))
     print('Averaging continuous features...')
     for feature in utils.iterations_loop(remaining_feat):
-        # Join remaining features through their average, min or max value (just to be sure that there aren't missing or different values)
+        # Join remaining features through their average, min or max value
+        # (just to be sure that there aren't missing or different values)
         if cont_join_method.lower() == 'mean':
             data_to_add = data_df.groupby(id_columns)[feature].mean().to_frame().reset_index()
         elif cont_join_method.lower() == 'min':

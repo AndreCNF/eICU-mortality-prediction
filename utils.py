@@ -97,7 +97,7 @@ def is_definitely_string(x):
         float(x)
         return False
 
-    except:
+    except Exception:
         return isinstance(x, str)
 
 
@@ -138,7 +138,7 @@ def in_ipynb():
     '''Detect if code is running in a IPython notebook, such as in Jupyter Lab.'''
     try:
         return str(type(get_ipython())) == "<class 'ipykernel.zmqshell.ZMQInteractiveShell'>"
-    except:
+    except Exception:
         # Not on IPython if get_ipython fails
         return False
 

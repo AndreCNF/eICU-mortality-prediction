@@ -185,7 +185,7 @@ def get_element(x, n, till_the_end=False):
             return x[n:]
         else:
             return x[n]
-    except:
+    except Exception:
         return np.nan
 
 

@@ -600,7 +600,7 @@ def train(model, train_dataloader, val_dataloader, test_dataloader, seq_len_dict
             print(f'Epoch {epoch}: Training loss: {train_loss}; Training Accuracy: {train_acc}; Training AUC: {train_auc}; \
                     Validation loss: {val_loss}; Validation Accuracy: {val_acc}; Validation AUC: {val_auc}')
             print('----------------------')
-        except:
+        except Exception:
             warnings.warn(f'There was a problem doing training epoch {epoch}. Ending training.')
 
     try:
@@ -612,7 +612,7 @@ def train(model, train_dataloader, val_dataloader, test_dataloader, seq_len_dict
             model_inference(model, seq_len_dict, dataloader=test_dataloader , experiment=experiment)
     except UnboundLocalError:
         warnings.warn('Inference failed due to non existent saved models. Skipping evaluation on test set.')
-    except:
+    except Exception:
         warnings.warn(f'Inference failed due to {sys.exc_info()[0]}. Skipping evaluation on test set.')
 
     if log_comet_ml is True:
