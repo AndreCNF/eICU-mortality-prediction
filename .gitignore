@@ -23,3 +23,11 @@ sandbox/dask-worker-space/purge.lock
 sandbox/.ipynb_checkpoints/encoding-and-joining-rows-checkpoint.ipynb
 .vscode/settings.json
 sandbox/.ipynb_checkpoints/outlier-detection-experiments-checkpoint.ipynb
+notebooks/sandbox/.ipynb_checkpoints/category_to_feature_example-checkpoint.ipynb
+notebooks/sandbox/.ipynb_checkpoints/category_to_feature_example-checkpoint.py
+notebooks/sandbox/.ipynb_checkpoints/data-utils-tests-checkpoint.ipynb
+notebooks/sandbox/.ipynb_checkpoints/embedding-bag-test-checkpoint.ipynb
+notebooks/sandbox/.ipynb_checkpoints/encoding-and-joining-rows-checkpoint.ipynb
+notebooks/sandbox/.ipynb_checkpoints/handling-multiple-encodings-and-joins-checkpoint.ipynb
+notebooks/sandbox/.ipynb_checkpoints/outlier-detection-experiments-checkpoint.ipynb
+notebooks/sandbox/.ipynb_checkpoints/separating-a-column-into-two-checkpoint.ipynb

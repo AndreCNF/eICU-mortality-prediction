@@ -5,7 +5,7 @@ description = "Mortality prediction through recurrent neural networks on the eIC
 authors = ["André Ferreira <andrecnf@gmail.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.6"
 pandas = "^0.25.0"
 dask = "^2.2"
 torch = "^1.1"
