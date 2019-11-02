@@ -1,17 +1,53 @@
 import torch                            # PyTorch to create and apply deep learning models
 from torch import nn, optim             # nn for neural network layers and optim for training optimizers
 from torch.nn import functional as F    # Module containing several activation functions
+import math                             # Useful package for logarithm operations
+from data_utils import embedding        # Embeddings and other categorical features handling methods
 
 # [TODO] Create new classes for each model type and add options to include
 # variants such as embedding, time decay, regularization learning, etc
 class VanillaLSTM(nn.Module):
-    def __init__(self, n_inputs, n_hidden, n_outputs, n_layers, p_dropout):
+    def __init__(self, n_inputs, n_hidden, n_outputs, n_layers=1, p_dropout=0, embed_features=None,
+                 num_embeddings=None, embedding_dim=None):
+        # [TODO] Add documentation for each model class
         super().__init__()
-        self.n_inputs = n_inputs         # Number of input features
-        self.n_hidden = n_hidden         # Number of hidden units
-        self.n_outputs = n_outputs       # Number of outputs
-        self.n_layers = n_layers         # Number of LSTM layers
-        self.p_dropout = p_dropout       # Probability of dropout
+        self.n_inputs = n_inputs                # Number of input features
+        self.n_hidden = n_hidden                # Number of hidden units
+        self.n_outputs = n_outputs              # Number of outputs
+        self.n_layers = n_layers                # Number of LSTM layers
+        self.p_dropout = p_dropout              # Probability of dropout
+        self.embed_features = embed_features    # List of features that need to go through embedding layers
+        # Embedding layers
+        if self.embed_features is not None:
+            if num_embeddings is None:
+                raise Exception('ERROR: If the user specifies features to be embedded, each feature\'s number of \
+                                 embeddings must also be specified. Received a `embed_features` argument, but not \
+                                 `num_embeddings`.')
+            else:
+                if len(num_embeddings) != len(self.embed_features):
+                    raise Exception(f'ERROR: The list of the number of embeddings `num_embeddings` and the embedding \
+                                      features `embed_features` must have the same length. The provided `num_embeddings` \
+                                      has length {len(num_embeddings)} while `embed_features` has length {len(self.embed_features)}.')
+            if isinstance(self.embed_features, int):
+                self.embed_features = [self.embed_features]
+            if isinstance(self.embed_features, list):
+                # Create a modules dictionary of embedding bag layers;
+                # each key corresponds to a embedded feature's index
+                self.embed_layers = nn.ModuleDict()
+                for i in len(self.embed_features):
+                    if embedding_dim is None:
+                        # Calculate a reasonable embedding dimension for the current feature;
+                        # the formula sets a minimum embedding dimension of 3, with above
+                        # values being calculated as the rounded up base 5 logarithm of
+                        # the number of embeddings
+                        embedding_dim_i = max(3, int(math.ceil(math.log(num_embeddings[i], base=5))))
+                    else:
+                        embedding_dim_i = embedding_dim[i]
+                    # Create an embedding layer for the current feature
+                    self.embed_layers[self.embed_features[i]] = nn.EmbeddingBag(num_embeddings[i], embedding_dim_i)
+            else:
+                raise Exception(f'ERROR: The embedding features must be indicated in `embed_features` as either a \
+                                  single, integer index or a list of indices. The provided argument has type {type(embed_features)}.')
         # LSTM layer(s)
         self.lstm = nn.LSTM(self.n_inputs, self.n_hidden, self.n_layers, batch_first=True, dropout=self.p_dropout)
         # Fully connected layer which takes the LSTM's hidden units and calculates the output classification
@@ -20,6 +56,12 @@ class VanillaLSTM(nn.Module):
         self.dropout = nn.Dropout(p=self.p_dropout)
 
     def forward(self, x, x_lengths=None, get_hidden_state=False, hidden_state=None):
+        if self.embed_features is not None:
+            # Run each embedding layer on each respective feature, adding the
+            # resulting embedding values to the tensor and removinf the original,
+            # categorical encoded columns
+            x = embedding.embedding_bag_pipeline(x, self.embed_layers,
+                                                 self.embed_features, inplace=True)
         # Get the batch size (might not be always the same)
         batch_size = x.shape[0]
         if hidden_state is None:
@@ -277,7 +319,7 @@ class DeepCare(nn.Module):
         return hidden
 
 
-class Transformer-XL(nn.Module):
+class TransformerXL(nn.Module):
     def __init__(self, n_inputs, n_hidden, n_outputs, n_layers, p_dropout):
         super().__init__()
         self.n_inputs = n_inputs         # Number of input features

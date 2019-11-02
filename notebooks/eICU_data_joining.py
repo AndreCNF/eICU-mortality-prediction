@@ -466,7 +466,7 @@ patient_df_norm.head(6)
 patient_df_norm.describe().compute().transpose()
 
 # ### Clean column names
-# 
+#
 # Standardize all column names to be on lower case, have spaces replaced by underscores and remove comas.
 
 patient_df.columns = du.data_processing.clean_naming(patient_df.columns)
@@ -610,7 +610,7 @@ vital_aprdc_df_norm.head(6)
 vital_aprdc_df_norm.describe().compute().transpose()
 
 # ### Clean column names
-# 
+#
 # Standardize all column names to be on lower case, have spaces replaced by underscores and remove comas.
 
 vital_aprdc_df.columns = du.data_processing.clean_naming(vital_aprdc_df.columns)
@@ -822,7 +822,7 @@ infect_df_norm.head(6)
 infect_df_norm.describe().compute().transpose()
 
 # ### Clean column names
-# 
+#
 # Standardize all column names to be on lower case, have spaces replaced by underscores and remove comas.
 
 infect_df.columns = du.data_processing.clean_naming(infect_df.columns)
@@ -1041,7 +1041,7 @@ micro_df_norm.head(6)
 micro_df_norm.describe().compute().transpose()
 
 # ### Clean column names
-# 
+#
 # Standardize all column names to be on lower case, have spaces replaced by underscores and remove comas.
 
 micro_df.columns = du.data_processing.clean_naming(micro_df.columns)
@@ -1275,7 +1275,7 @@ resp_care_df.tail(6)
 resp_care_df[resp_care_df.patientunitstayid == 1557538].compute()
 
 # ### Clean column names
-# 
+#
 # Standardize all column names to be on lower case, have spaces replaced by underscores and remove comas.
 
 resp_care_df.columns = du.data_processing.clean_naming(resp_care_df.columns)
@@ -1309,6 +1309,269 @@ len(resp_care_df)
 resp_care_df.patientunitstayid.nunique().compute()
 
 eICU_df = dd.merge_asof(eICU_df, resp_care_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
+eICU_df.head()
+
+# + {"toc-hr-collapsed": false, "cell_type": "markdown"}
+# ## Respiratory charting data
+# -
+
+# ### Read the data
+
+resp_chart_df = dd.read_csv(f'{data_path}original/respiratoryCharting.csv')
+resp_chart_df.head()
+
+len(resp_chart_df)
+
+resp_chart_df.patientunitstayid.nunique().compute()
+
+# Only 13001 unit stays have nurse care data. Might not be useful to include them.
+
+resp_chart_df.npartitions
+
+resp_chart_df = resp_chart_df.repartition(npartitions=30)
+
+# Get an overview of the dataframe through the `describe` method:
+
+resp_chart_df.describe().compute().transpose()
+
+resp_chart_df.visualize()
+
+resp_chart_df.columns
+
+resp_chart_df.dtypes
+
+# ### Check for missing values
+
+# + {"pixiedust": {"displayParams": {}}}
+du.search_explore.dataframe_missing_values(resp_chart_df)
+# -
+
+# ### Remove unneeded features
+
+resp_chart_df.celllabel.value_counts().compute()
+
+resp_chart_df.cellattribute.value_counts().compute()
+
+resp_chart_df.cellattributevalue.value_counts().compute()
+
+resp_chart_df.cellattributepath.value_counts().compute()
+
+resp_chart_df[resp_chart_df.celllabel == 'Intervention'].cellattributevalue.value_counts().compute()
+
+resp_chart_df[resp_chart_df.celllabel == 'Neurologic'].cellattributevalue.value_counts().compute()
+
+resp_chart_df[resp_chart_df.celllabel == 'Pupils'].cellattributevalue.value_counts().compute()
+
+resp_chart_df[resp_chart_df.celllabel == 'Edema'].cellattributevalue.value_counts().compute()
+
+resp_chart_df[resp_chart_df.celllabel == 'Secretions'].cellattributevalue.value_counts().compute()
+
+resp_chart_df[resp_chart_df.celllabel == 'Cough'].cellattributevalue.value_counts().compute()
+
+resp_chart_df[resp_chart_df.celllabel == 'Neurologic'].cellattribute.value_counts().compute()
+
+resp_chart_df[resp_chart_df.celllabel == 'Pupils'].cellattribute.value_counts().compute()
+
+resp_chart_df[resp_chart_df.celllabel == 'Secretions'].cellattribute.value_counts().compute()
+
+resp_chart_df[resp_chart_df.celllabel == 'Cough'].cellattribute.value_counts().compute()
+
+# Besides the usual removal of row identifier, `nurseAssessID`, and the timestamp when data was added, `nurseAssessEntryOffset`, I'm also removing `cellattributepath` and `cellattribute`, which have redundant info with `celllabel`. Regarding data categories, I'm only keeping `Neurologic`, `Pupils`, `Secretions` and `Cough`, as the remaining ones either don't add much value, have too little data or are redundant with data from other tables.
+
+resp_chart_df = resp_chart_df.drop(['nurseassessid', 'nurseassessentryoffset',
+                                      'cellattributepath', 'cellattribute'], axis=1)
+resp_chart_df.head()
+
+categories_to_keep = ['Neurologic', 'Pupils', 'Secretions', 'Cough']
+
+resp_chart_df.celllabel.isin(categories_to_keep).head()
+
+resp_chart_df = resp_chart_df[resp_chart_df.celllabel.isin(categories_to_keep)]
+resp_chart_df.head()
+
+# ### Convert categories to features
+
+# Make the `celllabel` and `cellattributevalue` columns of type categorical:
+
+resp_chart_df = resp_chart_df.categorize(columns=['celllabel', 'cellattributevalue'])
+
+resp_chart_df.head()
+
+# Transform the `celllabel` categories and `cellattributevalue` values into separate features:
+
+# [TODO] Adapt the category_to_feature method to Dask
+resp_chart_df = dd.from_pandas(du.data_processing.category_to_feature(resp_chart_df.compute(), categories_feature='celllabel', values_feature='cellattributevalue', min_len=1000), npartitions=30)
+resp_chart_df.head()
+
+# Now we have the categories separated into their own features, as desired.
+
+# Remove the old `celllabel` and `cellattributevalue` columns:
+
+resp_chart_df = resp_chart_df.drop(['celllabel', 'cellattributevalue'], axis=1)
+resp_chart_df.head()
+
+resp_chart_df['Neurologic'].value_counts().compute()
+
+resp_chart_df['Pupils'].value_counts().compute()
+
+resp_chart_df['Secretions'].value_counts().compute()
+
+resp_chart_df['Cough'].value_counts().compute()
+
+# + {"toc-hr-collapsed": false, "cell_type": "markdown"}
+# ### Discretize categorical features
+#
+# Convert binary categorical features into simple numberings, one hot encode features with a low number of categories (in this case, 5) and enumerate sparse categorical features that will be embedded.
+# -
+
+# #### Separate and prepare features for embedding
+#
+# Identify categorical features that have more than 5 unique categories, which will go through an embedding layer afterwards, and enumerate them.
+
+# Update list of categorical features and add those that will need embedding (features with more than 5 unique values):
+
+new_cat_feat = ['Pupils', 'Neurologic', 'Secretions', 'Cough']
+[cat_feat.append(col) for col in new_cat_feat]
+
+cat_feat_nunique = [resp_chart_df[feature].nunique().compute() for feature in new_cat_feat]
+cat_feat_nunique
+
+new_cat_embed_feat = []
+for i in range(len(new_cat_feat)):
+    if cat_feat_nunique[i] > 5:
+        # Add feature to the list of those that will be embedded
+        cat_embed_feat.append(new_cat_feat[i])
+        new_cat_embed_feat.append(new_cat_feat[i])
+
+resp_chart_df[new_cat_feat].head()
+
+# + {"pixiedust": {"displayParams": {}}}
+for i in range(len(new_cat_embed_feat)):
+    feature = new_cat_embed_feat[i]
+    # Prepare for embedding, i.e. enumerate categories
+    resp_chart_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(resp_chart_df, feature)
+# -
+
+resp_chart_df[new_cat_feat].head()
+
+cat_embed_feat_enum
+
+resp_chart_df[new_cat_feat].dtypes
+
+resp_chart_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+resp_chart_df = client.persist(resp_chart_df)
+
+resp_chart_df.visualize()
+
+# #### Save enumeration encoding mapping
+#
+# Save the dictionary that maps from the original categories/strings to the new numerical encondings.
+
+stream = open('cat_embed_feat_enum.yaml', 'w')
+yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
+
+# ### Create the timestamp feature and sort
+
+# Create the timestamp (`ts`) feature:
+
+resp_chart_df['ts'] = resp_chart_df['nurseassessoffset']
+resp_chart_df = resp_chart_df.drop('nurseassessoffset', axis=1)
+resp_chart_df.head()
+
+# Remove duplicate rows:
+
+len(resp_chart_df)
+
+resp_chart_df = resp_chart_df.drop_duplicates()
+resp_chart_df.head()
+
+len(resp_chart_df)
+
+resp_chart_df = resp_chart_df.repartition(npartitions=30)
+
+# Sort by `ts` so as to be easier to merge with other dataframes later:
+
+resp_chart_df = resp_chart_df.set_index('ts')
+resp_chart_df.head()
+
+resp_chart_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+resp_chart_df = client.persist(resp_chart_df)
+
+resp_chart_df.visualize()
+
+# Check for possible multiple rows with the same unit stay ID and timestamp:
+
+resp_chart_df.reset_index().head()
+
+resp_chart_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='Cough').head()
+
+resp_chart_df[resp_chart_df.patientunitstayid == 2553254].compute().head(10)
+
+# We can see that there are up to 80 categories per set of `patientunitstayid` and `ts`. As such, we must join them.
+
+# ### Join rows that have the same IDs
+
+# + {"pixiedust": {"displayParams": {}}}
+resp_chart_df = du.embedding.join_categorical_enum(resp_chart_df, new_cat_embed_feat)
+resp_chart_df.head()
+# -
+
+resp_chart_df.dtypes
+
+resp_chart_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='Cough').head()
+
+resp_chart_df[resp_chart_df.patientunitstayid == 2553254].compute().head(10)
+
+# Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
+
+resp_chart_df.visualize()
+
+# Save current dataframe in memory to avoid accumulating several operations on the dask graph
+resp_chart_df = client.persist(resp_chart_df)
+
+resp_chart_df.visualize()
+
+# ### Clean column names
+#
+# Standardize all column names to be on lower case, have spaces replaced by underscores and remove comas.
+
+resp_chart_df.columns = du.data_processing.clean_naming(resp_chart_df.columns)
+resp_chart_df.head()
+
+# ### Save the dataframe
+
+resp_chart_df = resp_chart_df.repartition(npartitions=30)
+
+# Save the dataframe before normalizing:
+
+resp_chart_df.to_parquet(f'{data_path}cleaned/unnormalized/respiratoryCharting.parquet')
+
+# Save the dataframe after normalizing:
+
+resp_chart_df.to_parquet(f'{data_path}cleaned/normalized/respiratoryCharting.parquet')
+
+# Confirm that everything is ok through the `describe` method:
+
+resp_chart_df.describe().compute().transpose()
+
+# ### Join dataframes
+#
+# Merge dataframes by the unit stay, `patientunitstayid`, and the timestamp, `ts`, with a tolerence for a difference of up to 30 minutes.
+
+resp_chart_df = dd.read_parquet(f'{data_path}cleaned/normalized/respiratoryCharting.parquet')
+resp_chart_df.head()
+
+resp_chart_df.npartitions
+
+len(resp_chart_df)
+
+resp_chart_df.patientunitstayid.nunique().compute()
+
+eICU_df = dd.merge_asof(eICU_df, resp_chart_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
 eICU_df.head()
 
 # + {"toc-hr-collapsed": true, "cell_type": "markdown"}
@@ -1494,7 +1757,7 @@ alrg_df = alrg_df.rename(columns={'drughiclseqno':'drugallergyhiclseqno'})
 alrg_df.head()
 
 # ### Clean column names
-# 
+#
 # Standardize all column names to be on lower case, have spaces replaced by underscores and remove comas.
 
 alrg_df.columns = du.data_processing.clean_naming(alrg_df.columns)
@@ -1751,7 +2014,7 @@ careplangen_df = careplangen_df.rename(columns={'activeupondischarge':'cpl_activ
 careplangen_df.head()
 
 # ### Clean column names
-# 
+#
 # Standardize all column names to be on lower case, have spaces replaced by underscores and remove comas.
 
 careplangen_df.columns = du.data_processing.clean_naming(careplangen_df.columns)
@@ -2047,7 +2310,7 @@ pasthist_df = client.persist(pasthist_df)
 pasthist_df.visualize()
 
 # ### Clean column names
-# 
+#
 # Standardize all column names to be on lower case, have spaces replaced by underscores and remove comas.
 
 pasthist_df.columns = du.data_processing.clean_naming(pasthist_df.columns)
@@ -2297,7 +2560,7 @@ infdrug_df_norm = infdrug_df_norm.rename(columns={'patientweight': 'weight', 'dr
 infdrug_df_norm.head()
 
 # ### Clean column names
-# 
+#
 # Standardize all column names to be on lower case, have spaces replaced by underscores and remove comas.
 
 infdrug_df.columns = du.data_processing.clean_naming(infdrug_df.columns)
@@ -2509,7 +2772,7 @@ diagn_df = client.persist(diagn_df)
 diagn_df.visualize()
 
 # ### Clean column names
-# 
+#
 # Standardize all column names to be on lower case, have spaces replaced by underscores and remove comas.
 
 diagn_df.columns = du.data_processing.clean_naming(diagn_df.columns)
@@ -2775,7 +3038,7 @@ admsdrug_df_norm = client.persist(admsdrug_df_norm)
 admsdrug_df_norm.visualize()
 
 # ### Clean column names
-# 
+#
 # Standardize all column names to be on lower case, have spaces replaced by underscores and remove comas.
 
 admsdrug_df.columns = du.data_processing.clean_naming(admsdrug_df.columns)
@@ -3118,7 +3381,7 @@ med_df_norm = med_df_norm.rename(columns={'frequency':'drugadmitfrequency'})
 med_df_norm.head()
 
 # ### Clean column names
-# 
+#
 # Standardize all column names to be on lower case, have spaces replaced by underscores and remove comas.
 
 med_df.columns = du.data_processing.clean_naming(med_df.columns)
@@ -3457,7 +3720,7 @@ note_df = client.persist(note_df)
 note_df.visualize()
 
 # ### Clean column names
-# 
+#
 # Standardize all column names to be on lower case, have spaces replaced by underscores and remove comas.
 
 note_df.columns = du.data_processing.clean_naming(note_df.columns)
@@ -3701,7 +3964,7 @@ treat_df = client.persist(treat_df)
 treat_df.visualize()
 
 # ### Clean column names
-# 
+#
 # Standardize all column names to be on lower case, have spaces replaced by underscores and remove comas.
 
 treat_df.columns = du.data_processing.clean_naming(treat_df.columns)
@@ -3967,7 +4230,7 @@ nursecare_df = nursecare_df.rename(columns={'Treatments':'nurse_treatments'})
 nursecare_df.head()
 
 # ### Clean column names
-# 
+#
 # Standardize all column names to be on lower case, have spaces replaced by underscores and remove comas.
 
 nursecare_df.columns = du.data_processing.clean_naming(nursecare_df.columns)
@@ -4230,7 +4493,7 @@ nurseassess_df = client.persist(nurseassess_df)
 nurseassess_df.visualize()
 
 # ### Clean column names
-# 
+#
 # Standardize all column names to be on lower case, have spaces replaced by underscores and remove comas.
 
 nurseassess_df.columns = du.data_processing.clean_naming(nurseassess_df.columns)
@@ -4593,7 +4856,7 @@ nursechart_df = nursechart_df.rename(columns={'nursingchartcelltypecat':'nurse_a
 nursechart_df.head()
 
 # ### Clean column names
-# 
+#
 # Standardize all column names to be on lower case, have spaces replaced by underscores and remove comas.
 
 nursechart_df.columns = du.data_processing.clean_naming(nursechart_df.columns)
