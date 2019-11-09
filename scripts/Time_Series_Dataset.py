@@ -1,7 +1,9 @@
 from torch.utils.data import Dataset
+import data_utils as du                    # Data science and machine learning relevant methods
 
 class Time_Series_Dataset(Dataset):
-    def __init__(self, arr, df, label_name=None):
+    def __init__(self, arr, df, label_name=None, id_column='subject_id',
+                 ts_column='ts', seq_len_dict=None):
         # Counter that indicates in which column we're in when searching for the label column
         col_num = 0
         for col in df.columns:
@@ -11,11 +13,16 @@ class Time_Series_Dataset(Dataset):
                 break
             col_num += 1
         # Column numbers corresponding to the features
-        self.features_columns = list(range(self.label_column)) + list(range(self.label_column + 1, arr.shape[2]))
+        self.features_columns = (list(range(self.label_column)) +
+                                 list(range(self.label_column + 1, arr.shape[2])))
         # Features
         self.X = arr[:, :, self.features_columns]
         # Labels
         self.y = arr[:, :, self.label_column]
+        # Sequence length dictionary
+        if seq_len_dict is None:
+            seq_len_dict = du.padding.get_sequence_length_dict(df, id_column='subject_id', ts_column='ts')
+        self.seq_len_dict = seq_len_dict
 
     def __getitem__(self, item):
         x_t = self.X[item]

@@ -2879,9 +2879,9 @@ admsdrug_df.head()
 #
 # Replace blank and unrealistic zero values with NaNs.
 
-admsdrug_df.drugdosage = admsdrug_df.drugdosage.replace(0, np.nan)
-admsdrug_df.drugunit = admsdrug_df.drugunit.replace(' ', np.nan)
-admsdrug_df.drugadmitfrequency = admsdrug_df.drugadmitfrequency.replace(' ', np.nan)
+admsdrug_df.drugdosage = admsdrug_df.drugdosage.replace(to_replace=0, value=np.nan)
+admsdrug_df.drugunit = admsdrug_df.drugunit.replace(to_replace=' ', value=np.nan)
+admsdrug_df.drugadmitfrequency = admsdrug_df.drugadmitfrequency.replace(to_replace=' ', value=np.nan)
 admsdrug_df.head()
 
 # + {"pixiedust": {"displayParams": {}}}
