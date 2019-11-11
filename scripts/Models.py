@@ -17,39 +17,52 @@ class VanillaLSTM(nn.Module):
         self.n_layers = n_layers                # Number of LSTM layers
         self.p_dropout = p_dropout              # Probability of dropout
         self.embed_features = embed_features    # List of features that need to go through embedding layers
+        self.num_embeddings = num_embeddings    # List of the total number of unique categories for the embedding layers
+        self.embedding_dim = embedding_dim      # List of embedding dimensions
         # Embedding layers
         if self.embed_features is not None:
-            if num_embeddings is None:
+            if isinstance(self.embed_features, int):
+                self.embed_features = [self.embed_features]
+            if self.num_embeddings is None:
                 raise Exception('ERROR: If the user specifies features to be embedded, each feature\'s number of \
                                  embeddings must also be specified. Received a `embed_features` argument, but not \
                                  `num_embeddings`.')
             else:
-                if len(num_embeddings) != len(self.embed_features):
+                if isinstance(self.num_embeddings, int):
+                    self.num_embeddings = [self.num_embeddings]
+                if len(self.num_embeddings) != len(self.embed_features):
                     raise Exception(f'ERROR: The list of the number of embeddings `num_embeddings` and the embedding \
                                       features `embed_features` must have the same length. The provided `num_embeddings` \
-                                      has length {len(num_embeddings)} while `embed_features` has length {len(self.embed_features)}.')
-            if isinstance(self.embed_features, int):
-                self.embed_features = [self.embed_features]
+                                      has length {len(self.num_embeddings)} while `embed_features` has length {len(self.embed_features)}.')
             if isinstance(self.embed_features, list):
                 # Create a modules dictionary of embedding bag layers;
                 # each key corresponds to a embedded feature's index
                 self.embed_layers = nn.ModuleDict()
-                for i in len(self.embed_features):
+                for i in range(len(self.embed_features)):
                     if embedding_dim is None:
                         # Calculate a reasonable embedding dimension for the current feature;
                         # the formula sets a minimum embedding dimension of 3, with above
                         # values being calculated as the rounded up base 5 logarithm of
                         # the number of embeddings
-                        embedding_dim_i = max(3, int(math.ceil(math.log(num_embeddings[i], base=5))))
+                        embedding_dim_i = max(3, int(math.ceil(math.log(self.num_embeddings[i], base=5))))
                     else:
-                        embedding_dim_i = embedding_dim[i]
+                        if isinstance(self.embedding_dim, int):
+                            self.embedding_dim = [self.embedding_dim]
+                        embedding_dim_i = self.embedding_dim[i]
                     # Create an embedding layer for the current feature
-                    self.embed_layers[self.embed_features[i]] = nn.EmbeddingBag(num_embeddings[i], embedding_dim_i)
+                    self.embed_layers[f'embed_{self.embed_features[i]}'] = nn.EmbeddingBag(self.num_embeddings[i], embedding_dim_i)
             else:
                 raise Exception(f'ERROR: The embedding features must be indicated in `embed_features` as either a \
                                   single, integer index or a list of indices. The provided argument has type {type(embed_features)}.')
         # LSTM layer(s)
-        self.lstm = nn.LSTM(self.n_inputs, self.n_hidden, self.n_layers, batch_first=True, dropout=self.p_dropout)
+        if self.embed_features is None:
+            self.lstm_n_inputs = self.n_inputs
+        else:
+            # Have into account the new embedding columns that will be added, as well as the removal
+            # of the originating categorical columns
+            self.lstm_n_inputs = self.n_inputs + sum(self.embedding_dim) - len(self.embedding_dim)
+        self.lstm = nn.LSTM(self.lstm_n_inputs, self.n_hidden, self.n_layers, 
+                            batch_first=True, dropout=self.p_dropout)
         # Fully connected layer which takes the LSTM's hidden units and calculates the output classification
         self.fc = nn.Linear(self.n_hidden, self.n_outputs)
         # Dropout used between the last LSTM layer and the fully connected layer
@@ -58,10 +71,12 @@ class VanillaLSTM(nn.Module):
     def forward(self, x, x_lengths=None, get_hidden_state=False, hidden_state=None):
         if self.embed_features is not None:
             # Run each embedding layer on each respective feature, adding the
-            # resulting embedding values to the tensor and removinf the original,
+            # resulting embedding values to the tensor and removing the original,
             # categorical encoded columns
-            x = embedding.embedding_bag_pipeline(x, self.embed_layers,
-                                                 self.embed_features, inplace=True)
+            x = embedding.embedding_bag_pipeline(x, self.embed_layers, self.embed_features,
+                                                 model_forward=True, inplace=True)
+        # Make sure that the input data is of type float
+        x = x.float()
         # Get the batch size (might not be always the same)
         batch_size = x.shape[0]
         if hidden_state is None:
@@ -101,7 +116,7 @@ class VanillaLSTM(nn.Module):
         y_pred = y_pred.view(-1, self.n_outputs)
         # Create a mask by filtering out all labels that are not a padding value
         # Also need to make it have type float to be able to multiply with y_pred
-        mask = (y_labels <= 1).float()
+        mask = (y_labels <= 1)
         # Count how many predictions we have
         n_pred = int(torch.sum(mask).item())
         # Check if there's only one class to classify (either it belongs to that class or it doesn't)
@@ -111,12 +126,12 @@ class VanillaLSTM(nn.Module):
             y_pred_other_class = 1 - y_pred
             y_pred = torch.stack([y_pred_other_class, y_pred]).permute(1, 0, 2).squeeze()
         # Pick the values for the label and zero out the rest with the mask
-        y_pred = y_pred[range(y_pred.shape[0]), y_labels * mask.long()] * mask
+        y_pred = y_pred[range(y_pred.shape[0]), y_labels * mask.long()] * mask.float()
         # I need to get the diagonal of the tensor, which represents a vector of each
         # score (y_pred) multiplied by its correct mask value
         # Otherwise we get a square matrix of every score multiplied by every mask value
         # Completely remove the padded values from the predictions using the mask
-        y_pred = torch.masked_select(y_pred, mask.byte())
+        y_pred = torch.masked_select(y_pred, mask)
         # Compute cross entropy loss which ignores all padding values
         ce_loss = -torch.sum(torch.log(y_pred)) / n_pred
         return ce_loss
@@ -138,21 +153,76 @@ class VanillaLSTM(nn.Module):
 
 
 class TLSTM(nn.Module):
-    def __init__(self, n_inputs, n_hidden, n_outputs, n_layers, p_dropout):
+    def __init__(self, n_inputs, n_hidden, n_outputs, n_layers=1, p_dropout=0, embed_features=None,
+                 num_embeddings=None, embedding_dim=None):
+        # [TODO] Add documentation for each model class
         super().__init__()
-        self.n_inputs = n_inputs         # Number of input features
-        self.n_hidden = n_hidden         # Number of hidden units
-        self.n_outputs = n_outputs       # Number of outputs
-        self.n_layers = n_layers         # Number of LSTM layers
-        self.p_dropout = p_dropout       # Probability of dropout
+        self.n_inputs = n_inputs                # Number of input features
+        self.n_hidden = n_hidden                # Number of hidden units
+        self.n_outputs = n_outputs              # Number of outputs
+        self.n_layers = n_layers                # Number of LSTM layers
+        self.p_dropout = p_dropout              # Probability of dropout
+        self.embed_features = embed_features    # List of features that need to go through embedding layers
+        self.num_embeddings = num_embeddings    # List of the total number of unique categories for the embedding layers
+        self.embedding_dim = embedding_dim      # List of embedding dimensions
+        # Embedding layers
+        if self.embed_features is not None:
+            if isinstance(self.embed_features, int):
+                self.embed_features = [self.embed_features]
+            if self.num_embeddings is None:
+                raise Exception('ERROR: If the user specifies features to be embedded, each feature\'s number of \
+                                 embeddings must also be specified. Received a `embed_features` argument, but not \
+                                 `num_embeddings`.')
+            else:
+                if isinstance(self.num_embeddings, int):
+                    self.num_embeddings = [self.num_embeddings]
+                if len(self.num_embeddings) != len(self.embed_features):
+                    raise Exception(f'ERROR: The list of the number of embeddings `num_embeddings` and the embedding \
+                                      features `embed_features` must have the same length. The provided `num_embeddings` \
+                                      has length {len(self.num_embeddings)} while `embed_features` has length {len(self.embed_features)}.')
+            if isinstance(self.embed_features, list):
+                # Create a modules dictionary of embedding bag layers;
+                # each key corresponds to a embedded feature's index
+                self.embed_layers = nn.ModuleDict()
+                for i in range(len(self.embed_features)):
+                    if embedding_dim is None:
+                        # Calculate a reasonable embedding dimension for the current feature;
+                        # the formula sets a minimum embedding dimension of 3, with above
+                        # values being calculated as the rounded up base 5 logarithm of
+                        # the number of embeddings
+                        embedding_dim_i = max(3, int(math.ceil(math.log(self.num_embeddings[i], base=5))))
+                    else:
+                        if isinstance(self.embedding_dim, int):
+                            self.embedding_dim = [self.embedding_dim]
+                        embedding_dim_i = self.embedding_dim[i]
+                    # Create an embedding layer for the current feature
+                    self.embed_layers[f'embed_{self.embed_features[i]}'] = nn.EmbeddingBag(self.num_embeddings[i], embedding_dim_i)
+            else:
+                raise Exception(f'ERROR: The embedding features must be indicated in `embed_features` as either a \
+                                  single, integer index or a list of indices. The provided argument has type {type(embed_features)}.')
         # LSTM layer(s)
-        self.lstm = nn.LSTM(self.n_inputs, self.n_hidden, self.n_layers, batch_first=True, dropout=self.p_dropout)
+        if self.embed_features is None:
+            self.lstm_n_inputs = self.n_inputs
+        else:
+            # Have into account the new embedding columns that will be added, as well as the removal
+            # of the originating categorical columns
+            self.lstm_n_inputs = self.n_inputs + sum(self.embedding_dim) - len(self.embedding_dim)
+        self.lstm = nn.LSTM(self.lstm_n_inputs, self.n_hidden, self.n_layers, 
+                            batch_first=True, dropout=self.p_dropout)
         # Fully connected layer which takes the LSTM's hidden units and calculates the output classification
         self.fc = nn.Linear(self.n_hidden, self.n_outputs)
         # Dropout used between the last LSTM layer and the fully connected layer
         self.dropout = nn.Dropout(p=self.p_dropout)
 
     def forward(self, x, x_lengths=None, get_hidden_state=False, hidden_state=None):
+        if self.embed_features is not None:
+            # Run each embedding layer on each respective feature, adding the
+            # resulting embedding values to the tensor and removing the original,
+            # categorical encoded columns
+            x = embedding.embedding_bag_pipeline(x, self.embed_layers, self.embed_features,
+                                                 model_forward=True, inplace=True)
+        # Make sure that the input data is of type float
+        x = x.float()
         # Get the batch size (might not be always the same)
         batch_size = x.shape[0]
         if hidden_state is None:
@@ -192,7 +262,7 @@ class TLSTM(nn.Module):
         y_pred = y_pred.view(-1, self.n_outputs)
         # Create a mask by filtering out all labels that are not a padding value
         # Also need to make it have type float to be able to multiply with y_pred
-        mask = (y_labels <= 1).float()
+        mask = (y_labels <= 1)
         # Count how many predictions we have
         n_pred = int(torch.sum(mask).item())
         # Check if there's only one class to classify (either it belongs to that class or it doesn't)
@@ -202,12 +272,12 @@ class TLSTM(nn.Module):
             y_pred_other_class = 1 - y_pred
             y_pred = torch.stack([y_pred_other_class, y_pred]).permute(1, 0, 2).squeeze()
         # Pick the values for the label and zero out the rest with the mask
-        y_pred = y_pred[range(y_pred.shape[0]), y_labels * mask.long()] * mask
+        y_pred = y_pred[range(y_pred.shape[0]), y_labels * mask.long()] * mask.float()
         # I need to get the diagonal of the tensor, which represents a vector of each
         # score (y_pred) multiplied by its correct mask value
         # Otherwise we get a square matrix of every score multiplied by every mask value
         # Completely remove the padded values from the predictions using the mask
-        y_pred = torch.masked_select(y_pred, mask.byte())
+        y_pred = torch.masked_select(y_pred, mask)
         # Compute cross entropy loss which ignores all padding values
         ce_loss = -torch.sum(torch.log(y_pred)) / n_pred
         return ce_loss
@@ -229,21 +299,76 @@ class TLSTM(nn.Module):
 
 
 class DeepCare(nn.Module):
-    def __init__(self, n_inputs, n_hidden, n_outputs, n_layers, p_dropout):
+    def __init__(self, n_inputs, n_hidden, n_outputs, n_layers=1, p_dropout=0, embed_features=None,
+                 num_embeddings=None, embedding_dim=None):
+        # [TODO] Add documentation for each model class
         super().__init__()
-        self.n_inputs = n_inputs         # Number of input features
-        self.n_hidden = n_hidden         # Number of hidden units
-        self.n_outputs = n_outputs       # Number of outputs
-        self.n_layers = n_layers         # Number of LSTM layers
-        self.p_dropout = p_dropout       # Probability of dropout
+        self.n_inputs = n_inputs                # Number of input features
+        self.n_hidden = n_hidden                # Number of hidden units
+        self.n_outputs = n_outputs              # Number of outputs
+        self.n_layers = n_layers                # Number of LSTM layers
+        self.p_dropout = p_dropout              # Probability of dropout
+        self.embed_features = embed_features    # List of features that need to go through embedding layers
+        self.num_embeddings = num_embeddings    # List of the total number of unique categories for the embedding layers
+        self.embedding_dim = embedding_dim      # List of embedding dimensions
+        # Embedding layers
+        if self.embed_features is not None:
+            if isinstance(self.embed_features, int):
+                self.embed_features = [self.embed_features]
+            if self.num_embeddings is None:
+                raise Exception('ERROR: If the user specifies features to be embedded, each feature\'s number of \
+                                 embeddings must also be specified. Received a `embed_features` argument, but not \
+                                 `num_embeddings`.')
+            else:
+                if isinstance(self.num_embeddings, int):
+                    self.num_embeddings = [self.num_embeddings]
+                if len(self.num_embeddings) != len(self.embed_features):
+                    raise Exception(f'ERROR: The list of the number of embeddings `num_embeddings` and the embedding \
+                                      features `embed_features` must have the same length. The provided `num_embeddings` \
+                                      has length {len(self.num_embeddings)} while `embed_features` has length {len(self.embed_features)}.')
+            if isinstance(self.embed_features, list):
+                # Create a modules dictionary of embedding bag layers;
+                # each key corresponds to a embedded feature's index
+                self.embed_layers = nn.ModuleDict()
+                for i in range(len(self.embed_features)):
+                    if embedding_dim is None:
+                        # Calculate a reasonable embedding dimension for the current feature;
+                        # the formula sets a minimum embedding dimension of 3, with above
+                        # values being calculated as the rounded up base 5 logarithm of
+                        # the number of embeddings
+                        embedding_dim_i = max(3, int(math.ceil(math.log(self.num_embeddings[i], base=5))))
+                    else:
+                        if isinstance(self.embedding_dim, int):
+                            self.embedding_dim = [self.embedding_dim]
+                        embedding_dim_i = self.embedding_dim[i]
+                    # Create an embedding layer for the current feature
+                    self.embed_layers[f'embed_{self.embed_features[i]}'] = nn.EmbeddingBag(self.num_embeddings[i], embedding_dim_i)
+            else:
+                raise Exception(f'ERROR: The embedding features must be indicated in `embed_features` as either a \
+                                  single, integer index or a list of indices. The provided argument has type {type(embed_features)}.')
         # LSTM layer(s)
-        self.lstm = nn.LSTM(self.n_inputs, self.n_hidden, self.n_layers, batch_first=True, dropout=self.p_dropout)
+        if self.embed_features is None:
+            self.lstm_n_inputs = self.n_inputs
+        else:
+            # Have into account the new embedding columns that will be added, as well as the removal
+            # of the originating categorical columns
+            self.lstm_n_inputs = self.n_inputs + sum(self.embedding_dim) - len(self.embedding_dim)
+        self.lstm = nn.LSTM(self.lstm_n_inputs, self.n_hidden, self.n_layers, 
+                            batch_first=True, dropout=self.p_dropout)
         # Fully connected layer which takes the LSTM's hidden units and calculates the output classification
         self.fc = nn.Linear(self.n_hidden, self.n_outputs)
         # Dropout used between the last LSTM layer and the fully connected layer
         self.dropout = nn.Dropout(p=self.p_dropout)
 
     def forward(self, x, x_lengths=None, get_hidden_state=False, hidden_state=None):
+        if self.embed_features is not None:
+            # Run each embedding layer on each respective feature, adding the
+            # resulting embedding values to the tensor and removing the original,
+            # categorical encoded columns
+            x = embedding.embedding_bag_pipeline(x, self.embed_layers, self.embed_features,
+                                                 model_forward=True, inplace=True)
+        # Make sure that the input data is of type float
+        x = x.float()
         # Get the batch size (might not be always the same)
         batch_size = x.shape[0]
         if hidden_state is None:
@@ -283,7 +408,7 @@ class DeepCare(nn.Module):
         y_pred = y_pred.view(-1, self.n_outputs)
         # Create a mask by filtering out all labels that are not a padding value
         # Also need to make it have type float to be able to multiply with y_pred
-        mask = (y_labels <= 1).float()
+        mask = (y_labels <= 1)
         # Count how many predictions we have
         n_pred = int(torch.sum(mask).item())
         # Check if there's only one class to classify (either it belongs to that class or it doesn't)
@@ -293,12 +418,12 @@ class DeepCare(nn.Module):
             y_pred_other_class = 1 - y_pred
             y_pred = torch.stack([y_pred_other_class, y_pred]).permute(1, 0, 2).squeeze()
         # Pick the values for the label and zero out the rest with the mask
-        y_pred = y_pred[range(y_pred.shape[0]), y_labels * mask.long()] * mask
+        y_pred = y_pred[range(y_pred.shape[0]), y_labels * mask.long()] * mask.float()
         # I need to get the diagonal of the tensor, which represents a vector of each
         # score (y_pred) multiplied by its correct mask value
         # Otherwise we get a square matrix of every score multiplied by every mask value
         # Completely remove the padded values from the predictions using the mask
-        y_pred = torch.masked_select(y_pred, mask.byte())
+        y_pred = torch.masked_select(y_pred, mask)
         # Compute cross entropy loss which ignores all padding values
         ce_loss = -torch.sum(torch.log(y_pred)) / n_pred
         return ce_loss
@@ -320,21 +445,76 @@ class DeepCare(nn.Module):
 
 
 class TransformerXL(nn.Module):
-    def __init__(self, n_inputs, n_hidden, n_outputs, n_layers, p_dropout):
+    def __init__(self, n_inputs, n_hidden, n_outputs, n_layers=1, p_dropout=0, embed_features=None,
+                 num_embeddings=None, embedding_dim=None):
+        # [TODO] Add documentation for each model class
         super().__init__()
-        self.n_inputs = n_inputs         # Number of input features
-        self.n_hidden = n_hidden         # Number of hidden units
-        self.n_outputs = n_outputs       # Number of outputs
-        self.n_layers = n_layers         # Number of LSTM layers
-        self.p_dropout = p_dropout       # Probability of dropout
+        self.n_inputs = n_inputs                # Number of input features
+        self.n_hidden = n_hidden                # Number of hidden units
+        self.n_outputs = n_outputs              # Number of outputs
+        self.n_layers = n_layers                # Number of LSTM layers
+        self.p_dropout = p_dropout              # Probability of dropout
+        self.embed_features = embed_features    # List of features that need to go through embedding layers
+        self.num_embeddings = num_embeddings    # List of the total number of unique categories for the embedding layers
+        self.embedding_dim = embedding_dim      # List of embedding dimensions
+        # Embedding layers
+        if self.embed_features is not None:
+            if isinstance(self.embed_features, int):
+                self.embed_features = [self.embed_features]
+            if self.num_embeddings is None:
+                raise Exception('ERROR: If the user specifies features to be embedded, each feature\'s number of \
+                                 embeddings must also be specified. Received a `embed_features` argument, but not \
+                                 `num_embeddings`.')
+            else:
+                if isinstance(self.num_embeddings, int):
+                    self.num_embeddings = [self.num_embeddings]
+                if len(self.num_embeddings) != len(self.embed_features):
+                    raise Exception(f'ERROR: The list of the number of embeddings `num_embeddings` and the embedding \
+                                      features `embed_features` must have the same length. The provided `num_embeddings` \
+                                      has length {len(self.num_embeddings)} while `embed_features` has length {len(self.embed_features)}.')
+            if isinstance(self.embed_features, list):
+                # Create a modules dictionary of embedding bag layers;
+                # each key corresponds to a embedded feature's index
+                self.embed_layers = nn.ModuleDict()
+                for i in range(len(self.embed_features)):
+                    if embedding_dim is None:
+                        # Calculate a reasonable embedding dimension for the current feature;
+                        # the formula sets a minimum embedding dimension of 3, with above
+                        # values being calculated as the rounded up base 5 logarithm of
+                        # the number of embeddings
+                        embedding_dim_i = max(3, int(math.ceil(math.log(self.num_embeddings[i], base=5))))
+                    else:
+                        if isinstance(self.embedding_dim, int):
+                            self.embedding_dim = [self.embedding_dim]
+                        embedding_dim_i = self.embedding_dim[i]
+                    # Create an embedding layer for the current feature
+                    self.embed_layers[f'embed_{self.embed_features[i]}'] = nn.EmbeddingBag(self.num_embeddings[i], embedding_dim_i)
+            else:
+                raise Exception(f'ERROR: The embedding features must be indicated in `embed_features` as either a \
+                                  single, integer index or a list of indices. The provided argument has type {type(embed_features)}.')
         # LSTM layer(s)
-        self.lstm = nn.LSTM(self.n_inputs, self.n_hidden, self.n_layers, batch_first=True, dropout=self.p_dropout)
+        if self.embed_features is None:
+            self.lstm_n_inputs = self.n_inputs
+        else:
+            # Have into account the new embedding columns that will be added, as well as the removal
+            # of the originating categorical columns
+            self.lstm_n_inputs = self.n_inputs + sum(self.embedding_dim) - len(self.embedding_dim)
+        self.lstm = nn.LSTM(self.lstm_n_inputs, self.n_hidden, self.n_layers, 
+                            batch_first=True, dropout=self.p_dropout)
         # Fully connected layer which takes the LSTM's hidden units and calculates the output classification
         self.fc = nn.Linear(self.n_hidden, self.n_outputs)
         # Dropout used between the last LSTM layer and the fully connected layer
         self.dropout = nn.Dropout(p=self.p_dropout)
 
     def forward(self, x, x_lengths=None, get_hidden_state=False, hidden_state=None):
+        if self.embed_features is not None:
+            # Run each embedding layer on each respective feature, adding the
+            # resulting embedding values to the tensor and removing the original,
+            # categorical encoded columns
+            x = embedding.embedding_bag_pipeline(x, self.embed_layers, self.embed_features,
+                                                 model_forward=True, inplace=True)
+        # Make sure that the input data is of type float
+        x = x.float()
         # Get the batch size (might not be always the same)
         batch_size = x.shape[0]
         if hidden_state is None:
@@ -374,7 +554,7 @@ class TransformerXL(nn.Module):
         y_pred = y_pred.view(-1, self.n_outputs)
         # Create a mask by filtering out all labels that are not a padding value
         # Also need to make it have type float to be able to multiply with y_pred
-        mask = (y_labels <= 1).float()
+        mask = (y_labels <= 1)
         # Count how many predictions we have
         n_pred = int(torch.sum(mask).item())
         # Check if there's only one class to classify (either it belongs to that class or it doesn't)
@@ -384,12 +564,12 @@ class TransformerXL(nn.Module):
             y_pred_other_class = 1 - y_pred
             y_pred = torch.stack([y_pred_other_class, y_pred]).permute(1, 0, 2).squeeze()
         # Pick the values for the label and zero out the rest with the mask
-        y_pred = y_pred[range(y_pred.shape[0]), y_labels * mask.long()] * mask
+        y_pred = y_pred[range(y_pred.shape[0]), y_labels * mask.long()] * mask.float()
         # I need to get the diagonal of the tensor, which represents a vector of each
         # score (y_pred) multiplied by its correct mask value
         # Otherwise we get a square matrix of every score multiplied by every mask value
         # Completely remove the padded values from the predictions using the mask
-        y_pred = torch.masked_select(y_pred, mask.byte())
+        y_pred = torch.masked_select(y_pred, mask)
         # Compute cross entropy loss which ignores all padding values
         ce_loss = -torch.sum(torch.log(y_pred)) / n_pred
         return ce_loss
