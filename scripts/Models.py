@@ -24,16 +24,12 @@ class VanillaLSTM(nn.Module):
             if isinstance(self.embed_features, int):
                 self.embed_features = [self.embed_features]
             if self.num_embeddings is None:
-                raise Exception('ERROR: If the user specifies features to be embedded, each feature\'s number of \
-                                 embeddings must also be specified. Received a `embed_features` argument, but not \
-                                 `num_embeddings`.')
+                raise Exception('ERROR: If the user specifies features to be embedded, each feature\'s number of embeddings must also be specified. Received a `embed_features` argument, but not `num_embeddings`.')
             else:
                 if isinstance(self.num_embeddings, int):
                     self.num_embeddings = [self.num_embeddings]
                 if len(self.num_embeddings) != len(self.embed_features):
-                    raise Exception(f'ERROR: The list of the number of embeddings `num_embeddings` and the embedding \
-                                      features `embed_features` must have the same length. The provided `num_embeddings` \
-                                      has length {len(self.num_embeddings)} while `embed_features` has length {len(self.embed_features)}.')
+                    raise Exception(f'ERROR: The list of the number of embeddings `num_embeddings` and the embedding features `embed_features` must have the same length. The provided `num_embeddings` has length {len(self.num_embeddings)} while `embed_features` has length {len(self.embed_features)}.')
             if isinstance(self.embed_features, list):
                 # Create a modules dictionary of embedding bag layers;
                 # each key corresponds to a embedded feature's index
@@ -52,8 +48,7 @@ class VanillaLSTM(nn.Module):
                     # Create an embedding layer for the current feature
                     self.embed_layers[f'embed_{self.embed_features[i]}'] = nn.EmbeddingBag(self.num_embeddings[i], embedding_dim_i)
             else:
-                raise Exception(f'ERROR: The embedding features must be indicated in `embed_features` as either a \
-                                  single, integer index or a list of indices. The provided argument has type {type(embed_features)}.')
+                raise Exception(f'ERROR: The embedding features must be indicated in `embed_features` as either a single, integer index or a list of indices. The provided argument has type {type(embed_features)}.')
         # LSTM layer(s)
         if self.embed_features is None:
             self.lstm_n_inputs = self.n_inputs
@@ -170,16 +165,12 @@ class TLSTM(nn.Module):
             if isinstance(self.embed_features, int):
                 self.embed_features = [self.embed_features]
             if self.num_embeddings is None:
-                raise Exception('ERROR: If the user specifies features to be embedded, each feature\'s number of \
-                                 embeddings must also be specified. Received a `embed_features` argument, but not \
-                                 `num_embeddings`.')
+                raise Exception('ERROR: If the user specifies features to be embedded, each feature\'s number of embeddings must also be specified. Received a `embed_features` argument, but not `num_embeddings`.')
             else:
                 if isinstance(self.num_embeddings, int):
                     self.num_embeddings = [self.num_embeddings]
                 if len(self.num_embeddings) != len(self.embed_features):
-                    raise Exception(f'ERROR: The list of the number of embeddings `num_embeddings` and the embedding \
-                                      features `embed_features` must have the same length. The provided `num_embeddings` \
-                                      has length {len(self.num_embeddings)} while `embed_features` has length {len(self.embed_features)}.')
+                    raise Exception(f'ERROR: The list of the number of embeddings `num_embeddings` and the embedding features `embed_features` must have the same length. The provided `num_embeddings` has length {len(self.num_embeddings)} while `embed_features` has length {len(self.embed_features)}.')
             if isinstance(self.embed_features, list):
                 # Create a modules dictionary of embedding bag layers;
                 # each key corresponds to a embedded feature's index
@@ -198,8 +189,7 @@ class TLSTM(nn.Module):
                     # Create an embedding layer for the current feature
                     self.embed_layers[f'embed_{self.embed_features[i]}'] = nn.EmbeddingBag(self.num_embeddings[i], embedding_dim_i)
             else:
-                raise Exception(f'ERROR: The embedding features must be indicated in `embed_features` as either a \
-                                  single, integer index or a list of indices. The provided argument has type {type(embed_features)}.')
+                raise Exception(f'ERROR: The embedding features must be indicated in `embed_features` as either a single, integer index or a list of indices. The provided argument has type {type(embed_features)}.')
         # LSTM layer(s)
         if self.embed_features is None:
             self.lstm_n_inputs = self.n_inputs

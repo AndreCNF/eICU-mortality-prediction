@@ -24,6 +24,8 @@ graphviz = "^0.11.1"
 distributed = "^2.2"
 fastparquet = "^0.3.2"
 pyyaml = "^5.1"
+modin = "^0.6.2"
+ray = "0.7.3"
 
 [tool.poetry.dev-dependencies]
 pylint = "^2.3"
