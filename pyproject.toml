@@ -7,25 +7,29 @@ authors = ["André Ferreira <andrecnf@gmail.com>"]
 [tool.poetry.dependencies]
 python = "^3.6"
 pandas = "^0.25.0"
-dask = "^2.2"
-torch = "^1.1"
-plotly = "tqdm"
-tqdm = "^4.32"
-scikit-learn = "^0.21.3"
+dask = "^2.10.1"
+torch = "^1.4.0"
+plotly = "^4.5.0"
+tqdm = "^4.42.1"
+scikit-learn = "^0.22.1"
 datetime = "^4.3"
 shap = {git = "https://github.com/AndreCNF/shap.git"}
-# [TODO] Add the model-interpreter package through poetry, when it's public
-# model-interpreter = {git = "https://github.com/AndreCNF/model-interpreter.git"}
-
+model-interpreter = {git = "https://github.com/AndreCNF/model-interpreter.git"}
 toolz = "^0.10.0"
-fsspec = "^0.4.0"
+fsspec = "^0.6.2"
 cloudpickle = "^1.2"
 graphviz = "^0.11.1"
 distributed = "^2.2"
 fastparquet = "^0.3.2"
 pyyaml = "^5.1"
-modin = "^0.6.2"
-ray = "0.7.3"
+modin = "^0.7.0"
+ray = "^0.8.1"
+numpy = "^1.18.1"
+data-utils = {git = "https://github.com/AndreCNF/data-utils.git"}
+xgboost = "^0.90"
+joblib = "^0.14.1"
+jupytext = "^1.3.3"
+jupyter-lsp = "^0.7.0-beta.0"
 
 [tool.poetry.dev-dependencies]
 pylint = "^2.3"
