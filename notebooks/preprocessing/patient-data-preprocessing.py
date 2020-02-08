@@ -14,12 +14,14 @@
 # ---
 
 # + {"toc-hr-collapsed": false, "Collapsed": "false", "cell_type": "markdown"}
-# # eICU Data Joining
+# # Patient Data Preprocessing
 # ---
 #
-# Reading and joining all parts of the eICU dataset from MIT with the data from over 139k patients collected in the US.
+# Reading and preprocessing patient data of the eICU dataset from MIT with the data from over 139k patients collected in the US.
 #
-# The main goal of this notebook is to prepare a single CSV document that contains all the relevant data to be used when training a machine learning model that predicts mortality, joining tables, filtering useless columns and performing imputation.
+# This notebook addresses the preprocessing of the following eICU tables:
+# * patient
+# * note
 
 # + {"colab_type": "text", "id": "KOdmFzXqF7nq", "toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
 # ## Importing the necessary packages
@@ -44,7 +46,6 @@ data_path = 'Datasets/Thesis/eICU/uncompressed/'
 project_path = 'GitHub/eICU-mortality-prediction/'
 
 # + {"Collapsed": "false", "persistent_id": "c0c2e356-d4f4-4a9d-bec2-88bdf9eb6a38", "last_executed_text": "# os.environ['MODIN_ENGINE'] = 'dask'        # Modin will use Dask\nimport modin.pandas as pd                  # Optimized distributed version of Pandas\nimport data_utils as du                    # Data science and machine learning relevant methods", "execution_event_id": "22d5ef08-0e70-4578-be22-dfaaef28a146"}
-# os.environ['MODIN_ENGINE'] = 'dask'        # Modin will use Dask
 import modin.pandas as pd                  # Optimized distributed version of Pandas
 import data_utils as du                    # Data science and machine learning relevant methods
 
@@ -398,7 +399,7 @@ note_df[note_df.notepath.str.contains('notes/Progress Notes/Social History')].no
 note_df[note_df.notepath.str.contains('notes/Progress Notes/Social History')].notevalue.value_counts().head(20)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# Out of all the possible notes, only those addressing the patient's social history seem to be interesting and containing information not found in other tables. As scuh, we'll only keep the note paths that mention social history:
+# Out of all the possible notes, only those addressing the patient's social history seem to be interesting and containing information not found in other tables. As such, we'll only keep the note paths that mention social history:
 
 # + {"Collapsed": "false", "persistent_id": "d3a0e8a8-68d6-4c90-aded-0f5940c3936b", "last_executed_text": "note_df = note_df[note_df.notepath.str.contains('notes/Progress Notes/Social History')]\nnote_df.head()", "execution_event_id": "58f39665-bca9-4c38-b6ce-1b8177332e40"}
 note_df = note_df[note_df.notepath.str.contains('notes/Progress Notes/Social History')]
@@ -569,7 +570,7 @@ note_df['CAD'].value_counts()
 # + {"Collapsed": "false", "persistent_id": "67b46f3d-d5bc-4cda-9c2d-4db10304f268"}
 note_df['Cancer'].value_counts()
 
-# + {"toc-hr-collapsed": false, "Collapsed": "false", "cell_type": "markdown"}
+# + {"toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
 # ### Discretize categorical features
 #
 # Convert binary categorical features into simple numberings, one hot encode features with a low number of categories (in this case, 5) and enumerate sparse categorical features that will be embedded.
@@ -622,7 +623,7 @@ note_df[new_cat_feat].dtypes
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
 # + {"Collapsed": "false", "persistent_id": "4342f002-c60a-4724-a542-9b7f906d3f2b"}
-stream = open('cat_embed_feat_enum_patient.yaml', 'w')
+stream = open('cat_embed_feat_enum_note.yaml', 'w')
 yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -632,8 +633,7 @@ yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 # Create the timestamp (`ts`) feature:
 
 # + {"Collapsed": "false", "persistent_id": "dfab2799-af6c-4475-8341-ec3f40546ed1"}
-note_df['ts'] = note_df['noteoffset']
-note_df = note_df.drop('noteoffset', axis=1)
+note_df = note_df.rename(columns={'noteoffset': 'ts'})
 note_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -653,17 +653,14 @@ len(note_df)
 # Sort by `ts` so as to be easier to merge with other dataframes later:
 
 # + {"Collapsed": "false", "persistent_id": "a03573d9-f345-4ff4-84b9-2b2a3f73ce27"}
-note_df = note_df.set_index('ts')
+note_df = note_df.sort_values('ts')
 note_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Check for possible multiple rows with the same unit stay ID and timestamp:
 
-# + {"Collapsed": "false", "persistent_id": "57b4548e-684d-4a17-bcef-ba9c968af375"}
-note_df.reset_index().head()
-
 # + {"Collapsed": "false", "persistent_id": "c94e7b7b-dc34-478b-842b-c34c926c934d"}
-note_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='CAD').head()
+note_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='CAD', n=5).head()
 
 # + {"Collapsed": "false", "persistent_id": "b8bcf17b-3d52-4cc9-bfbb-7f7d8fe83b3b"}
 note_df[note_df.patientunitstayid == 3091883].head(10)
@@ -678,14 +675,14 @@ note_df[note_df.patientunitstayid == 3052175].head(10)
 # ### Join rows that have the same IDs
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "591b2ccd-fa5c-4eb2-bec1-8ac21de1c890", "last_executed_text": "note_df = du.embedding.join_categorical_enum(note_df, cont_join_method='max')\nnote_df.head()", "execution_event_id": "c6c89c91-ec15-4636-99d0-6ed07bcc921c"}
-note_df = du.embedding.join_categorical_enum(note_df, cont_join_method='max')
+note_df = du.embedding.join_categorical_enum(note_df, cont_join_method='max', inplace=True)
 note_df.head()
 
 # + {"Collapsed": "false", "persistent_id": "d3040cd3-4500-4129-ae90-23f3753045f8", "last_executed_text": "note_df.dtypes", "execution_event_id": "22163577-ad6a-4eed-8b09-c87d5c740199"}
 note_df.dtypes
 
 # + {"Collapsed": "false", "persistent_id": "b4d9884b-d8bb-49f4-8a38-4146f751708e", "last_executed_text": "note_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='CAD').head()", "execution_event_id": "612ae128-11bd-46db-a875-83a1701d51f6"}
-note_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='CAD').head()
+note_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='CAD', n=5).head()
 
 # + {"Collapsed": "false", "persistent_id": "93c6457a-a187-421a-a9f7-6cbf844c1365"}
 note_df[note_df.patientunitstayid == 3091883].head(10)
@@ -725,3 +722,6 @@ note_df.to_csv(f'{data_path}cleaned/normalized/note.csv')
 
 # + {"Collapsed": "false", "persistent_id": "eebc356f-507e-4872-be9d-a1d774f2fd7a"}
 note_df.describe().transpose()
+
+# + {"Collapsed": "false"}
+

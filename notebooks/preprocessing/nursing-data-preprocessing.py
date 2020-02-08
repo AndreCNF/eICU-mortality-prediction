@@ -14,12 +14,15 @@
 # ---
 
 # + {"toc-hr-collapsed": false, "Collapsed": "false", "cell_type": "markdown"}
-# # eICU Data Joining
+# # Nursing Data Preprocessing
 # ---
 #
-# Reading and joining all parts of the eICU dataset from MIT with the data from over 139k patients collected in the US.
+# Reading and preprocessing nursing data of the eICU dataset from MIT with the data from over 139k patients collected in the US.
 #
-# The main goal of this notebook is to prepare a single CSV document that contains all the relevant data to be used when training a machine learning model that predicts mortality, joining tables, filtering useless columns and performing imputation.
+# This notebook addresses the preprocessing of the following eICU tables:
+# * nurseAssessment
+# * nurseCare
+# * nurseCharting
 
 # + {"colab_type": "text", "id": "KOdmFzXqF7nq", "toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
 # ## Importing the necessary packages
@@ -256,8 +259,7 @@ yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 # Create the timestamp (`ts`) feature:
 
 # + {"Collapsed": "false", "persistent_id": "d0647504-f554-4d1f-8eba-d87851eb5695"}
-nursecare_df['ts'] = nursecare_df['nursecareoffset']
-nursecare_df = nursecare_df.drop('nursecareoffset', axis=1)
+nursecare_df = nursecare_df.rename(columns={'nursecareoffset': 'ts'})
 nursecare_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -277,17 +279,14 @@ len(nursecare_df)
 # Sort by `ts` so as to be easier to merge with other dataframes later:
 
 # + {"Collapsed": "false", "persistent_id": "9fbb6262-2cdc-4809-a2b2-ce8847793cca"}
-nursecare_df = nursecare_df.set_index('ts')
+nursecare_df = nursecare_df.sort_values('ts')
 nursecare_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Check for possible multiple rows with the same unit stay ID and timestamp:
 
-# + {"Collapsed": "false", "persistent_id": "537efbd0-2f51-4d33-90dc-a4492f94139b"}
-nursecare_df.reset_index().head()
-
 # + {"Collapsed": "false", "persistent_id": "ec32dcd9-8bec-4077-9392-0f7430ddaae2"}
-nursecare_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='Nutrition').head()
+nursecare_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='Nutrition', n=5).head()
 
 # + {"Collapsed": "false", "persistent_id": "9baab531-96da-40e3-8bde-c4657bdc950e"}
 nursecare_df[nursecare_df.patientunitstayid == 2798325].head(10)
@@ -300,14 +299,14 @@ nursecare_df[nursecare_df.patientunitstayid == 2798325].head(10)
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "b0369d33-d5fb-45c7-aa2a-d180b987a251"}
 # [TODO] Find a way to join rows while ignoring zeros
-nursecare_df = du.embedding.join_categorical_enum(nursecare_df, new_cat_embed_feat)
+nursecare_df = du.embedding.join_categorical_enum(nursecare_df, new_cat_embed_feat, inplace=True)
 nursecare_df.head()
 
 # + {"Collapsed": "false", "persistent_id": "0b782718-8a92-4780-abbe-f8cab9efdfce"}
 nursecare_df.dtypes
 
 # + {"Collapsed": "false", "persistent_id": "1d5d3435-7ebf-4d13-8fdb-ac1a09f847b3"}
-nursecare_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='Nutrition').head()
+nursecare_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='Nutrition', n=5).head()
 
 # + {"Collapsed": "false", "persistent_id": "c4269670-2a2a-4e69-8800-ac737eaa3ebc"}
 nursecare_df[nursecare_df.patientunitstayid == 2798325].head(10)
@@ -571,8 +570,7 @@ yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 # Create the timestamp (`ts`) feature:
 
 # + {"Collapsed": "false", "persistent_id": "b1781127-4235-4097-9bb0-5d7dfa965735"}
-nurseassess_df['ts'] = nurseassess_df['nurseassessoffset']
-nurseassess_df = nurseassess_df.drop('nurseassessoffset', axis=1)
+nurseassess_df = nurseassess_df.rename(columns={'nurseassessoffset': 'ts'})
 nurseassess_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -592,17 +590,14 @@ len(nurseassess_df)
 # Sort by `ts` so as to be easier to merge with other dataframes later:
 
 # + {"Collapsed": "false", "persistent_id": "c8ba14f1-d5d7-4e2b-be19-3ec645351c8e"}
-nurseassess_df = nurseassess_df.set_index('ts')
+nurseassess_df = nurseassess_df.sort_values('ts')
 nurseassess_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Check for possible multiple rows with the same unit stay ID and timestamp:
 
-# + {"Collapsed": "false", "persistent_id": "63cf5946-52ad-4abf-8bfa-0cbf70464ea7"}
-nurseassess_df.reset_index().head()
-
 # + {"Collapsed": "false", "persistent_id": "28bb9396-7d50-42a9-a807-b4408c62f815"}
-nurseassess_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='Cough').head()
+nurseassess_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='Cough', n=5).head()
 
 # + {"Collapsed": "false", "persistent_id": "473b8ca5-32f0-45e0-ad54-c3b7ae008653"}
 nurseassess_df[nurseassess_df.patientunitstayid == 2553254].head(10)
@@ -614,14 +609,14 @@ nurseassess_df[nurseassess_df.patientunitstayid == 2553254].head(10)
 # ### Join rows that have the same IDs
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "a60ffe61-f2ba-4611-9e18-d6d28d12f0a0"}
-nurseassess_df = du.embedding.join_categorical_enum(nurseassess_df, new_cat_embed_feat)
+nurseassess_df = du.embedding.join_categorical_enum(nurseassess_df, new_cat_embed_feat, inplace=True)
 nurseassess_df.head()
 
 # + {"Collapsed": "false", "persistent_id": "decebaec-f14b-4521-adcc-24f485a0a781"}
 nurseassess_df.dtypes
 
 # + {"Collapsed": "false", "persistent_id": "0ba6b50e-69db-489c-a1f1-6f324a662a68"}
-nurseassess_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='Cough').head()
+nurseassess_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='Cough', n=5).head()
 
 # + {"Collapsed": "false", "persistent_id": "41c057d5-3d9e-454e-b71b-1f125d63842e"}
 nurseassess_df[nurseassess_df.patientunitstayid == 2553254].head(10)
@@ -1002,8 +997,7 @@ yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 # Create the timestamp (`ts`) feature:
 
 # + {"Collapsed": "false", "persistent_id": "a7eff302-981f-40e7-8bf0-ee9ee5738b0b"}
-nursechart_df['ts'] = nursechart_df['nursechartoffset']
-nursechart_df = nursechart_df.drop('nursechartoffset', axis=1)
+nursechart_df = nursechart_df.rename(columns={'nursechartoffset': 'ts'})
 nursechart_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -1023,17 +1017,14 @@ len(nursechart_df)
 # Sort by `ts` so as to be easier to merge with other dataframes later:
 
 # + {"Collapsed": "false", "persistent_id": "bc1611c3-89ae-4223-896d-b4f42c26db74"}
-nursechart_df = nursechart_df.set_index('ts')
+nursechart_df = nursechart_df.sort_values('ts')
 nursechart_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Check for possible multiple rows with the same unit stay ID and timestamp:
 
-# + {"Collapsed": "false", "persistent_id": "2737d455-c191-4fab-bae1-7b2f00110b77"}
-nursechart_df.reset_index().head()
-
 # + {"Collapsed": "false", "persistent_id": "6ae4396f-4560-400b-b37d-030a16a1889f"}
-nursechart_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='nursingchartcelltypecat').head()
+nursechart_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='nursingchartcelltypecat', n=5).head()
 
 # + {"Collapsed": "false", "persistent_id": "e4d4ed26-00ef-4661-ad50-e8517bb60a64"}
 nursechart_df[nursechart_df.patientunitstayid == 2553254].head(10)
@@ -1045,14 +1036,14 @@ nursechart_df[nursechart_df.patientunitstayid == 2553254].head(10)
 # ### Join rows that have the same IDs
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "3db5777c-316e-4631-9dbc-165fb55d093d"}
-nursechart_df = du.embedding.join_categorical_enum(nursechart_df, new_cat_embed_feat)
+nursechart_df = du.embedding.join_categorical_enum(nursechart_df, new_cat_embed_feat, inplace=True)
 nursechart_df.head()
 
 # + {"Collapsed": "false", "persistent_id": "940ed638-e0a6-4c91-a80b-fc332ce29fc1"}
 nursechart_df.dtypes
 
 # + {"Collapsed": "false", "persistent_id": "4aee12fc-0b71-483d-8a59-dfada22a08af"}
-nursechart_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='nursingchartcelltypecat').head()
+nursechart_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='nursingchartcelltypecat', n=5).head()
 
 # + {"Collapsed": "false", "persistent_id": "6a2b5792-c42f-403d-a79b-fb4619d6c2ba"}
 nursechart_df[nursechart_df.patientunitstayid == 2553254].head(10)

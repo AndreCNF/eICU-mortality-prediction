@@ -14,12 +14,14 @@
 # ---
 
 # + {"toc-hr-collapsed": false, "Collapsed": "false", "cell_type": "markdown"}
-# # eICU Data Joining
+# # Respiratory Data Preprocessing
 # ---
 #
-# Reading and joining all parts of the eICU dataset from MIT with the data from over 139k patients collected in the US.
+# Reading and preprocessing respiratory data of the eICU dataset from MIT with the data from over 139k patients collected in the US.
 #
-# The main goal of this notebook is to prepare a single CSV document that contains all the relevant data to be used when training a machine learning model that predicts mortality, joining tables, filtering useless columns and performing imputation.
+# This notebook addresses the preprocessing of the following eICU tables:
+# * respiratoryCare
+# * respiratoryCharting
 
 # + {"colab_type": "text", "id": "KOdmFzXqF7nq", "toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
 # ## Importing the necessary packages
@@ -122,8 +124,7 @@ resp_care_df.head()
 # Create the timestamp (`ts`) feature:
 
 # + {"Collapsed": "false", "persistent_id": "1e985184-2fe7-49a9-bdad-b383420fe2c2"}
-resp_care_df['ts'] = resp_care_df['ventstartoffset']
-resp_care_df = resp_care_df.drop('ventstartoffset', axis=1)
+resp_care_df = resp_care_df.rename(columns={'ventstartoffset': 'ts'})
 resp_care_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -143,14 +144,14 @@ len(resp_care_df)
 # Sort by `ts` so as to be easier to merge with other dataframes later:
 
 # + {"Collapsed": "false", "persistent_id": "5999db50-c412-4514-9924-bcf0d7b4b20f"}
-resp_care_df = resp_care_df.set_index('ts')
+resp_care_df = resp_care_df.sort_values('ts')
 resp_care_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Check for possible multiple rows with the same unit stay ID and timestamp:
 
 # + {"Collapsed": "false", "persistent_id": "08b71ed2-1822-4f96-9fd8-fd6c88742e99"}
-resp_care_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='ventendoffset').head()
+resp_care_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='ventendoffset', n=5).head()
 
 # + {"Collapsed": "false", "persistent_id": "678fefff-a384-4c44-ab09-86119e6d4087"}
 resp_care_df[resp_care_df.patientunitstayid == 3348331].head(20)
@@ -171,11 +172,11 @@ resp_care_df[resp_care_df.patientunitstayid == 3348331].head(20)
 # There are no errors of having the start vent timestamp later than the end vent timestamp.
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "6e8377a7-4e89-4371-a663-bd10b5dcf5d9"}
-resp_care_df = du.embedding.join_categorical_enum(resp_care_df, cont_join_method='min')
+resp_care_df = du.embedding.join_categorical_enum(resp_care_df, cont_join_method='min', inplace=True)
 resp_care_df.head()
 
 # + {"Collapsed": "false", "persistent_id": "b054019f-50a4-4326-8bc6-bd31966bbeb4"}
-resp_care_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='ventendoffset').head()
+resp_care_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='ventendoffset', n=5).head()
 
 # + {"Collapsed": "false", "persistent_id": "741c918e-715b-467a-a775-f012e48b56ba"}
 resp_care_df[resp_care_df.patientunitstayid == 1113084].head(10)
@@ -187,7 +188,7 @@ resp_care_df[resp_care_df.patientunitstayid == 1113084].head(10)
 # Only keep the first instance of each patient, as we're only keeping track of when they are on ventilation:
 
 # + {"Collapsed": "false", "persistent_id": "988fcf02-dc89-4808-be0b-ed8f7c55d44a"}
-resp_care_df = resp_care_df.reset_index().groupby('patientunitstayid').first().reset_index().set_index('ts')
+resp_care_df = resp_care_df.groupby('patientunitstayid').first().sort_values('ts')
 resp_care_df.head(20)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -228,13 +229,6 @@ resp_care_df['onvent'] = 1
 resp_care_df.head(6)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# Reset index to allow editing the `ts` column:
-
-# + {"Collapsed": "false", "persistent_id": "51605a70-099e-4c45-a2c7-4bd19d164cf1"}
-resp_care_df = resp_care_df.reset_index()
-resp_care_df.head(6)
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
 # Duplicate every row, so as to create a discharge event:
 
 # + {"Collapsed": "false", "persistent_id": "601990ac-7417-4f9a-9f42-d326c284c96b"}
@@ -260,7 +254,7 @@ resp_care_df.head()
 # Sort by `ts` so as to be easier to merge with other dataframes later:
 
 # + {"Collapsed": "false", "persistent_id": "d2439d3c-3b47-4a13-a822-02540510714b"}
-resp_care_df = resp_care_df.set_index('ts')
+resp_care_df = resp_care_df.sort_values('ts')
 resp_care_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -525,8 +519,7 @@ yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 # Create the timestamp (`ts`) feature:
 
 # + {"Collapsed": "false", "persistent_id": "540651fd-1fa7-425d-bce3-5027cd7761bf"}
-resp_chart_df['ts'] = resp_chart_df['nurseassessoffset']
-resp_chart_df = resp_chart_df.drop('nurseassessoffset', axis=1)
+resp_chart_df = resp_chart_df.rename(columns={'nurseassessoffset': 'ts'})
 resp_chart_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -546,17 +539,14 @@ len(resp_chart_df)
 # Sort by `ts` so as to be easier to merge with other dataframes later:
 
 # + {"Collapsed": "false", "persistent_id": "c29990be-8458-4d83-aa02-6c2733704b86"}
-resp_chart_df = resp_chart_df.set_index('ts')
+resp_chart_df = resp_chart_df.sort_values('ts')
 resp_chart_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Check for possible multiple rows with the same unit stay ID and timestamp:
 
-# + {"Collapsed": "false", "persistent_id": "93dcd9c6-df9c-480c-bcc6-9a88db3bba3d"}
-resp_chart_df.reset_index().head()
-
 # + {"Collapsed": "false", "persistent_id": "acadb9e1-775f-43b3-b680-45aa2b37acd7"}
-resp_chart_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='Cough').head()
+resp_chart_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='Cough', n=5).head()
 
 # + {"Collapsed": "false", "persistent_id": "62614201-b663-4adf-9080-33e648a0a0ec"}
 resp_chart_df[resp_chart_df.patientunitstayid == 2553254].head(10)
@@ -568,14 +558,14 @@ resp_chart_df[resp_chart_df.patientunitstayid == 2553254].head(10)
 # ### Join rows that have the same IDs
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "84be170e-c8fb-47a6-a9f9-1d373cbb1eb4"}
-resp_chart_df = du.embedding.join_categorical_enum(resp_chart_df, new_cat_embed_feat)
+resp_chart_df = du.embedding.join_categorical_enum(resp_chart_df, new_cat_embed_feat, inplace=True)
 resp_chart_df.head()
 
 # + {"Collapsed": "false", "persistent_id": "6ece20d0-6de2-4989-9394-e020fc8916ed"}
 resp_chart_df.dtypes
 
 # + {"Collapsed": "false", "persistent_id": "09692bf1-874c-49c5-a525-31f91a28c019"}
-resp_chart_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='Cough').head()
+resp_chart_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='Cough', n=5).head()
 
 # + {"Collapsed": "false", "persistent_id": "b9cbb7ec-8a59-49a2-a32c-b3baf79877ca"}
 resp_chart_df[resp_chart_df.patientunitstayid == 2553254].head(10)

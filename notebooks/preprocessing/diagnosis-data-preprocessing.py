@@ -14,12 +14,15 @@
 # ---
 
 # + {"toc-hr-collapsed": false, "Collapsed": "false", "cell_type": "markdown"}
-# # eICU Data Joining
+# # Diagnosis Data Preprocessing
 # ---
 #
-# Reading and joining all parts of the eICU dataset from MIT with the data from over 139k patients collected in the US.
+# Reading and preprocessing diagnosis data of the eICU dataset from MIT with the data from over 139k patients collected in the US.
 #
-# The main goal of this notebook is to prepare a single CSV document that contains all the relevant data to be used when training a machine learning model that predicts mortality, joining tables, filtering useless columns and performing imputation.
+# This notebook addresses the preprocessing of the following eICU tables:
+# * allergy
+# * diagnosis
+# * pastHistory
 
 # + {"colab_type": "text", "id": "KOdmFzXqF7nq", "toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
 # ## Importing the necessary packages
@@ -192,8 +195,7 @@ yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 # Create the timestamp (`ts`) feature:
 
 # + {"Collapsed": "false", "persistent_id": "2f698d25-5a2b-44be-9d82-2c7790ee489f"}
-alrg_df['ts'] = alrg_df['allergyoffset']
-alrg_df = alrg_df.drop('allergyoffset', axis=1)
+alrg_df = alrg_df.rename(columns={'allergyoffset': 'ts'})
 alrg_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -213,17 +215,14 @@ len(alrg_df)
 # Sort by `ts` so as to be easier to merge with other dataframes later:
 
 # + {"Collapsed": "false", "persistent_id": "173d1236-0aad-49a4-a8fd-b25c99bc30bc"}
-alrg_df = alrg_df.set_index('ts')
+alrg_df = alrg_df.sort_values('ts')
 alrg_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Check for possible multiple rows with the same unit stay ID and timestamp:
 
-# + {"Collapsed": "false", "persistent_id": "14dad389-ff55-4dc3-a435-90f9b9c8f58b"}
-alrg_df.reset_index().head()
-
 # + {"Collapsed": "false", "persistent_id": "d2660024-2f7e-4d37-b312-2a69aea35f0a"}
-alrg_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='allergyname').head()
+alrg_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='allergyname', n=5).head()
 
 # + {"Collapsed": "false", "persistent_id": "a49094b0-6f71-4f70-ae6c-223373294b50"}
 alrg_df[alrg_df.patientunitstayid == 3197554].head(10)
@@ -238,14 +237,14 @@ alrg_df[alrg_df.patientunitstayid == 3197554].head(10)
 # Even after removing duplicates rows, there are still some that have different information for the same ID and timestamp. We have to concatenate the categorical enumerations.
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "bf671749-9886-44f0-923f-24fd31d7d371"}
-alrg_df = du.embedding.join_categorical_enum(alrg_df, new_cat_embed_feat)
+alrg_df = du.embedding.join_categorical_enum(alrg_df, new_cat_embed_feat, inplace=True)
 alrg_df.head()
 
 # + {"Collapsed": "false", "persistent_id": "96d8f554-5a5f-4b82-b5d5-47e5ce4c0f75"}
 alrg_df.dtypes
 
 # + {"Collapsed": "false", "persistent_id": "4024c555-2938-4f9a-9105-e4d77569267a"}
-alrg_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='allergyname').head()
+alrg_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='allergyname', n=5).head()
 
 # + {"Collapsed": "false", "persistent_id": "7bb3f0b5-8f04-42f8-96aa-716762f65e5a"}
 alrg_df[alrg_df.patientunitstayid == 3197554].head(10)
@@ -582,7 +581,7 @@ len(pasthist_df)
 # Check for possible multiple rows with the same unit stay ID and timestamp:
 
 # + {"Collapsed": "false", "persistent_id": "acae2295-6f7e-4290-b8a7-12d13042b65d"}
-pasthist_df.groupby(['patientunitstayid']).count().nlargest(columns='pasthistoryvalue').head()
+pasthist_df.groupby(['patientunitstayid']).count().nlargest(columns='pasthistoryvalue', n=5).head()
 
 # + {"Collapsed": "false", "persistent_id": "1c71ea45-4026-43ac-8433-bd70d567bee9"}
 pasthist_df[pasthist_df.patientunitstayid == 1558102].head(10)
@@ -594,14 +593,14 @@ pasthist_df[pasthist_df.patientunitstayid == 1558102].head(10)
 # ### Join rows that have the same IDs
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023"}
-pasthist_df = du.embedding.join_categorical_enum(pasthist_df, new_cat_embed_feat, id_columns=['patientunitstayid'])
+pasthist_df = du.embedding.join_categorical_enum(pasthist_df, new_cat_embed_feat, id_columns=['patientunitstayid'], inplace=True)
 pasthist_df.head()
 
 # + {"Collapsed": "false", "persistent_id": "6edc2eea-1139-4f7f-a314-db03cd785128"}
 pasthist_df.dtypes
 
 # + {"Collapsed": "false", "persistent_id": "61f2c4df-d3b6-459b-9632-194e2736ff27"}
-pasthist_df.groupby(['patientunitstayid']).count().nlargest(columns='pasthistoryvalue').head()
+pasthist_df.groupby(['patientunitstayid']).count().nlargest(columns='pasthistoryvalue', n=5).head()
 
 # + {"Collapsed": "false", "persistent_id": "aa5f247a-8e4b-4527-a265-2af71b0f8e06"}
 pasthist_df[pasthist_df.patientunitstayid == 1558102].head(10)
@@ -788,8 +787,7 @@ yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 # Create the timestamp (`ts`) feature:
 
 # + {"Collapsed": "false", "persistent_id": "8011a320-6066-416e-bb3e-280d97088afe"}
-diagn_df['ts'] = diagn_df['diagnosisoffset']
-diagn_df = diagn_df.drop('diagnosisoffset', axis=1)
+diagn_df = diagn_df.rename(columns={'diagnosisoffset': 'ts'})
 diagn_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -809,17 +807,14 @@ len(diagn_df)
 # Sort by `ts` so as to be easier to merge with other dataframes later:
 
 # + {"Collapsed": "false", "persistent_id": "e82d40c2-9e0c-411a-a2e2-acb1dd4f1d96"}
-diagn_df = diagn_df.set_index('ts')
+diagn_df = diagn_df.sort_values('ts')
 diagn_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Check for possible multiple rows with the same unit stay ID and timestamp:
 
-# + {"Collapsed": "false", "persistent_id": "287cb2ac-7d06-4240-b896-75ab99093d32"}
-diagn_df.reset_index().head()
-
 # + {"Collapsed": "false", "persistent_id": "f28206fd-f1d0-4ca2-b006-653f60d05782"}
-diagn_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='diagnosis_type_1').head()
+diagn_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='diagnosis_type_1', n=5).head()
 
 # + {"Collapsed": "false", "persistent_id": "cac394e5-a6fa-4bc7-a496-1c97b49de381"}
 diagn_df[diagn_df.patientunitstayid == 3089982].head(10)
@@ -831,14 +826,14 @@ diagn_df[diagn_df.patientunitstayid == 3089982].head(10)
 # ### Join rows that have the same IDs
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "b6614a18-9359-48be-b659-ea4a8bb90f00"}
-diagn_df = du.embedding.join_categorical_enum(diagn_df, new_cat_embed_feat)
+diagn_df = du.embedding.join_categorical_enum(diagn_df, new_cat_embed_feat, inplace=True)
 diagn_df.head()
 
 # + {"Collapsed": "false", "persistent_id": "e854db5e-06f3-45ee-ad27-f5214f3f6ea7"}
 diagn_df.dtypes
 
 # + {"Collapsed": "false", "persistent_id": "21a955e7-fdc3-42d8-97e0-47f4401b7c8e"}
-diagn_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='diagnosis_type_1').head()
+diagn_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='diagnosis_type_1', n=5).head()
 
 # + {"Collapsed": "false", "persistent_id": "4dddda8f-daf1-4d2b-8782-8de20201ea7f"}
 diagn_df[diagn_df.patientunitstayid == 3089982].head(10)

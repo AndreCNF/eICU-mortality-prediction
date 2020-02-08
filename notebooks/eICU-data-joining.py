@@ -14,14 +14,12 @@
 # ---
 
 # + {"toc-hr-collapsed": false, "Collapsed": "false", "cell_type": "markdown"}
-# # Exams Data Preprocessing
+# # eICU Data Joining
 # ---
 #
-# Reading and preprocessing exams data of the eICU dataset from MIT with the data from over 139k patients collected in the US.
+# Reading and joining all preprocessed parts of the eICU dataset from MIT with the data from over 139k patients collected in the US.
 #
-# This notebook addresses the preprocessing of the following eICU tables:
-# * lab
-# * physicalExam
+# The main goal of this notebook is to prepare a single CSV document that contains all the relevant data to be used when training a machine learning model that predicts mortality, joining tables, filtering useless columns and performing imputation.
 
 # + {"colab_type": "text", "id": "KOdmFzXqF7nq", "toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
 # ## Importing the necessary packages
@@ -37,13 +35,13 @@ import pixiedust                           # Debugging in Jupyter Notebook cells
 
 # + {"Collapsed": "false", "persistent_id": "a1f6ee7f-36d4-489d-b2dd-ec2a38f15d11", "last_executed_text": "# Change to parent directory (presumably \"Documents\")\nos.chdir(\"../../..\")\n\n# Path to the CSV dataset files\ndata_path = 'Documents/Datasets/Thesis/eICU/uncompressed/'\n\n# Path to the code files\nproject_path = 'Documents/GitHub/eICU-mortality-prediction/'", "execution_event_id": "baeb346a-1c34-42d1-a501-7ae37369255e"}
 # Change to parent directory (presumably "Documents")
-os.chdir("../../../..")
+os.chdir("../../..")
 
 # Path to the CSV dataset files
-data_path = 'Datasets/Thesis/eICU/uncompressed/'
+data_path = 'Documents/Datasets/Thesis/eICU/uncompressed/'
 
 # Path to the code files
-project_path = 'GitHub/eICU-mortality-prediction/'
+project_path = 'Documents/GitHub/eICU-mortality-prediction/'
 
 # + {"Collapsed": "false", "persistent_id": "c0c2e356-d4f4-4a9d-bec2-88bdf9eb6a38", "last_executed_text": "import modin.pandas as pd                  # Optimized distributed version of Pandas\nimport data_utils as du                    # Data science and machine learning relevant methods", "execution_event_id": "82ef68be-443a-4bb8-8abd-7457a7005b4d"}
 import modin.pandas as pd                  # Optimized distributed version of Pandas

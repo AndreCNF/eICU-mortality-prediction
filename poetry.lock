@@ -9,7 +9,7 @@ version = "0.7.12"
 [[package]]
 category = "main"
 description = "Disable App Nap on OS X 10.9"
-marker = "sys_platform == \"darwin\" or platform_system == \"Darwin\""
+marker = "python_version >= \"3.3\" and sys_platform == \"darwin\" or platform_system == \"Darwin\""
 name = "appnope"
 optional = false
 python-versions = "*"
@@ -81,6 +81,7 @@ pytz = ">=2015.7"
 [[package]]
 category = "main"
 description = "Specifications for callback functions passed in to an API"
+marker = "python_version >= \"3.3\""
 name = "backcall"
 optional = false
 python-versions = "*"
@@ -180,7 +181,7 @@ description = "Supercharging Machine Learning"
 name = "comet-ml"
 optional = false
 python-versions = "*"
-version = "2.0.18"
+version = "3.0.2"
 
 [package.dependencies]
 comet-git-pure = ">=0.19.11"
@@ -237,7 +238,7 @@ python-versions = "^3.6"
 version = "0.1.0"
 
 [package.dependencies]
-comet-ml = "^2.0"
+comet-ml = "^3.0.2"
 dask = "^2.5"
 distributed = "^2.5"
 everett = "^1.0"
@@ -245,6 +246,7 @@ fsspec = "^0.6.0"
 modin = "^0.7.0"
 pandas = "^0.25.1"
 pdoc3 = "^0.7.2"
+pillow = "^7.0.0"
 portray = "^1.3"
 ray = "0.8.0"
 sklearn = "^0.0.0"
@@ -253,10 +255,9 @@ torch = "^1.2"
 tqdm = "^4.38"
 
 [package.source]
-reference = "e11065ae527e592d8d546c4043a0f8cdca6c136f"
+reference = "bcd6f61da4294cde40b53f1da44ef07798be8672"
 type = "git"
 url = "https://github.com/AndreCNF/data-utils.git"
-
 [[package]]
 category = "main"
 description = "This package provides a DateTime data type, as known from Zope. Unless you need to communicate with Zope APIs, you're probably better off using Python's built-in datetime module."
@@ -413,8 +414,8 @@ category = "main"
 description = "Python Git Library"
 name = "gitpython"
 optional = false
-python-versions = ">=3.0, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
-version = "3.0.5"
+python-versions = ">=3.4"
+version = "3.0.7"
 
 [package.dependencies]
 gitdb2 = ">=2.0.0"
@@ -551,6 +552,27 @@ python-versions = "*"
 version = "0.2.0"
 
 [[package]]
+category = "main"
+description = "IPython HTML widgets for Jupyter"
+name = "ipywidgets"
+optional = false
+python-versions = "*"
+version = "7.5.1"
+
+[package.dependencies]
+ipykernel = ">=4.5.1"
+nbformat = ">=4.2.0"
+traitlets = ">=4.3.1"
+widgetsnbextension = ">=3.5.0,<3.6.0"
+
+[package.dependencies.ipython]
+python = ">=3.3"
+version = ">=4.0.0"
+
+[package.extras]
+test = ["pytest (>=3.6.0)", "pytest-cov", "mock"]
+
+[[package]]
 category = "dev"
 description = "A Python utility / library to sort Python imports."
 name = "isort"
@@ -567,6 +589,7 @@ xdg_home = ["appdirs (>=1.4.0)"]
 [[package]]
 category = "main"
 description = "An autocompletion tool for Python that can be used for text editors."
+marker = "python_version >= \"3.3\""
 name = "jedi"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
@@ -824,13 +847,14 @@ description = "A Material Design theme for MkDocs"
 name = "mkdocs-material"
 optional = false
 python-versions = "*"
-version = "4.4.3"
+version = "4.6.2"
 
 [package.dependencies]
 Pygments = ">=2.2"
-mkdocs = ">=1"
+markdown = ">=3.2"
+mkdocs = ">=1.0"
 mkdocs-minify-plugin = ">=0.2"
-pymdown-extensions = ">=4.11"
+pymdown-extensions = ">=6.3"
 
 [[package]]
 category = "main"
@@ -855,12 +879,13 @@ version = "0.1.0"
 
 [package.dependencies]
 colorlover = "^0.3.0"
-comet_ml = "^2.0"
+comet-ml = "^3.0.2"
 everett = "^1.0"
 modin = "^0.7.0"
 numpy = "^1.17"
 pandas = "^0.25.0"
 pdoc3 = "^0.7.2"
+pillow = "^7.0.0"
 plotly = "^4.0"
 ray = "0.8.0"
 shap = "branch master"
@@ -868,10 +893,9 @@ torch = "^1.1"
 tqdm = "^4.32"
 
 [package.source]
-reference = "8181990d14e262bd9e60d05d9260f90a4149b762"
+reference = "04b85450aaaa58f20093962f3a05621327906c15"
 type = "git"
 url = "https://github.com/AndreCNF/model-interpreter.git"
-
 [[package]]
 category = "main"
 description = "Modin: Make your pandas code run faster by changing one line of code."
@@ -1059,6 +1083,7 @@ version = "1.4.2"
 [[package]]
 category = "main"
 description = "A Python Parser"
+marker = "python_version >= \"3.3\""
 name = "parso"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
@@ -1095,7 +1120,7 @@ hug = ">=2.6,<3.0"
 [[package]]
 category = "main"
 description = "Pexpect allows easy control of interactive console applications."
-marker = "sys_platform != \"win32\""
+marker = "python_version >= \"3.3\" and sys_platform != \"win32\""
 name = "pexpect"
 optional = false
 python-versions = "*"
@@ -1107,6 +1132,7 @@ ptyprocess = ">=0.5"
 [[package]]
 category = "main"
 description = "Tiny 'shelve'-like database with concurrency support"
+marker = "python_version >= \"3.3\""
 name = "pickleshare"
 optional = false
 python-versions = "*"
@@ -1197,6 +1223,7 @@ twisted = ["twisted"]
 [[package]]
 category = "main"
 description = "Library for building powerful interactive command lines in Python"
+marker = "python_version >= \"3.3\""
 name = "prompt-toolkit"
 optional = false
 python-versions = ">=3.6"
@@ -1231,7 +1258,7 @@ enum = ["enum34"]
 [[package]]
 category = "main"
 description = "Run a subprocess in a pseudo terminal"
-marker = "sys_platform != \"win32\" or os_name != \"nt\""
+marker = "python_version >= \"3.3\" and sys_platform != \"win32\" or os_name != \"nt\""
 name = "ptyprocess"
 optional = false
 python-versions = "*"
@@ -1498,7 +1525,7 @@ scipy = "*"
 tqdm = ">4.25.0"
 
 [package.extras]
-all = ["matplotlib", "ipython", "lime"]
+all = ["lime", "matplotlib", "ipython"]
 others = ["lime"]
 plots = ["matplotlib", "ipython"]
 
@@ -1506,7 +1533,6 @@ plots = ["matplotlib", "ipython"]
 reference = "8e2a355c60bf340704affd264107e67ca913d0c9"
 type = "git"
 url = "https://github.com/AndreCNF/shap.git"
-
 [[package]]
 category = "main"
 description = "Python 2 and 3 compatibility utilities"
@@ -1815,6 +1841,17 @@ version = "0.34.2"
 test = ["pytest (>=3.0.0)", "pytest-cov"]
 
 [[package]]
+category = "main"
+description = "IPython HTML widgets for Jupyter"
+name = "widgetsnbextension"
+optional = false
+python-versions = "*"
+version = "3.5.1"
+
+[package.dependencies]
+notebook = ">=4.4.1"
+
+[[package]]
 category = "dev"
 description = "Module for decorators, wrappers and monkey patching."
 name = "wrapt"
@@ -1868,7 +1905,7 @@ marker = "python_version < \"3.8\""
 name = "zipp"
 optional = false
 python-versions = ">=3.6"
-version = "2.1.0"
+version = "2.2.0"
 
 [package.extras]
 docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
@@ -1891,7 +1928,7 @@ test = ["zope.event"]
 testing = ["coverage", "nose", "zope.event"]
 
 [metadata]
-content-hash = "f343cab724a08796da787f6c7f7cb79899e239b3b3c207814222d3cf59c65aa6"
+content-hash = "86f45044f50bd14785228e2d823bf77fd1e77c9a40ec9f8c5da1aa516e0a29be"
 python-versions = "^3.6"
 
 [metadata.files]
@@ -1965,8 +2002,8 @@ comet-git-pure = [
     {file = "comet_git_pure-0.19.14-py3-none-any.whl", hash = "sha256:82d292a1253e7a022155ed7688542cb4155b49d580880aaf4359f3c2d7f694fd"},
 ]
 comet-ml = [
-    {file = "comet_ml-2.0.18-py3-none-any.whl", hash = "sha256:9a6b7ceff4a582720a5c0b27f2db6b2396e900faee6c99a5a116982fd84d3445"},
-    {file = "comet_ml-2.0.18.tar.gz", hash = "sha256:2c0f56c36ea9d7dd5cd2c818317667bf5eec331122c4ae1732b78b2fd0fd0488"},
+    {file = "comet_ml-3.0.2-py3-none-any.whl", hash = "sha256:2ac36800ec6ace557bcf0bba781404f5b82242a64b920ed64e7611ab42cb9436"},
+    {file = "comet_ml-3.0.2.tar.gz", hash = "sha256:f5fb4850a816a59b0e004f87ffd4976190cfaf6eef05cf8909187db0942e74c4"},
 ]
 cycler = [
     {file = "cycler-0.10.0-py2.py3-none-any.whl", hash = "sha256:1d8a5ae1ff6c5cf9b93e8811e581232ad8920aeec647c37316ceac982b08cb2d"},
@@ -2045,8 +2082,8 @@ gitdb2 = [
     {file = "gitdb2-2.0.6.tar.gz", hash = "sha256:1b6df1433567a51a4a9c1a5a0de977aa351a405cc56d7d35f3388bad1f630350"},
 ]
 gitpython = [
-    {file = "GitPython-3.0.5-py3-none-any.whl", hash = "sha256:c155c6a2653593ccb300462f6ef533583a913e17857cfef8fc617c246b6dc245"},
-    {file = "GitPython-3.0.5.tar.gz", hash = "sha256:9c2398ffc3dcb3c40b27324b316f08a4f93ad646d5a6328cafbb871aa79f5e42"},
+    {file = "GitPython-3.0.7-py3-none-any.whl", hash = "sha256:99c77677f31f255e130f3fed4c8e0eebb35f1a09df98ff965fff6774f71688cf"},
+    {file = "GitPython-3.0.7.tar.gz", hash = "sha256:99cd0403cecd8a13b95d2e045b9fcaa7837137fcc5ec3105f2c413305d82c143"},
 ]
 graphviz = [
     {file = "graphviz-0.11.1-py2.py3-none-any.whl", hash = "sha256:6d0f69c107cfdc9bd1df3763fad99569bbcba29d0c52ffcbc6f266621d8bf709"},
@@ -2086,6 +2123,10 @@ ipython = [
 ipython-genutils = [
     {file = "ipython_genutils-0.2.0-py2.py3-none-any.whl", hash = "sha256:72dd37233799e619666c9f639a9da83c34013a73e8bbc79a7a6348d93c61fab8"},
     {file = "ipython_genutils-0.2.0.tar.gz", hash = "sha256:eb2e116e75ecef9d4d228fdc66af54269afa26ab4463042e33785b887c628ba8"},
+]
+ipywidgets = [
+    {file = "ipywidgets-7.5.1-py2.py3-none-any.whl", hash = "sha256:13ffeca438e0c0f91ae583dc22f50379b9d6b28390ac7be8b757140e9a771516"},
+    {file = "ipywidgets-7.5.1.tar.gz", hash = "sha256:e945f6e02854a74994c596d9db83444a1850c01648f1574adf144fbbabe05c97"},
 ]
 isort = [
     {file = "isort-4.3.21-py2.py3-none-any.whl", hash = "sha256:6e811fcb295968434526407adb8796944f1988c5b65e8139058f2014cbe100fd"},
@@ -2318,8 +2359,8 @@ mkdocs = [
     {file = "mkdocs-1.0.4.tar.gz", hash = "sha256:17d34329aad75d5de604b9ed4e31df3a4d235afefdc46ce7b1964fddb2e1e939"},
 ]
 mkdocs-material = [
-    {file = "mkdocs-material-4.4.3.tar.gz", hash = "sha256:e4a9ac73db7c65fdae1dbd248091e4b0a3f5db3e6bf87a46bb457db013a045e4"},
-    {file = "mkdocs_material-4.4.3-py2.py3-none-any.whl", hash = "sha256:a5246b550299d00a135a3f739e70ac6db73d7127480f0fecbda113d0095a674a"},
+    {file = "mkdocs-material-4.6.2.tar.gz", hash = "sha256:4f32bfc8f8da74abc0bc65116d7f9e3d6b2e3e2dc43b61cfaab72e151c9c0431"},
+    {file = "mkdocs_material-4.6.2-py2.py3-none-any.whl", hash = "sha256:294275c4d3f3e5711b27645b013a0afe8b22a8ace8db81099cb1403ad47b4af5"},
 ]
 mkdocs-minify-plugin = [
     {file = "mkdocs-minify-plugin-0.2.1.tar.gz", hash = "sha256:3000a5069dd0f42f56a8aaf7fd5ea1222c67487949617e39585d6b6434b074b6"},
@@ -2891,6 +2932,10 @@ wheel = [
     {file = "wheel-0.34.2-py2.py3-none-any.whl", hash = "sha256:df277cb51e61359aba502208d680f90c0493adec6f0e848af94948778aed386e"},
     {file = "wheel-0.34.2.tar.gz", hash = "sha256:8788e9155fe14f54164c1b9eb0a319d98ef02c160725587ad60f14ddc57b6f96"},
 ]
+widgetsnbextension = [
+    {file = "widgetsnbextension-3.5.1-py2.py3-none-any.whl", hash = "sha256:bd314f8ceb488571a5ffea6cc5b9fc6cba0adaf88a9d2386b93a489751938bcd"},
+    {file = "widgetsnbextension-3.5.1.tar.gz", hash = "sha256:079f87d87270bce047512400efd70238820751a11d2d8cb137a5a5bdbaf255c7"},
+]
 wrapt = [
     {file = "wrapt-1.11.2.tar.gz", hash = "sha256:565a021fd19419476b9362b05eeaa094178de64f8361e44468f9e9d7843901e1"},
 ]
@@ -2912,8 +2957,8 @@ zict = [
     {file = "zict-1.0.0.tar.gz", hash = "sha256:e34dd25ea97def518fb4c77f2c27078f3a7d6c965b0a3ac8fe5bdb0a8011a310"},
 ]
 zipp = [
-    {file = "zipp-2.1.0-py3-none-any.whl", hash = "sha256:ccc94ed0909b58ffe34430ea5451f07bc0c76467d7081619a454bf5c98b89e28"},
-    {file = "zipp-2.1.0.tar.gz", hash = "sha256:feae2f18633c32fc71f2de629bfb3bd3c9325cd4419642b1f1da42ee488d9b98"},
+    {file = "zipp-2.2.0-py36-none-any.whl", hash = "sha256:d65287feb793213ffe11c0f31b81602be31448f38aeb8ffc2eb286c4f6f6657e"},
+    {file = "zipp-2.2.0.tar.gz", hash = "sha256:5c56e330306215cd3553342cfafc73dda2c60792384117893f3a83f8a1209f50"},
 ]
 "zope.interface" = [
     {file = "zope.interface-4.7.1-cp27-cp27m-macosx_10_6_intel.whl", hash = "sha256:14157421f4121a57625002cc4f48ac7521ea238d697c4a4459a884b62132b977"},

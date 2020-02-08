@@ -14,12 +14,14 @@
 # ---
 
 # + {"toc-hr-collapsed": false, "Collapsed": "false", "cell_type": "markdown"}
-# # eICU Data Joining
+# # Vital Data Preprocessing
 # ---
 #
-# Reading and joining all parts of the eICU dataset from MIT with the data from over 139k patients collected in the US.
+# Reading and preprocessing vital signals data of the eICU dataset from MIT with the data from over 139k patients collected in the US.
 #
-# The main goal of this notebook is to prepare a single CSV document that contains all the relevant data to be used when training a machine learning model that predicts mortality, joining tables, filtering useless columns and performing imputation.
+# This notebook addresses the preprocessing of the following eICU tables:
+# * vitalAperiodic
+# * vitalPeriodic
 
 # + {"colab_type": "text", "id": "KOdmFzXqF7nq", "toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
 # ## Importing the necessary packages
@@ -198,17 +200,14 @@ len(patient_df)
 # Sort by `ts` so as to be easier to merge with other dataframes later:
 
 # + {"Collapsed": "false", "persistent_id": "b110a331-70ea-4522-b454-bb85edf64a65"}
-vital_prdc_df = vital_prdc_df.set_index('ts')
+vital_prdc_df = vital_prdc_df.sort_values('ts')
 vital_prdc_df.head(6)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Check for possible multiple rows with the same unit stay ID and timestamp:
 
-# + {"Collapsed": "false", "persistent_id": "916b433e-a194-45a5-a278-6766021abfd2"}
-micro_df.reset_index().head()
-
 # + {"Collapsed": "false", "persistent_id": "080e07ca-fe7c-40fd-b5ba-60d58df367ac"}
-micro_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='culturesite').head()
+micro_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='culturesite', n=5).head()
 
 # + {"Collapsed": "false", "persistent_id": "da199102-daa7-4168-b64e-021c662a5567"}
 micro_df[micro_df.patientunitstayid == 3069495].head(20)
@@ -217,14 +216,14 @@ micro_df[micro_df.patientunitstayid == 3069495].head(20)
 # ### Join rows that have the same IDs
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "4b1e0a15-d383-4a59-8157-7b4be95bf042"}
-micro_df = du.embedding.join_categorical_enum(micro_df, new_cat_embed_feat)
+micro_df = du.embedding.join_categorical_enum(micro_df, new_cat_embed_feat, inplace=True)
 micro_df.head()
 
 # + {"Collapsed": "false", "persistent_id": "f0ec040f-7283-4015-8be6-11b30e8323a6"}
 micro_df.dtypes
 
 # + {"Collapsed": "false", "persistent_id": "f9163f0d-bd73-4dc8-a23e-6f72e67cf4fb"}
-micro_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='culturesite').head()
+micro_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='culturesite', n=5).head()
 
 # + {"Collapsed": "false", "persistent_id": "fb8184d5-8f93-463f-b8a6-95a456f6ae11"}
 micro_df[micro_df.patientunitstayid == 3069495].head(20)
@@ -342,8 +341,7 @@ vital_aprdc_df.head()
 # Create the timestamp (`ts`) feature:
 
 # + {"Collapsed": "false", "persistent_id": "b18b4887-b49f-4341-b28e-6c7866e53bb8"}
-vital_aprdc_df['ts'] = vital_aprdc_df['observationoffset']
-vital_aprdc_df = vital_aprdc_df.drop('observationoffset', axis=1)
+vital_aprdc_df = vital_aprdc_df.rename(columns={'observationoffset': 'ts'})
 vital_aprdc_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -363,14 +361,14 @@ len(vital_aprdc_df)
 # Sort by `ts` so as to be easier to merge with other dataframes later:
 
 # + {"Collapsed": "false", "persistent_id": "f353a49b-c4cf-427b-8f51-987d998a8ae4"}
-vital_aprdc_df = vital_aprdc_df.set_index('ts')
+vital_aprdc_df = vital_aprdc_df.sort_values('ts')
 vital_aprdc_df.head(6)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Check for possible multiple rows with the same unit stay ID and timestamp:
 
 # + {"Collapsed": "false", "persistent_id": "32516efa-0ea4-4308-a50c-a7117fcb9d7b"}
-vital_aprdc_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='noninvasivemean').head()
+vital_aprdc_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='noninvasivemean', n=5).head()
 
 # + {"Collapsed": "false", "persistent_id": "112555fe-0484-4ab2-a325-71007d3db114"}
 vital_aprdc_df[micro_df.patientunitstayid == 3069495].head(20)
@@ -379,14 +377,14 @@ vital_aprdc_df[micro_df.patientunitstayid == 3069495].head(20)
 # ### Join rows that have the same IDs
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "df09ded9-fad0-494e-a9a6-b791fdfd9030"}
-micro_df = du.embedding.join_categorical_enum(micro_df, new_cat_embed_feat)
+micro_df = du.embedding.join_categorical_enum(micro_df, new_cat_embed_feat, inplace=True)
 micro_df.head()
 
 # + {"Collapsed": "false", "persistent_id": "85242cf3-1e23-4b70-902f-7c480ecc98d4"}
 micro_df.dtypes
 
 # + {"Collapsed": "false", "persistent_id": "30583cb6-8b9c-4e86-899d-98e5e6b04b5b"}
-micro_df.reset_index().groupby(['patientunitstayid', 'ts']).count().nlargest(columns='culturesite').head()
+micro_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='culturesite', n=5).head()
 
 # + {"Collapsed": "false", "persistent_id": "1b1717b8-3b9c-48da-8c4b-56ee7c4b8585"}
 micro_df[micro_df.patientunitstayid == 3069495].head(20)
