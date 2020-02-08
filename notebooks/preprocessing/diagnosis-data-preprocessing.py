@@ -35,13 +35,13 @@ import pixiedust                           # Debugging in Jupyter Notebook cells
 
 # + {"Collapsed": "false", "persistent_id": "a1f6ee7f-36d4-489d-b2dd-ec2a38f15d11", "last_executed_text": "# Change to parent directory (presumably \"Documents\")\nos.chdir(\"../../..\")\n\n# Path to the CSV dataset files\ndata_path = 'Documents/Datasets/Thesis/eICU/uncompressed/'\n\n# Path to the code files\nproject_path = 'Documents/GitHub/eICU-mortality-prediction/'", "execution_event_id": "baeb346a-1c34-42d1-a501-7ae37369255e"}
 # Change to parent directory (presumably "Documents")
-os.chdir("../../..")
+os.chdir("../../../..")
 
 # Path to the CSV dataset files
-data_path = 'Documents/Datasets/Thesis/eICU/uncompressed/'
+data_path = 'Datasets/Thesis/eICU/uncompressed/'
 
 # Path to the code files
-project_path = 'Documents/GitHub/eICU-mortality-prediction/'
+project_path = 'GitHub/eICU-mortality-prediction/'
 
 # + {"Collapsed": "false", "persistent_id": "c0c2e356-d4f4-4a9d-bec2-88bdf9eb6a38", "last_executed_text": "import modin.pandas as pd                  # Optimized distributed version of Pandas\nimport data_utils as du                    # Data science and machine learning relevant methods", "execution_event_id": "82ef68be-443a-4bb8-8abd-7457a7005b4d"}
 import modin.pandas as pd                  # Optimized distributed version of Pandas
@@ -410,39 +410,32 @@ pasthist_df.pasthistorypath.map(lambda x: len(x.split('/'))).min()
 pasthist_df.pasthistorypath.map(lambda x: len(x.split('/'))).max()
 
 # + {"Collapsed": "false", "persistent_id": "ae522e1e-8465-4e53-8299-c0fc1f3757c1"}
-pasthist_df.pasthistorypath.apply(lambda x: du.search_explore.get_element_from_split(x, 0, separator='/'),
-                                  meta=('x', str)).value_counts()
+pasthist_df.pasthistorypath.apply(lambda x: du.search_explore.get_element_from_split(x, 0, separator='/')).value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "e72babaa-63b4-4804-87b5-f9ee67fd7118"}
-pasthist_df.pasthistorypath.apply(lambda x: du.search_explore.get_element_from_split(x, 1, separator='/'),
-                                  meta=('x', str)).value_counts()
+pasthist_df.pasthistorypath.apply(lambda x: du.search_explore.get_element_from_split(x, 1, separator='/')).value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "bf504856-1e69-40a8-9677-1878144e00f7"}
-pasthist_df.pasthistorypath.apply(lambda x: du.search_explore.get_element_from_split(x, 2, separator='/'),
-                                  meta=('x', str)).value_counts()
+pasthist_df.pasthistorypath.apply(lambda x: du.search_explore.get_element_from_split(x, 2, separator='/')).value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "5f79fcc3-0dfa-40fa-b2f9-4e2f1211feab"}
-pasthist_df.pasthistorypath.apply(lambda x: du.search_explore.get_element_from_split(x, 3, separator='/'),
-                                  meta=('x', str)).value_counts()
+pasthist_df.pasthistorypath.apply(lambda x: du.search_explore.get_element_from_split(x, 3, separator='/')).value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "271ee812-3434-47b0-9dd0-6edfea59c5fe"}
-pasthist_df.pasthistorypath.apply(lambda x: du.search_explore.get_element_from_split(x, 4, separator='/'),
-                                  meta=('x', str)).value_counts()
+pasthist_df.pasthistorypath.apply(lambda x: du.search_explore.get_element_from_split(x, 4, separator='/')).value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "4b03a6bd-ea02-456e-9d28-095f2b10fea0"}
-pasthist_df.pasthistorypath.apply(lambda x: du.search_explore.get_element_from_split(x, 5, separator='/'),
-                                  meta=('x', str)).value_counts()
+pasthist_df.pasthistorypath.apply(lambda x: du.search_explore.get_element_from_split(x, 5, separator='/')).value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "954a240a-a4b1-4e5a-b2d0-1f1864040aac"}
-pasthist_df.pasthistorypath.apply(lambda x: du.search_explore.get_element_from_split(x, 6, separator='/'),
-                                  meta=('x', str)).value_counts()
+pasthist_df.pasthistorypath.apply(lambda x: du.search_explore.get_element_from_split(x, 6, separator='/')).value_counts()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # There are always at least 5 levels of the notes. As the first 4 ones are essentially always the same ("notes/Progress Notes/Past History/Organ Systems/") and the 5th one tends to not be very specific (only indicates which organ system it affected, when it isn't just a case of no health problems detected), it's best to preserve the 5th and isolate the remaining string as a new feature. This way, the split provides further insight to the model on similar notes.
 
 # + {"Collapsed": "false", "persistent_id": "abfe7998-c744-4653-96d4-752c3c7c62a8"}
-pasthist_df['pasthistorytype'] = pasthist_df.pasthistorypath.apply(lambda x: du.search_explore.get_element_from_split(x, 4, separator='/'), meta=('x', str))
-pasthist_df['pasthistorydetails'] = pasthist_df.pasthistorypath.apply(lambda x: du.search_explore.get_element_from_split(x, 5, separator='/', till_the_end=True), meta=('x', str))
+pasthist_df['pasthistorytype'] = pasthist_df.pasthistorypath.apply(lambda x: du.search_explore.get_element_from_split(x, 4, separator='/'))
+pasthist_df['pasthistorydetails'] = pasthist_df.pasthistorypath.apply(lambda x: du.search_explore.get_element_from_split(x, 5, separator='/', till_the_end=True))
 pasthist_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -466,7 +459,7 @@ pasthist_df = pasthist_df.drop('pasthistorydetails_last', axis=1)
 pasthist_df.head()
 
 # + {"Collapsed": "false", "persistent_id": "5022385b-8935-436e-a82b-8c402c0808f5"}
-pasthist_df['pasthistorydetails'] = pasthist_df.pasthistorydetails.apply(lambda x: '/'.join(x.split('/')[:-1]), meta=('pasthistorydetails', str))
+pasthist_df['pasthistorydetails'] = pasthist_df.pasthistorydetails.apply(lambda x: '/'.join(x.split('/')[:-1]))
 pasthist_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -500,7 +493,7 @@ pasthist_df[pasthist_df.pasthistorydetails == ''].head()
 # + {"Collapsed": "false", "persistent_id": "23607e71-135a-4281-baaa-ccff0f9765ad"}
 pasthist_df['pasthistorydetails'] = pasthist_df.apply(lambda df: 'No Health Problems' if df['pasthistorytype'] == 'No Health Problems'
                                                                  else df['pasthistorydetails'],
-                                                      axis=1, meta=(None, str))
+                                                      axis=1)
 pasthist_df.head()
 
 # + {"Collapsed": "false", "persistent_id": "6a32a636-2c60-45c4-b20f-8b82c9921cb4"}
@@ -725,9 +718,9 @@ diagn_df.diagnosisstring.map(lambda x: len(x.split('|'))).min()
 # There are always at least 2 higher level diagnosis. It could be beneficial to extract those first 2 levels to separate features, so as to avoid the need for the model to learn similarities that are already known.
 
 # + {"Collapsed": "false", "persistent_id": "38475e5c-1260-4068-af50-5072366282ce"}
-diagn_df['diagnosis_type_1'] = diagn_df.diagnosisstring.apply(lambda x: du.search_explore.get_element_from_split(x, 0, separator='|'), meta=('x', str))
-diagn_df['diagnosis_disorder_2'] = diagn_df.diagnosisstring.apply(lambda x: du.search_explore.get_element_from_split(x, 1, separator='|'), meta=('x', str))
-diagn_df['diagnosis_detailed_3'] = diagn_df.diagnosisstring.apply(lambda x: du.search_explore.get_element_from_split(x, 2, separator='|', till_the_end=True), meta=('x', str))
+diagn_df['diagnosis_type_1'] = diagn_df.diagnosisstring.apply(lambda x: du.search_explore.get_element_from_split(x, 0, separator='|'))
+diagn_df['diagnosis_disorder_2'] = diagn_df.diagnosisstring.apply(lambda x: du.search_explore.get_element_from_split(x, 1, separator='|'))
+diagn_df['diagnosis_detailed_3'] = diagn_df.diagnosisstring.apply(lambda x: du.search_explore.get_element_from_split(x, 2, separator='|', till_the_end=True))
 # Remove now redundant `diagnosisstring` feature
 diagn_df = diagn_df.drop('diagnosisstring', axis=1)
 diagn_df.head()

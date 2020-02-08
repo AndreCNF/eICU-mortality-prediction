@@ -35,13 +35,13 @@ import pixiedust                           # Debugging in Jupyter Notebook cells
 
 # + {"Collapsed": "false", "persistent_id": "a1f6ee7f-36d4-489d-b2dd-ec2a38f15d11", "last_executed_text": "# Change to parent directory (presumably \"Documents\")\nos.chdir(\"../../..\")\n\n# Path to the CSV dataset files\ndata_path = 'Documents/Datasets/Thesis/eICU/uncompressed/'\n\n# Path to the code files\nproject_path = 'Documents/GitHub/eICU-mortality-prediction/'", "execution_event_id": "baeb346a-1c34-42d1-a501-7ae37369255e"}
 # Change to parent directory (presumably "Documents")
-os.chdir("../../..")
+os.chdir("../../../..")
 
 # Path to the CSV dataset files
-data_path = 'Documents/Datasets/Thesis/eICU/uncompressed/'
+data_path = 'Datasets/Thesis/eICU/uncompressed/'
 
 # Path to the code files
-project_path = 'Documents/GitHub/eICU-mortality-prediction/'
+project_path = 'GitHub/eICU-mortality-prediction/'
 
 # + {"Collapsed": "false", "persistent_id": "c0c2e356-d4f4-4a9d-bec2-88bdf9eb6a38", "last_executed_text": "import modin.pandas as pd                  # Optimized distributed version of Pandas\nimport data_utils as du                    # Data science and machine learning relevant methods", "execution_event_id": "82ef68be-443a-4bb8-8abd-7457a7005b4d"}
 import modin.pandas as pd                  # Optimized distributed version of Pandas
@@ -1039,36 +1039,30 @@ treat_df.treatmentstring.map(lambda x: len(x.split('|'))).max()
 # There are always at least 3 higher level diagnosis. It could be beneficial to extract those first 3 levels to separate features, with the last one getting values until the end of the string, so as to avoid the need for the model to learn similarities that are already known.
 
 # + {"Collapsed": "false", "persistent_id": "aee50693-322a-4a01-9ef2-fac27c51e45f"}
-treat_df.treatmentstring.apply(lambda x: du.search_explore.get_element_from_split(x, 0, separator='|'),
-                               meta=('x', str)).value_counts()
+treat_df.treatmentstring.apply(lambda x: du.search_explore.get_element_from_split(x, 0, separator='|')).value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "6ffd154f-ab1e-4614-b990-3414c2e8abf5"}
-treat_df.treatmentstring.apply(lambda x: du.search_explore.get_element_from_split(x, 1, separator='|'),
-                               meta=('x', str)).value_counts()
+treat_df.treatmentstring.apply(lambda x: du.search_explore.get_element_from_split(x, 1, separator='|')).value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "add7fc79-2edc-4481-939a-68c69f3b4383"}
-treat_df.treatmentstring.apply(lambda x: du.search_explore.get_element_from_split(x, 2, separator='|'),
-                               meta=('x', str)).value_counts()
+treat_df.treatmentstring.apply(lambda x: du.search_explore.get_element_from_split(x, 2, separator='|')).value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "fdfd37f9-1ac4-4c08-bec7-1f7971cee605"}
-treat_df.treatmentstring.apply(lambda x: du.search_explore.get_element_from_split(x, 3, separator='|'),
-                               meta=('x', str)).value_counts()
+treat_df.treatmentstring.apply(lambda x: du.search_explore.get_element_from_split(x, 3, separator='|')).value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "2e81fa29-6255-427f-aeb8-3d9ddd615565"}
-treat_df.treatmentstring.apply(lambda x: du.search_explore.get_element_from_split(x, 4, separator='|'),
-                               meta=('x', str)).value_counts()
+treat_df.treatmentstring.apply(lambda x: du.search_explore.get_element_from_split(x, 4, separator='|')).value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "7a30e647-0d39-480e-82ec-897defcfac38"}
-treat_df.treatmentstring.apply(lambda x: du.search_explore.get_element_from_split(x, 5, separator='|'),
-                               meta=('x', str)).value_counts()
+treat_df.treatmentstring.apply(lambda x: du.search_explore.get_element_from_split(x, 5, separator='|')).value_counts()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # <!-- There are always 8 levels of the notes. As the first 6 ones are essentially always the same ("notes/Progress Notes/Social History / Family History/Social History/Social History/"), it's best to just preserve the 7th one and isolate the 8th in a new feature. This way, the split provides further insight to the model on similar notes. However, it's also worth taking note that the 8th level of `notepath` seems to be identical to the feature `notevalue`. We'll look more into it later. -->
 
 # + {"Collapsed": "false", "persistent_id": "44721e19-f088-4cf3-be69-5201d1260d52"}
-treat_df['treatmenttype'] = treat_df.treatmentstring.apply(lambda x: du.search_explore.get_element_from_split(x, 0, separator='|'), meta=('x', str))
-treat_df['treatmenttherapy'] = treat_df.treatmentstring.apply(lambda x: du.search_explore.get_element_from_split(x, 1, separator='|'), meta=('x', str))
-treat_df['treatmentdetails'] = treat_df.treatmentstring.apply(lambda x: du.search_explore.get_element_from_split(x, 2, separator='|', till_the_end=True), meta=('x', str))
+treat_df['treatmenttype'] = treat_df.treatmentstring.apply(lambda x: du.search_explore.get_element_from_split(x, 0, separator='|'))
+treat_df['treatmenttherapy'] = treat_df.treatmentstring.apply(lambda x: du.search_explore.get_element_from_split(x, 1, separator='|'))
+treat_df['treatmentdetails'] = treat_df.treatmentstring.apply(lambda x: du.search_explore.get_element_from_split(x, 2, separator='|', till_the_end=True))
 treat_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}

@@ -35,13 +35,13 @@ import pixiedust                           # Debugging in Jupyter Notebook cells
 
 # + {"Collapsed": "false", "persistent_id": "a1f6ee7f-36d4-489d-b2dd-ec2a38f15d11", "last_executed_text": "# Change to parent directory (presumably \"Documents\")\nos.chdir(\"../../..\")\n\n# Path to the CSV dataset files\ndata_path = 'Documents/Datasets/Thesis/eICU/uncompressed/'\n\n# Path to the code files\nproject_path = 'Documents/GitHub/eICU-mortality-prediction/'", "execution_event_id": "baeb346a-1c34-42d1-a501-7ae37369255e"}
 # Change to parent directory (presumably "Documents")
-os.chdir("../../..")
+os.chdir("../../../..")
 
 # Path to the CSV dataset files
-data_path = 'Documents/Datasets/Thesis/eICU/uncompressed/'
+data_path = 'Datasets/Thesis/eICU/uncompressed/'
 
 # Path to the code files
-project_path = 'Documents/GitHub/eICU-mortality-prediction/'
+project_path = 'GitHub/eICU-mortality-prediction/'
 
 # + {"Collapsed": "false", "persistent_id": "c0c2e356-d4f4-4a9d-bec2-88bdf9eb6a38", "last_executed_text": "import modin.pandas as pd                  # Optimized distributed version of Pandas\nimport data_utils as du                    # Data science and machine learning relevant methods", "execution_event_id": "82ef68be-443a-4bb8-8abd-7457a7005b4d"}
 import modin.pandas as pd                  # Optimized distributed version of Pandas
