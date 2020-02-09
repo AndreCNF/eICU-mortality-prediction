@@ -166,7 +166,7 @@ infdrug_df[new_cat_feat].head()
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
     # Prepare for embedding, i.e. enumerate categories
-    infdrug_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(infdrug_df, feature)
+    infdrug_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(infdrug_df, feature, nan_value=0)
 
 # + {"Collapsed": "false", "persistent_id": "c5c8d717-87c8-408d-b018-d6b6b1575549"}
 infdrug_df[new_cat_feat].head()
@@ -183,7 +183,7 @@ infdrug_df[new_cat_feat].dtypes
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
 # + {"Collapsed": "false", "persistent_id": "b40f8861-dae3-49ca-8649-d937ba3cfcf0"}
-stream = open('cat_embed_feat_enum_treat.yaml', 'w')
+stream = open(f'{data_path}/cleaned/cat_embed_feat_enum_inf_drug.yaml', 'w')
 yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -250,9 +250,27 @@ infdrug_df_norm.patientweight.value_counts()
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Join rows that have the same IDs
 
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "cb08c783-dc90-4b03-9f21-8da8164bea89"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Convert dataframe to Pandas, as the groupby operation in `join_categorical_enum` isn't working properly with Modin:
+
+# + {"Collapsed": "false"}
+infdrug_df_norm, pd = du.utils.convert_dataframe(infdrug_df_norm, to='pandas')
+
+# + {"Collapsed": "false"}
+type(infdrug_df_norm)
+
+# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023"}
 infdrug_df_norm = du.embedding.join_categorical_enum(infdrug_df_norm, new_cat_embed_feat, inplace=True)
 infdrug_df_norm.head()
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Reconvert dataframe to Modin:
+
+# + {"Collapsed": "false"}
+infdrug_df_norm, pd = du.utils.convert_dataframe(infdrug_df_norm, to='modin')
+
+# + {"Collapsed": "false"}
+type(infdrug_df_norm)
 
 # + {"Collapsed": "false", "persistent_id": "e8c3544d-cf75-45d1-8af2-e6feb8a8d587"}
 infdrug_df_norm.dtypes
@@ -465,7 +483,7 @@ for i in range(len(new_cat_embed_feat)):
     if feature == 'drughiclseqno':
         continue
     # Prepare for embedding, i.e. enumerate categories
-    admsdrug_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(admsdrug_df, feature)
+    admsdrug_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(admsdrug_df, feature, nan_value=0)
 
 # + {"Collapsed": "false", "persistent_id": "11a4cd2e-86f0-4637-a8dc-b7bf456d2bbe"}
 admsdrug_df[new_cat_feat].head()
@@ -482,7 +500,7 @@ admsdrug_df[new_cat_feat].dtypes
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
 # + {"Collapsed": "false", "persistent_id": "fb54b948-abf1-412d-9fb3-4edd22500e97"}
-stream = open('cat_embed_feat_enum_treat.yaml', 'w')
+stream = open(f'{data_path}/cleaned/cat_embed_feat_enum_adms_drug.yaml', 'w')
 yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -545,9 +563,27 @@ admsdrug_df_norm.head()
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Even after removing duplicates rows, there are still some that have different information for the same ID and timestamp. We have to concatenate the categorical enumerations.
 
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "5d87f689-5f4f-4483-841a-533bc5e053c7"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Convert dataframe to Pandas, as the groupby operation in `join_categorical_enum` isn't working properly with Modin:
+
+# + {"Collapsed": "false"}
+admsdrug_df_norm, pd = du.utils.convert_dataframe(admsdrug_df_norm, to='pandas')
+
+# + {"Collapsed": "false"}
+type(admsdrug_df_norm)
+
+# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023"}
 admsdrug_df_norm = du.embedding.join_categorical_enum(admsdrug_df_norm, new_cat_embed_feat, inplace=True)
 admsdrug_df_norm.head()
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Reconvert dataframe to Modin:
+
+# + {"Collapsed": "false"}
+admsdrug_df_norm, pd = du.utils.convert_dataframe(admsdrug_df_norm, to='modin')
+
+# + {"Collapsed": "false"}
+type(admsdrug_df_norm)
 
 # + {"Collapsed": "false", "persistent_id": "004138b3-74c4-4ca8-b8b4-3409648e00d0"}
 admsdrug_df_norm.dtypes
@@ -768,7 +804,7 @@ for i in range(len(new_cat_embed_feat)):
     if feature == 'drughiclseqno':
         continue
     # Prepare for embedding, i.e. enumerate categories
-    med_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(med_df, feature)
+    med_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(med_df, feature, nan_value=0)
 
 # + {"Collapsed": "false", "persistent_id": "e38470e5-73f7-4d35-b91d-ce0793b7f6f6"}
 med_df[new_cat_feat].head()
@@ -785,7 +821,7 @@ med_df[new_cat_feat].dtypes
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
 # + {"Collapsed": "false", "persistent_id": "e51cc2e0-b598-484f-a3f8-8c764950777f"}
-stream = open('cat_embed_feat_enum_treat.yaml', 'w')
+stream = open(f'{data_path}/cleaned/cat_embed_feat_enum_med.yaml', 'w')
 yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -888,9 +924,27 @@ med_df_norm.head()
 # + {"Collapsed": "false", "persistent_id": "ed86d5a7-eeb3-44c4-9a4e-6dd67af307f2"}
 list(set(med_df_norm.columns) - set(new_cat_embed_feat) - set(['patientunitstayid', 'ts']))
 
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "45866561-e170-4d9e-9189-e73cb5bcfc0f"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Convert dataframe to Pandas, as the groupby operation in `join_categorical_enum` isn't working properly with Modin:
+
+# + {"Collapsed": "false"}
+med_df_norm, pd = du.utils.convert_dataframe(med_df, to='pandas')
+
+# + {"Collapsed": "false"}
+type(med_df_norm)
+
+# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023"}
 med_df_norm = du.embedding.join_categorical_enum(med_df_norm, new_cat_embed_feat, inplace=True)
 med_df_norm.head()
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Reconvert dataframe to Modin:
+
+# + {"Collapsed": "false"}
+med_df_norm, pd = du.utils.convert_dataframe(med_df, to='modin')
+
+# + {"Collapsed": "false"}
+type(med_df_norm)
 
 # + {"Collapsed": "false", "persistent_id": "db6b5624-e600-4d90-bc5a-ffa5a876d8dd"}
 med_df_norm.dtypes
@@ -1111,7 +1165,7 @@ treat_df[new_cat_feat].head()
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
     # Prepare for embedding, i.e. enumerate categories
-    treat_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(treat_df, feature)
+    treat_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(treat_df, feature, nan_value=0)
 
 # + {"Collapsed": "false", "persistent_id": "a69a1a9d-9330-4f68-9c17-e8af92847439"}
 treat_df[new_cat_feat].head()
@@ -1128,7 +1182,7 @@ treat_df[new_cat_feat].dtypes
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
 # + {"Collapsed": "false", "persistent_id": "373ef393-e31d-4778-a902-78fc1ce179f3"}
-stream = open('cat_embed_feat_enum_treat.yaml', 'w')
+stream = open(f'{data_path}/cleaned/cat_embed_feat_enum_treat.yaml', 'w')
 yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -1176,9 +1230,27 @@ treat_df[treat_df.patientunitstayid == 1352520].head(10)
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Join rows that have the same IDs
 
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "e08bac51-50b2-47d1-aea3-8f72a80223aa"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Convert dataframe to Pandas, as the groupby operation in `join_categorical_enum` isn't working properly with Modin:
+
+# + {"Collapsed": "false"}
+treat_df, pd = du.utils.convert_dataframe(treat_df, to='pandas')
+
+# + {"Collapsed": "false"}
+type(treat_df)
+
+# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023"}
 treat_df = du.embedding.join_categorical_enum(treat_df, new_cat_embed_feat, inplace=True)
 treat_df.head()
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Reconvert dataframe to Modin:
+
+# + {"Collapsed": "false"}
+treat_df, pd = du.utils.convert_dataframe(treat_df, to='modin')
+
+# + {"Collapsed": "false"}
+type(treat_df)
 
 # + {"Collapsed": "false", "persistent_id": "e2b70eff-045e-4587-af99-329381e839b2"}
 treat_df.dtypes

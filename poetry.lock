@@ -241,7 +241,7 @@ version = "0.1.0"
 comet-ml = "^3.0.2"
 dask = "^2.5"
 distributed = "^2.5"
-everett = "^1.0"
+everett = "^1.0.2"
 fsspec = "^0.6.0"
 modin = "^0.7.0"
 pandas = "^0.25.1"
@@ -255,7 +255,7 @@ torch = "^1.2"
 tqdm = "^4.38"
 
 [package.source]
-reference = "bcd6f61da4294cde40b53f1da44ef07798be8672"
+reference = "e0544d76d2ce1424289c7e80317eafe1a0956030"
 type = "git"
 url = "https://github.com/AndreCNF/data-utils.git"
 [[package]]
@@ -686,7 +686,7 @@ description = "Multi-Language Server WebSocket proxy for Jupyter notebook or lab
 name = "jupyter-lsp"
 optional = false
 python-versions = "*"
-version = "0.7.0b0"
+version = "0.7.0"
 
 [package.dependencies]
 notebook = ">=4.3.1"
@@ -1525,7 +1525,7 @@ scipy = "*"
 tqdm = ">4.25.0"
 
 [package.extras]
-all = ["lime", "matplotlib", "ipython"]
+all = ["ipython", "lime", "matplotlib"]
 others = ["lime"]
 plots = ["matplotlib", "ipython"]
 
@@ -1582,7 +1582,7 @@ description = "Python documentation generator"
 name = "sphinx"
 optional = false
 python-versions = ">=3.5"
-version = "2.3.1"
+version = "2.4.0"
 
 [package.dependencies]
 Jinja2 = ">=2.3"
@@ -1605,7 +1605,7 @@ sphinxcontrib-serializinghtml = "*"
 
 [package.extras]
 docs = ["sphinxcontrib-websupport"]
-test = ["pytest", "pytest-cov", "html5lib", "flake8 (>=3.5.0)", "flake8-import-order", "mypy (>=0.761)", "docutils-stubs"]
+test = ["pytest (<5.3.3)", "pytest-cov", "html5lib", "flake8 (>=3.5.0)", "flake8-import-order", "mypy (>=0.761)", "docutils-stubs"]
 
 [[package]]
 category = "main"
@@ -2160,7 +2160,7 @@ jupyter-core = [
     {file = "jupyter_core-4.6.1.tar.gz", hash = "sha256:a183e0ec2e8f6adddf62b0a3fc6a2237e3e0056d381e536d3e7c7ecc3067e244"},
 ]
 jupyter-lsp = [
-    {file = "jupyter-lsp-0.7.0b0.tar.gz", hash = "sha256:1fa25c2f540992b9fca197144478efb0698c58fb3c6fef032dff664c40f97041"},
+    {file = "jupyter-lsp-0.7.0.tar.gz", hash = "sha256:18d79881ab34eeb6e5f42930dc369e23b0d2240da94a0e2416317eb50cbdfaa1"},
 ]
 jupytext = [
     {file = "jupytext-1.3.3.tar.gz", hash = "sha256:5d7b089c67e54d097c92a40559a94b098bd8aa2a987ec15fd0d6d2328a7679bf"},
@@ -2809,8 +2809,8 @@ sortedcontainers = [
     {file = "sortedcontainers-2.1.0.tar.gz", hash = "sha256:974e9a32f56b17c1bac2aebd9dcf197f3eb9cd30553c5852a3187ad162e1a03a"},
 ]
 sphinx = [
-    {file = "Sphinx-2.3.1-py3-none-any.whl", hash = "sha256:298537cb3234578b2d954ff18c5608468229e116a9757af3b831c2b2b4819159"},
-    {file = "Sphinx-2.3.1.tar.gz", hash = "sha256:e6e766b74f85f37a5f3e0773a1e1be8db3fcb799deb58ca6d18b70b0b44542a5"},
+    {file = "Sphinx-2.4.0-py3-none-any.whl", hash = "sha256:b3feeed2da588adabd0db5329a309f27317e98382122721511e901833d092028"},
+    {file = "Sphinx-2.4.0.tar.gz", hash = "sha256:fb2ce74c28154872757925edda0060b4c4102cdc86b8b30063f23399678de2ca"},
 ]
 sphinxcontrib-applehelp = [
     {file = "sphinxcontrib-applehelp-1.0.1.tar.gz", hash = "sha256:edaa0ab2b2bc74403149cb0209d6775c96de797dfd5b5e2a71981309efab3897"},

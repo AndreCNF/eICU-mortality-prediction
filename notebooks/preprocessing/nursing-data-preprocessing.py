@@ -232,7 +232,7 @@ nursecare_df[new_cat_feat].head()
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
     # Prepare for embedding, i.e. enumerate categories
-    nursecare_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(nursecare_df, feature)
+    nursecare_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(nursecare_df, feature, nan_value=0)
 
 # + {"Collapsed": "false", "persistent_id": "9ceba9e2-6821-4a73-8875-5ddebef03516"}
 nursecare_df[new_cat_feat].head()
@@ -249,7 +249,7 @@ nursecare_df[new_cat_feat].dtypes
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
 # + {"Collapsed": "false", "persistent_id": "398e3a5f-c8e3-4657-aa40-05967570fd66"}
-stream = open('cat_embed_feat_enum_nursing.yaml', 'w')
+stream = open(f'{data_path}/cleaned/cat_embed_feat_enum_nurse_care.yaml', 'w')
 yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -297,10 +297,27 @@ nursecare_df[nursecare_df.patientunitstayid == 2798325].head(10)
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Join rows that have the same IDs
 
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "b0369d33-d5fb-45c7-aa2a-d180b987a251"}
-# [TODO] Find a way to join rows while ignoring zeros
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Convert dataframe to Pandas, as the groupby operation in `join_categorical_enum` isn't working properly with Modin:
+
+# + {"Collapsed": "false"}
+nursecare_df, pd = du.utils.convert_dataframe(nursecare_df, to='pandas')
+
+# + {"Collapsed": "false"}
+type(nursecare_df)
+
+# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023"}
 nursecare_df = du.embedding.join_categorical_enum(nursecare_df, new_cat_embed_feat, inplace=True)
 nursecare_df.head()
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Reconvert dataframe to Modin:
+
+# + {"Collapsed": "false"}
+nursecare_df, pd = du.utils.convert_dataframe(nursecare_df, to='modin')
+
+# + {"Collapsed": "false"}
+type(nursecare_df)
 
 # + {"Collapsed": "false", "persistent_id": "0b782718-8a92-4780-abbe-f8cab9efdfce"}
 nursecare_df.dtypes
@@ -543,7 +560,7 @@ nurseassess_df[new_cat_feat].head()
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
     # Prepare for embedding, i.e. enumerate categories
-    nurseassess_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(nurseassess_df, feature)
+    nurseassess_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(nurseassess_df, feature, nan_value=0)
 
 # + {"Collapsed": "false", "persistent_id": "6101e468-8fdc-48c2-90f7-7a8db94c1b58"}
 nurseassess_df[new_cat_feat].head()
@@ -560,7 +577,7 @@ nurseassess_df[new_cat_feat].dtypes
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
 # + {"Collapsed": "false", "persistent_id": "0280b97a-1137-433b-a54e-6168edc4a350"}
-stream = open('cat_embed_feat_enum_nursing.yaml', 'w')
+stream = open(f'{data_path}/cleaned/cat_embed_feat_enum_nurse_assess.yaml', 'w')
 yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -608,9 +625,27 @@ nurseassess_df[nurseassess_df.patientunitstayid == 2553254].head(10)
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Join rows that have the same IDs
 
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "a60ffe61-f2ba-4611-9e18-d6d28d12f0a0"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Convert dataframe to Pandas, as the groupby operation in `join_categorical_enum` isn't working properly with Modin:
+
+# + {"Collapsed": "false"}
+nurseassess_df, pd = du.utils.convert_dataframe(nurseassess_df, to='pandas')
+
+# + {"Collapsed": "false"}
+type(nurseassess_df)
+
+# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023"}
 nurseassess_df = du.embedding.join_categorical_enum(nurseassess_df, new_cat_embed_feat, inplace=True)
 nurseassess_df.head()
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Reconvert dataframe to Modin:
+
+# + {"Collapsed": "false"}
+nurseassess_df, pd = du.utils.convert_dataframe(nurseassess_df, to='modin')
+
+# + {"Collapsed": "false"}
+type(nurseassess_df)
 
 # + {"Collapsed": "false", "persistent_id": "decebaec-f14b-4521-adcc-24f485a0a781"}
 nurseassess_df.dtypes
@@ -970,7 +1005,7 @@ nursechart_df[new_cat_feat].head()
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
     # Prepare for embedding, i.e. enumerate categories
-    nursechart_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(nursechart_df, feature)
+    nursechart_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(nursechart_df, feature, nan_value=0)
 
 # + {"Collapsed": "false", "persistent_id": "d45b3fbd-7152-4b99-94c1-328a97af385f"}
 nursechart_df[new_cat_feat].head()
@@ -987,7 +1022,7 @@ nursechart_df[new_cat_feat].dtypes
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
 # + {"Collapsed": "false", "persistent_id": "439732df-2263-4fe2-81be-7535119a7170"}
-stream = open('cat_embed_feat_enum_nursing.yaml', 'w')
+stream = open(f'{data_path}/cleaned/cat_embed_feat_enum_nurse_chart.yaml', 'w')
 yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -1035,9 +1070,27 @@ nursechart_df[nursechart_df.patientunitstayid == 2553254].head(10)
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Join rows that have the same IDs
 
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "3db5777c-316e-4631-9dbc-165fb55d093d"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Convert dataframe to Pandas, as the groupby operation in `join_categorical_enum` isn't working properly with Modin:
+
+# + {"Collapsed": "false"}
+nursechart_df, pd = du.utils.convert_dataframe(nursechart_df, to='pandas')
+
+# + {"Collapsed": "false"}
+type(nursechart_df)
+
+# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023"}
 nursechart_df = du.embedding.join_categorical_enum(nursechart_df, new_cat_embed_feat, inplace=True)
 nursechart_df.head()
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Reconvert dataframe to Modin:
+
+# + {"Collapsed": "false"}
+nursechart_df, pd = du.utils.convert_dataframe(nursechart_df, to='modin')
+
+# + {"Collapsed": "false"}
+type(nursechart_df)
 
 # + {"Collapsed": "false", "persistent_id": "940ed638-e0a6-4c91-a80b-fc332ce29fc1"}
 nursechart_df.dtypes

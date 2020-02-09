@@ -180,7 +180,7 @@ patient_df[new_cat_feat].head()
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
     # Prepare for embedding, i.e. enumerate categories
-    patient_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(patient_df, feature)
+    patient_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(patient_df, feature, nan_value=0)
 
 # + {"Collapsed": "false", "persistent_id": "66530762-67c7-4547-953a-b5848c9e4be2", "last_executed_text": "patient_df[new_cat_feat].head()", "execution_event_id": "5a66c551-ae55-4c93-b418-7d3010895def"}
 patient_df[new_cat_feat].head()
@@ -197,7 +197,7 @@ patient_df[cat_feat].dtypes
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
 # + {"Collapsed": "false", "persistent_id": "57ad30f0-8e12-482d-91c7-789b3b64b39a", "last_executed_text": "stream = open('cat_embed_feat_enum_patient.yaml', 'w')\nyaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)", "execution_event_id": "fbfc56d3-0060-43b5-937a-c2721d8112d6"}
-stream = open('cat_embed_feat_enum_patient.yaml', 'w')
+stream = open(f'{data_path}/cleaned/cat_embed_feat_enum_patient.yaml', 'w')
 yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -542,7 +542,7 @@ note_df[note_df.notetopic == 'Bleeding Disorders'].notevalue.value_counts()
 # Transform the `notetopic` categories and `notevalue` values into separate features:
 
 # + {"Collapsed": "false", "persistent_id": "80f2910a-7d8d-4bac-8afe-fa4fd54c7b84", "last_executed_text": "note_df = du.data_processing.category_to_feature(note_df, categories_feature='notetopic', \n                                                 values_feature='notevalue', min_len=1000, inplace=True)\nnote_df.head()", "execution_event_id": "531b8a3f-58ec-4acc-b25e-e0b44ab6cedf"}
-note_df = du.data_processing.category_to_feature(note_df, categories_feature='notetopic', 
+note_df = du.data_processing.category_to_feature(note_df, categories_feature='notetopic',
                                                  values_feature='notevalue', min_len=1000, inplace=True)
 note_df.head()
 
@@ -606,7 +606,7 @@ note_df[new_cat_feat].head()
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
     # Prepare for embedding, i.e. enumerate categories
-    note_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(note_df, feature)
+    note_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(note_df, feature, nan_value=0)
 
 # + {"Collapsed": "false", "persistent_id": "781ff06e-15f5-495c-967d-97c3dd790be7"}
 note_df[new_cat_feat].head()
@@ -623,7 +623,7 @@ note_df[new_cat_feat].dtypes
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
 # + {"Collapsed": "false", "persistent_id": "4342f002-c60a-4724-a542-9b7f906d3f2b"}
-stream = open('cat_embed_feat_enum_note.yaml', 'w')
+stream = open(f'{data_path}/cleaned/cat_embed_feat_enum_note.yaml', 'w')
 yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -724,4 +724,3 @@ note_df.to_csv(f'{data_path}cleaned/normalized/note.csv')
 note_df.describe().transpose()
 
 # + {"Collapsed": "false"}
-

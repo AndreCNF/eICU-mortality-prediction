@@ -492,7 +492,7 @@ resp_chart_df[new_cat_feat].head()
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
     # Prepare for embedding, i.e. enumerate categories
-    resp_chart_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(resp_chart_df, feature)
+    resp_chart_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(resp_chart_df, feature, nan_value=0)
 
 # + {"Collapsed": "false", "persistent_id": "151d0866-afbb-486c-b4b4-204fda79a0b8"}
 resp_chart_df[new_cat_feat].head()
@@ -509,7 +509,7 @@ resp_chart_df[new_cat_feat].dtypes
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
 # + {"Collapsed": "false", "persistent_id": "2135f766-d52d-4f58-bf40-ac648ce9021f"}
-stream = open('cat_embed_feat_enum_resp.yaml', 'w')
+stream = open(f'{data_path}/cleaned/cat_embed_feat_enum_resp.yaml', 'w')
 yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -557,9 +557,27 @@ resp_chart_df[resp_chart_df.patientunitstayid == 2553254].head(10)
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Join rows that have the same IDs
 
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "84be170e-c8fb-47a6-a9f9-1d373cbb1eb4"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Convert dataframe to Pandas, as the groupby operation in `join_categorical_enum` isn't working properly with Modin:
+
+# + {"Collapsed": "false"}
+resp_chart_df, pd = du.utils.convert_dataframe(resp_chart_df, to='pandas')
+
+# + {"Collapsed": "false"}
+type(resp_chart_df)
+
+# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023"}
 resp_chart_df = du.embedding.join_categorical_enum(resp_chart_df, new_cat_embed_feat, inplace=True)
 resp_chart_df.head()
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Reconvert dataframe to Modin:
+
+# + {"Collapsed": "false"}
+resp_chart_df, pd = du.utils.convert_dataframe(resp_chart_df, to='modin')
+
+# + {"Collapsed": "false"}
+type(resp_chart_df)
 
 # + {"Collapsed": "false", "persistent_id": "6ece20d0-6de2-4989-9394-e020fc8916ed"}
 resp_chart_df.dtypes

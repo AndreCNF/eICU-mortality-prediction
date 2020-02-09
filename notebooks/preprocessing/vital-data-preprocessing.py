@@ -149,7 +149,7 @@ patient_df[new_cat_feat].head()
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
     # Prepare for embedding, i.e. enumerate categories
-    patient_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(patient_df, feature)
+    patient_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(patient_df, feature, nan_value=0)
 
 # + {"Collapsed": "false", "persistent_id": "b3b2937b-c97c-4f5f-a38e-0b7cdeb1d252"}
 patient_df[new_cat_feat].head()
@@ -166,7 +166,7 @@ patient_df[cat_feat].dtypes
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
 # + {"Collapsed": "false", "persistent_id": "6c3ecabe-097a-47be-9f76-1a1e8ab7af79"}
-stream = open('cat_embed_feat_enum_vital.yaml', 'w')
+stream = open(f'{data_path}/cleaned/cat_embed_feat_enum_vital_periodic.yaml', 'w')
 yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -215,9 +215,27 @@ micro_df[micro_df.patientunitstayid == 3069495].head(20)
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Join rows that have the same IDs
 
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "4b1e0a15-d383-4a59-8157-7b4be95bf042"}
-micro_df = du.embedding.join_categorical_enum(micro_df, new_cat_embed_feat, inplace=True)
-micro_df.head()
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Convert dataframe to Pandas, as the groupby operation in `join_categorical_enum` isn't working properly with Modin:
+
+# + {"Collapsed": "false"}
+vital_prdc_df, pd = du.utils.convert_dataframe(vital_prdc_df, to='pandas')
+
+# + {"Collapsed": "false"}
+type(vital_prdc_df)
+
+# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023"}
+vital_prdc_df = du.embedding.join_categorical_enum(vital_prdc_df, new_cat_embed_feat, inplace=True)
+vital_prdc_df.head()
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Reconvert dataframe to Modin:
+
+# + {"Collapsed": "false"}
+vital_prdc_df, pd = du.utils.convert_dataframe(vital_prdc_df, to='modin')
+
+# + {"Collapsed": "false"}
+type(vital_prdc_df)
 
 # + {"Collapsed": "false", "persistent_id": "f0ec040f-7283-4015-8be6-11b30e8323a6"}
 micro_df.dtypes
@@ -376,9 +394,27 @@ vital_aprdc_df[micro_df.patientunitstayid == 3069495].head(20)
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Join rows that have the same IDs
 
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "df09ded9-fad0-494e-a9a6-b791fdfd9030"}
-micro_df = du.embedding.join_categorical_enum(micro_df, new_cat_embed_feat, inplace=True)
-micro_df.head()
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Convert dataframe to Pandas, as the groupby operation in `join_categorical_enum` isn't working properly with Modin:
+
+# + {"Collapsed": "false"}
+vital_aprdc_df, pd = du.utils.convert_dataframe(vital_aprdc_df, to='pandas')
+
+# + {"Collapsed": "false"}
+type(vital_aprdc_df)
+
+# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023"}
+vital_aprdc_df = du.embedding.join_categorical_enum(vital_aprdc_df, new_cat_embed_feat, inplace=True)
+vital_aprdc_df.head()
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Reconvert dataframe to Modin:
+
+# + {"Collapsed": "false"}
+vital_aprdc_df, pd = du.utils.convert_dataframe(vital_aprdc_df, to='modin')
+
+# + {"Collapsed": "false"}
+type(vital_aprdc_df)
 
 # + {"Collapsed": "false", "persistent_id": "85242cf3-1e23-4b70-902f-7c480ecc98d4"}
 micro_df.dtypes

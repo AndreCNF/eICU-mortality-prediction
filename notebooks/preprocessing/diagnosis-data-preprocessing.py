@@ -98,6 +98,12 @@ alrg_df.dtypes
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "c309a388-c464-4fa2-85b3-9f6aab6bbb1d"}
 du.search_explore.dataframe_missing_values(alrg_df)
 
+# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "c309a388-c464-4fa2-85b3-9f6aab6bbb1d"}
+du.search_explore.dataframe_missing_values(alrg_df, 'allergyname')
+
+# + {"Collapsed": "false"}
+alrg_df.allergyname.isnull().sum()
+
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Remove unneeded features
 
@@ -112,6 +118,9 @@ alrg_df[alrg_df.allergytype == 'Drug'].drughiclseqno.value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "fce01df2-fdd7-42c3-8fa8-22794989df1a"}
 alrg_df.allergynotetype.value_counts()
+
+# + {"Collapsed": "false", "persistent_id": "fce01df2-fdd7-42c3-8fa8-22794989df1a"}
+alrg_df.allergyname.value_counts()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Feature `allergynotetype` also doesn't seem very relevant, discarding it.
@@ -155,6 +164,12 @@ for i in range(len(new_cat_feat)):
 # + {"Collapsed": "false", "persistent_id": "ce58accd-9f73-407c-b441-6da299604bb1"}
 alrg_df[new_cat_feat].head()
 
+# + {"Collapsed": "false"}
+alrg_df[alrg_df.allergyname.str.contains('other')].allergyname.value_counts()
+
+# + {"Collapsed": "false"}
+alrg_df[alrg_df.allergyname.str.contains('unknown')].allergyname.value_counts()
+
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "9c0217cf-66d8-467b-b0df-b75441b1c0dc"}
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
@@ -162,13 +177,16 @@ for i in range(len(new_cat_embed_feat)):
     if feature == 'drughiclseqno':
         continue
     # Prepare for embedding, i.e. enumerate categories
-    alrg_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(alrg_df, feature)
+    alrg_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(alrg_df, feature, nan_value=0)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# Fill missing values of the drug data with 0, so as to prepare for embedding:
+# Fill missing values of the drug and allergies data with 0, so as to prepare for embedding:
 
 # + {"Collapsed": "false", "persistent_id": "50a95412-7211-4780-b0da-aad5e166191e"}
 alrg_df.drughiclseqno = alrg_df.drughiclseqno.fillna(0).astype(int)
+
+# + {"Collapsed": "false", "persistent_id": "50a95412-7211-4780-b0da-aad5e166191e"}
+alrg_df.allergyname = alrg_df.allergyname.fillna(0).astype(int)
 
 # + {"Collapsed": "false", "persistent_id": "e7ebceaf-e35b-4143-8fea-b5b14016e7f3"}
 alrg_df[new_cat_feat].head()
@@ -185,7 +203,7 @@ alrg_df[new_cat_feat].dtypes
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
 # + {"Collapsed": "false", "persistent_id": "45fdd1e4-00cd-49f8-b498-f50fb291e89a"}
-stream = open('cat_embed_feat_enum.yaml', 'w')
+stream = open(f'{data_path}/cleaned/cat_embed_feat_enum_alrg.yaml', 'w')
 yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -236,9 +254,70 @@ alrg_df[alrg_df.patientunitstayid == 3197554].head(10)
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Even after removing duplicates rows, there are still some that have different information for the same ID and timestamp. We have to concatenate the categorical enumerations.
 
+# + {"Collapsed": "false"}
+# data_df = alrg_df.copy()
+# data_df.head()
+
+# + {"Collapsed": "false"}
+# data_df['allergyname'] = data_df['allergyname'].astype(str)
+
+# + {"Collapsed": "false", "persistent_id": "d2660024-2f7e-4d37-b312-2a69aea35f0a"}
+# data_df.groupby(['patientunitstayid', 'ts']).count()
+
+# + {"Collapsed": "false", "persistent_id": "d2660024-2f7e-4d37-b312-2a69aea35f0a"}
+# data_df.groupby(['patientunitstayid', 'ts']).sum()
+
+# + {"Collapsed": "false"}
+# data_df.columns
+
+# + {"Collapsed": "false"}
+# data_df.groupby('ts').head().columns
+
+# + {"Collapsed": "false"}
+# data_df.index
+
+# + {"Collapsed": "false"}
+# data_df.columns = data_df.columns.get_level_values(0)
+
+# + {"Collapsed": "false"}
+# pd.Grouper(key='patientunitstayid')
+
+# + {"Collapsed": "false"}
+# data_df.groupby(by=[pd.Grouper(key='patientunitstayid'), pd.Grouper(key='ts')])
+
+# + {"Collapsed": "false"}
+# data_df.groupby(['patientunitstayid', 'ts'])['allergyname'].apply(lambda x: ';'.join(x)).to_frame().reset_index()
+
+# + {"Collapsed": "false"}
+# data_df.groupby('ts')['allergyname'].apply(lambda x: ';'.join(x)).to_frame().reset_index()
+
+# + {"Collapsed": "false"}
+# data_df.groupby(['patientunitstayid', 'ts']).head()
+
+# + {"Collapsed": "false"}
+# data_df.groupby(['patientunitstayid', 'ts']).mean()
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Convert dataframe to Pandas, as the multi-column groupby operation in `join_categorical_enum` isn't working with Modin:
+
+# + {"Collapsed": "false"}
+alrg_df, pd = du.utils.convert_dataframe(alrg_df, to='pandas')
+
+# + {"Collapsed": "false"}
+type(alrg_df)
+
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "bf671749-9886-44f0-923f-24fd31d7d371"}
 alrg_df = du.embedding.join_categorical_enum(alrg_df, new_cat_embed_feat, inplace=True)
 alrg_df.head()
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Reconvert dataframe to Modin:
+
+# + {"Collapsed": "false"}
+alrg_df, pd = du.utils.convert_dataframe(alrg_df, to='modin')
+
+# + {"Collapsed": "false"}
+type(alrg_df)
 
 # + {"Collapsed": "false", "persistent_id": "96d8f554-5a5f-4b82-b5d5-47e5ce4c0f75"}
 alrg_df.dtypes
@@ -288,25 +367,6 @@ alrg_df.to_csv(f'{data_path}cleaned/normalized/allergy.csv')
 
 # + {"Collapsed": "false", "persistent_id": "2297202e-d250-430b-9ecd-23efc756cb25"}
 alrg_df.describe().transpose()
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# ### Join dataframes
-#
-# Merge dataframes by the unit stay, `patientunitstayid`, and the timestamp, `ts`, with a tolerence for a difference of up to 30 minutes.
-
-# + {"Collapsed": "false", "persistent_id": "9782a118-7e1e-4ba3-a63f-9b2654bf2fe4"}
-alrg_df = pd.read_csv(f'{data_path}cleaned/normalized/allergy.csv')
-alrg_df.head()
-
-# + {"Collapsed": "false", "persistent_id": "f5e0185c-8ac8-4583-813d-c730965ff79a"}
-len(alrg_df)
-
-# + {"Collapsed": "false", "persistent_id": "3948b5c9-9ba8-491a-a436-7afd56d8b0cc"}
-alrg_df.patientunitstayid.nunique()
-
-# + {"Collapsed": "false", "persistent_id": "d2c24e33-72ee-4aae-b215-c5b66e132fa2"}
-eICU_df = pd.merge_asof(eICU_df, alrg_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
-eICU_df.head()
 
 # + {"toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
 # ## Past history data
@@ -491,12 +551,23 @@ pasthist_df[pasthist_df.pasthistorydetails == ''].head()
 
 # + {"Collapsed": "false", "persistent_id": "23607e71-135a-4281-baaa-ccff0f9765ad"}
 pasthist_df['pasthistorydetails'] = pasthist_df.apply(lambda df: 'No Health Problems' if df['pasthistorytype'] == 'No Health Problems'
-                                                                 else df['pasthistorydetails'],
-                                                      axis=1)
+                                                                 else df['pasthistorydetails'], axis=1)
 pasthist_df.head()
 
 # + {"Collapsed": "false", "persistent_id": "6a32a636-2c60-45c4-b20f-8b82c9921cb4"}
 pasthist_df[pasthist_df.pasthistorydetails == '']
+
+# + {"Collapsed": "false"}
+pasthist_df.pasthistoryvalue.value_counts()
+
+# + {"Collapsed": "false"}
+pasthist_df.pasthistorydetails.value_counts()
+
+# + {"Collapsed": "false"}
+pasthist_df.pasthistoryvalue.nunique()
+
+# + {"Collapsed": "false"}
+pasthist_df.pasthistorydetails.nunique()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Remove the now redundant `pasthistorypath` column:
@@ -541,7 +612,7 @@ pasthist_df[new_cat_feat].head()
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
     # Prepare for embedding, i.e. enumerate categories
-    pasthist_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(pasthist_df, feature)
+    pasthist_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(pasthist_df, feature, nan_value=0)
 
 # + {"Collapsed": "false", "persistent_id": "7ee06a1a-cb99-4a94-9271-6f67948fd2a6"}
 pasthist_df[new_cat_feat].head()
@@ -558,7 +629,7 @@ pasthist_df[new_cat_feat].dtypes
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
 # + {"Collapsed": "false", "persistent_id": "534d4a78-6d3e-4e3b-b318-5f353835d53a"}
-stream = open('cat_embed_feat_enum.yaml', 'w')
+stream = open(f'{data_path}/cleaned/cat_embed_feat_enum_past_hist.yaml', 'w')
 yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -581,7 +652,7 @@ len(pasthist_df)
 # Check for possible multiple rows with the same unit stay ID and timestamp:
 
 # + {"Collapsed": "false", "persistent_id": "acae2295-6f7e-4290-b8a7-12d13042b65d"}
-pasthist_df.groupby(['patientunitstayid']).count().nlargest(columns='pasthistoryvalue', n=5).head()
+pasthist_df.groupby('patientunitstayid').count().nlargest(columns='pasthistoryvalue', n=5).head()
 
 # + {"Collapsed": "false", "persistent_id": "1c71ea45-4026-43ac-8433-bd70d567bee9"}
 pasthist_df[pasthist_df.patientunitstayid == 1558102].head(10)
@@ -592,9 +663,27 @@ pasthist_df[pasthist_df.patientunitstayid == 1558102].head(10)
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Join rows that have the same IDs
 
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Convert dataframe to Pandas, as the groupby operation in `join_categorical_enum` isn't working properly with Modin:
+
+# + {"Collapsed": "false"}
+pasthist_df, pd = du.utils.convert_dataframe(pasthist_df, to='pandas')
+
+# + {"Collapsed": "false"}
+type(pasthist_df)
+
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023"}
 pasthist_df = du.embedding.join_categorical_enum(pasthist_df, new_cat_embed_feat, id_columns=['patientunitstayid'], inplace=True)
 pasthist_df.head()
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Reconvert dataframe to Modin:
+
+# + {"Collapsed": "false"}
+pasthist_df, pd = du.utils.convert_dataframe(pasthist_df, to='modin')
+
+# + {"Collapsed": "false"}
+type(pasthist_df)
 
 # + {"Collapsed": "false", "persistent_id": "6edc2eea-1139-4f7f-a314-db03cd785128"}
 pasthist_df.dtypes
@@ -637,25 +726,6 @@ pasthist_df.to_csv(f'{data_path}cleaned/normalized/pastHistory.csv')
 
 # + {"Collapsed": "false", "persistent_id": "ee91beb5-1415-4960-9e84-8cbfbde07e15"}
 pasthist_df.describe().transpose()
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# ### Join dataframes
-#
-# Merge dataframes by the unit stay, `patientunitstayid`, and the timestamp, `ts`, with a tolerence for a difference of up to 30 minutes.
-
-# + {"Collapsed": "false", "persistent_id": "beed207c-3fa8-428f-abe7-d286eb2a92ac"}
-pasthist_df = pd.read_csv(f'{data_path}cleaned/normalized/pastHistory.csv')
-pasthist_df.head()
-
-# + {"Collapsed": "false", "persistent_id": "6fc058a7-6542-4bab-9b76-ae31ca82a28d"}
-len(pasthist_df)
-
-# + {"Collapsed": "false", "persistent_id": "1d562b3d-84be-4b0e-a808-d413d030647a"}
-pasthist_df.patientunitstayid.nunique()
-
-# + {"Collapsed": "false", "persistent_id": "af809274-88c4-407b-989e-4a59bfefc509"}
-eICU_df = pd.merge_asof(eICU_df, pasthist_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
-eICU_df.head()
 
 # + {"toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
 # ## Diagnosis data
@@ -760,7 +830,7 @@ diagn_df[new_cat_feat].head()
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
     # Prepare for embedding, i.e. enumerate categories
-    diagn_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(diagn_df, feature)
+    diagn_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(diagn_df, feature, nan_value=0)
 
 # + {"Collapsed": "false", "persistent_id": "64118894-5fb4-4e31-91cf-695d64a7e633"}
 diagn_df[new_cat_feat].head()
@@ -777,7 +847,7 @@ diagn_df[new_cat_feat].dtypes
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
 # + {"Collapsed": "false", "persistent_id": "95ac0351-6a18-41b0-9937-37d255fa34ca"}
-stream = open('cat_embed_feat_enum.yaml', 'w')
+stream = open(f'{data_path}/cleaned/cat_embed_feat_enum_diag.yaml', 'w')
 yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -825,9 +895,27 @@ diagn_df[diagn_df.patientunitstayid == 3089982].head(10)
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Join rows that have the same IDs
 
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "b6614a18-9359-48be-b659-ea4a8bb90f00"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Convert dataframe to Pandas, as the groupby operation in `join_categorical_enum` isn't working properly with Modin:
+
+# + {"Collapsed": "false"}
+diagn_df, pd = du.utils.convert_dataframe(diagn_df, to='pandas')
+
+# + {"Collapsed": "false"}
+type(diagn_df)
+
+# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023"}
 diagn_df = du.embedding.join_categorical_enum(diagn_df, new_cat_embed_feat, inplace=True)
 diagn_df.head()
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Reconvert dataframe to Modin:
+
+# + {"Collapsed": "false"}
+diagn_df, pd = du.utils.convert_dataframe(diagn_df, to='modin')
+
+# + {"Collapsed": "false"}
+type(diagn_df)
 
 # + {"Collapsed": "false", "persistent_id": "e854db5e-06f3-45ee-ad27-f5214f3f6ea7"}
 diagn_df.dtypes
@@ -870,22 +958,3 @@ diagn_df.to_csv(f'{data_path}cleaned/normalized/diagnosis.csv')
 
 # + {"Collapsed": "false", "persistent_id": "0906c011-5d47-49e4-b8d0-bfb97b575f66"}
 diagn_df.describe().transpose()
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# ### Join dataframes
-#
-# Merge dataframes by the unit stay, `patientunitstayid`, and the timestamp, `ts`, with a tolerence for a difference of up to 30 minutes.
-
-# + {"Collapsed": "false", "persistent_id": "1107b26a-d309-4e7a-bdd8-dda075b95257"}
-diagn_df = pd.read_csv(f'{data_path}cleaned/normalized/diagnosis.csv')
-diagn_df.head()
-
-# + {"Collapsed": "false", "persistent_id": "267f6d8b-c3e3-4510-8f92-39b452121037"}
-len(diagn_df)
-
-# + {"Collapsed": "false", "persistent_id": "2e0e6a07-50a4-4450-945f-915f46ee2352"}
-diagn_df.patientunitstayid.nunique()
-
-# + {"Collapsed": "false", "persistent_id": "f140ac92-00a6-417b-9a6d-50d2c7c93f51"}
-eICU_df = pd.merge_asof(eICU_df, diagn_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
-eICU_df.head()
