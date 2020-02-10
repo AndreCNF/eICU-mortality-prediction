@@ -783,6 +783,9 @@ diagn_df.diagnosisstring.map(lambda x: x.split('|')).head()
 # + {"Collapsed": "false", "persistent_id": "08936a84-6640-4b15-bb1b-0192922d6daf"}
 diagn_df.diagnosisstring.map(lambda x: len(x.split('|'))).min()
 
+# + {"Collapsed": "false", "persistent_id": "08936a84-6640-4b15-bb1b-0192922d6daf"}
+diagn_df.diagnosisstring.map(lambda x: len(x.split('|'))).max()
+
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # There are always at least 2 higher level diagnosis. It could be beneficial to extract those first 2 levels to separate features, so as to avoid the need for the model to learn similarities that are already known.
 
@@ -958,3 +961,6 @@ diagn_df.to_csv(f'{data_path}cleaned/normalized/diagnosis.csv')
 
 # + {"Collapsed": "false", "persistent_id": "0906c011-5d47-49e4-b8d0-bfb97b575f66"}
 diagn_df.describe().transpose()
+
+# + {"Collapsed": "false"}
+

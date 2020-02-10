@@ -166,13 +166,12 @@ nursecare_df.head()
 # ### Convert categories to features
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# Make the `celllabel` and `cellattributevalue` columns of type categorical:
-
-# + {"Collapsed": "false", "persistent_id": "edb243b2-7a8d-4051-a27e-e4049565490b"}
-nursecare_df = nursecare_df.categorize(columns=['celllabel', 'cellattributevalue'])
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
 # Transform the `celllabel` categories and `cellattributevalue` values into separate features:
+
+# + {"Collapsed": "false"}
+nursecare_df = du.data_processing.category_to_feature(nursecare_df, categories_feature='celllabel',
+                                                      values_feature='cellattributevalue', min_len=1000, inplace=True)
+nursecare_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Now we have the categories separated into their own features, as desired.
@@ -368,25 +367,6 @@ nursecare_df.to_csv(f'{data_path}cleaned/normalized/nurseCare.csv')
 # + {"Collapsed": "false", "persistent_id": "edafc000-e516-49fe-b8f6-ea4ce3969129"}
 nursecare_df.describe().transpose()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# ### Join dataframes
-#
-# Merge dataframes by the unit stay, `patientunitstayid`, and the timestamp, `ts`, with a tolerence for a difference of up to 30 minutes.
-
-# + {"Collapsed": "false", "persistent_id": "1d849f6b-174e-4e4d-82bc-fe854cedcb19"}
-nursecare_df = pd.read_csv(f'{data_path}cleaned/normalized/nurseCare.csv')
-nursecare_df.head()
-
-# + {"Collapsed": "false", "persistent_id": "3aa132e7-1a1b-47d0-9863-b3b74aafc86f"}
-len(nursecare_df)
-
-# + {"Collapsed": "false", "persistent_id": "855ec1b6-d397-4173-9994-202cf00b7537"}
-nursecare_df.patientunitstayid.nunique()
-
-# + {"Collapsed": "false", "persistent_id": "c8dac694-148a-403d-82b8-19fd509cc042"}
-eICU_df = pd.merge_asof(eICU_df, nursecare_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
-eICU_df.head()
-
 # + {"toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
 # ## Nurse assessment data
 
@@ -404,7 +384,7 @@ len(nurseassess_df)
 nurseassess_df.patientunitstayid.nunique()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# Only 13001 unit stays have nurse care data. Might not be useful to include them.
+# Only 13001 unit stays have nurse assessment data. Might not be useful to include them.
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Get an overview of the dataframe through the `describe` method:
@@ -491,16 +471,12 @@ nurseassess_df.head()
 # ### Convert categories to features
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# Make the `celllabel` and `cellattributevalue` columns of type categorical:
-
-# + {"Collapsed": "false", "persistent_id": "35e6e508-5b51-4196-92aa-e14cb93804e0"}
-nurseassess_df = nurseassess_df.categorize(columns=['celllabel', 'cellattributevalue'])
-
-# + {"Collapsed": "false", "persistent_id": "429b6864-358f-47c2-bdc3-1cd938ffda69"}
-nurseassess_df.head()
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
 # Transform the `celllabel` categories and `cellattributevalue` values into separate features:
+
+# + {"Collapsed": "false"}
+nurseassess_df = du.data_processing.category_to_feature(nurseassess_df, categories_feature='celllabel',
+                                                        values_feature='cellattributevalue', min_len=1000, inplace=True)
+nurseassess_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Now we have the categories separated into their own features, as desired.
@@ -688,25 +664,6 @@ nurseassess_df.to_csv(f'{data_path}cleaned/normalized/nurseAssessment.csv')
 
 # + {"Collapsed": "false", "persistent_id": "b009d13b-05d3-4b2b-9b35-1b9bba3dac28"}
 nurseassess_df.describe().transpose()
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# ### Join dataframes
-#
-# Merge dataframes by the unit stay, `patientunitstayid`, and the timestamp, `ts`, with a tolerence for a difference of up to 30 minutes.
-
-# + {"Collapsed": "false", "persistent_id": "2184d99d-e508-469d-9201-4246dcb62869"}
-nurseassess_df = pd.read_csv(f'{data_path}cleaned/normalized/nurseAssessment.csv')
-nurseassess_df.head()
-
-# + {"Collapsed": "false", "persistent_id": "eda02f1c-9904-4a55-9f3b-7cfd7a47afa2"}
-len(nurseassess_df)
-
-# + {"Collapsed": "false", "persistent_id": "22605092-029d-4535-96a2-3a990f8bb768"}
-nurseassess_df.patientunitstayid.nunique()
-
-# + {"Collapsed": "false", "persistent_id": "060d946d-2740-41f7-bcaf-68b673057a55"}
-eICU_df = pd.merge_asof(eICU_df, nurseassess_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
-eICU_df.head()
 
 # + {"toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
 # ## Nurse charting data
@@ -1142,22 +1099,3 @@ nursechart_df.to_csv(f'{data_path}cleaned/normalized/nurseCharting.csv')
 
 # + {"Collapsed": "false", "persistent_id": "88135c50-5523-47d7-a7a8-1b7dd50e5d84"}
 nursechart_df.describe().transpose()
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# ### Join dataframes
-#
-# Merge dataframes by the unit stay, `patientunitstayid`, and the timestamp, `ts`, with a tolerence for a difference of up to 30 minutes.
-
-# + {"Collapsed": "false", "persistent_id": "7e4d01f9-2b1d-4697-bac6-26623bf64e6a"}
-nursechart_df = pd.read_csv(f'{data_path}cleaned/normalized/nurseCharting.csv')
-nursechart_df.head()
-
-# + {"Collapsed": "false", "persistent_id": "e86d6dd7-1e02-46d4-949d-91a84f44549b"}
-len(nursechart_df)
-
-# + {"Collapsed": "false", "persistent_id": "f05ace4a-a23c-4d65-bfa9-b726dee830a6"}
-nursechart_df.patientunitstayid.nunique()
-
-# + {"Collapsed": "false", "persistent_id": "b68d4d2b-7b5d-4f32-9ac5-a16b9f1dc70e"}
-eICU_df = pd.merge_asof(eICU_df, nursechart_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
-eICU_df.head()

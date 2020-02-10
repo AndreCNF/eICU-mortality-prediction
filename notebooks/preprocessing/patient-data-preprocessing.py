@@ -328,7 +328,8 @@ new_cat_feat
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "d5ad6017-ad4a-419c-badb-9454add7752d", "last_executed_text": "patient_df_norm = du.data_processing.normalize_data(patient_df, categ_columns=new_cat_feat,\n                                                    id_columns=['patientunitstayid', 'ts', 'death_ts'])\npatient_df_norm.head(6)", "execution_event_id": "3d6d0a5c-9160-4ffc-87d4-85632a968a1d"}
 patient_df_norm = du.data_processing.normalize_data(patient_df, categ_columns=new_cat_feat,
-                                                    id_columns=['patientunitstayid', 'ts', 'death_ts'])
+                                                    id_columns=['patientunitstayid', 'ts', 'death_ts'],
+                                                    inplace=True)
 patient_df_norm.head(6)
 
 # + {"Collapsed": "false", "persistent_id": "64492d9f-df5d-4940-b931-cbb4c3af2949", "last_executed_text": "patient_df_norm.to_csv(f'{data_path}cleaned/normalized/patient.csv')", "execution_event_id": "3eed71a9-b6b3-4f0f-99b3-0b80313faf98"}

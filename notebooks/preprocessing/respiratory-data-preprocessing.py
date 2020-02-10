@@ -71,6 +71,7 @@ cat_embed_feat_enum = dict()               # Dictionary of the enumerations of t
 
 # + {"Collapsed": "false", "persistent_id": "31b57ee7-87a4-4461-9364-7eaf4abc43fb"}
 resp_care_df = pd.read_csv(f'{data_path}original/respiratoryCare.csv', dtype={'airwayposition': 'object',
+                                                                              'airwaytype': 'object',
                                                                               'airwaysize': 'object',
                                                                               'apneaparms': 'object',
                                                                               'setapneafio2': 'object',
@@ -154,7 +155,7 @@ resp_care_df.head()
 resp_care_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='ventendoffset', n=5).head()
 
 # + {"Collapsed": "false", "persistent_id": "678fefff-a384-4c44-ab09-86119e6d4087"}
-resp_care_df[resp_care_df.patientunitstayid == 3348331].head(20)
+resp_care_df[resp_care_df.patientunitstayid == 1113084].head(20)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # We can see that there are up to 5283 duplicate rows per set of `patientunitstayid` and `ts`. As such, we must join them.
@@ -166,7 +167,7 @@ resp_care_df[resp_care_df.patientunitstayid == 3348331].head(20)
 # Even after removing duplicates rows, there are still some that have different information for the same ID and timestamp. We have to apply a groupby function, selecting the minimum value for each of the offset features, as the larger values don't make sense (in the `priorventstartoffset`).
 
 # + {"Collapsed": "false", "persistent_id": "092a9ef1-2caa-4d53-b63a-6c641e5a6b46"}
-((resp_care_df.index > resp_care_df.ventendoffset) & resp_care_df.ventendoffset != 0).value_counts()
+((resp_care_df.ts > resp_care_df.ventendoffset) & resp_care_df.ventendoffset != 0).value_counts()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # There are no errors of having the start vent timestamp later than the end vent timestamp.
@@ -185,10 +186,19 @@ resp_care_df[resp_care_df.patientunitstayid == 1113084].head(10)
 # Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
+# Convert dataframe to Pandas, as the next cells aren't working properly with Modin:
+
+# + {"Collapsed": "false"}
+resp_care_df, pd = du.utils.convert_dataframe(resp_care_df, to='pandas')
+
+# + {"Collapsed": "false"}
+type(resp_care_df)
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Only keep the first instance of each patient, as we're only keeping track of when they are on ventilation:
 
 # + {"Collapsed": "false", "persistent_id": "988fcf02-dc89-4808-be0b-ed8f7c55d44a"}
-resp_care_df = resp_care_df.groupby('patientunitstayid').first().sort_values('ts')
+resp_care_df = resp_care_df.groupby('patientunitstayid').first().sort_values('ts').reset_index()
 resp_care_df.head(20)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -197,16 +207,10 @@ resp_care_df.head(20)
 # Make a feature `priorvent` that indicates if the patient has been on ventilation before.
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# Convert to pandas:
-
-# + {"Collapsed": "false", "persistent_id": "e7a14e8f-c9a5-45ae-a760-2416e3a4a740"}
-resp_care_df = resp_care_df
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
 # Create the prior ventilation column:
 
 # + {"Collapsed": "false", "persistent_id": "447b27eb-02bd-42a6-8b0d-e90d350add29"}
-resp_care_df['priorvent'] = (resp_care_df.priorventstartoffset < resp_care_df.index).astype(int)
+resp_care_df['priorvent'] = (resp_care_df.priorventstartoffset < resp_care_df.ts).astype(int)
 resp_care_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -271,6 +275,15 @@ resp_care_df.tail(6)
 resp_care_df[resp_care_df.patientunitstayid == 1557538]
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
+# Reconvert dataframe to Modin:
+
+# + {"Collapsed": "false"}
+resp_care_df, pd = du.utils.convert_dataframe(resp_care_df, to='modin')
+
+# + {"Collapsed": "false"}
+type(resp_care_df)
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Clean column names
 #
 # Standardize all column names to be on lower case, have spaces replaced by underscores and remove comas.
@@ -299,25 +312,6 @@ resp_care_df.to_csv(f'{data_path}cleaned/normalized/respiratoryCare.csv')
 
 # + {"Collapsed": "false", "persistent_id": "749d2891-1cc2-469b-884e-2617fdfef0bf"}
 resp_care_df.describe().transpose()
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# ### Join dataframes
-#
-# Merge dataframes by the unit stay, `patientunitstayid`, and the timestamp, `ts`, with a tolerence for a difference of up to 30 minutes.
-
-# + {"Collapsed": "false", "persistent_id": "4722cdd4-ed12-4e97-b7f5-19dff576e4d4"}
-resp_care_df = pd.read_csv(f'{data_path}cleaned/normalized/respiratoryCare.csv')
-resp_care_df.head()
-
-# + {"Collapsed": "false", "persistent_id": "0646049d-7687-49cd-a54d-5d478dab509a"}
-len(resp_care_df)
-
-# + {"Collapsed": "false", "persistent_id": "fcfec6e7-d79a-4133-956c-40723e1c4582"}
-resp_care_df.patientunitstayid.nunique()
-
-# + {"Collapsed": "false", "persistent_id": "f65b8ef3-d72c-49de-b6af-b914d5c7c7e7"}
-eICU_df = pd.merge_asof(eICU_df, resp_care_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
-eICU_df.head()
 
 # + {"toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
 # ## Respiratory charting data
@@ -620,22 +614,3 @@ resp_chart_df.to_csv(f'{data_path}cleaned/normalized/respiratoryCharting.csv')
 
 # + {"Collapsed": "false", "persistent_id": "0acfdac7-0ec3-4b8b-86d1-4a08563c9b4b"}
 resp_chart_df.describe().transpose()
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# ### Join dataframes
-#
-# Merge dataframes by the unit stay, `patientunitstayid`, and the timestamp, `ts`, with a tolerence for a difference of up to 30 minutes.
-
-# + {"Collapsed": "false", "persistent_id": "9f71d94c-3761-42e1-9eea-883e3a2bc6e5"}
-resp_chart_df = pd.read_csv(f'{data_path}cleaned/normalized/respiratoryCharting.csv')
-resp_chart_df.head()
-
-# + {"Collapsed": "false", "persistent_id": "e258728a-ff39-4dca-8842-5261f3a4a6a3"}
-len(resp_chart_df)
-
-# + {"Collapsed": "false", "persistent_id": "7e776a89-8833-4932-9458-0269330493d3"}
-resp_chart_df.patientunitstayid.nunique()
-
-# + {"Collapsed": "false", "persistent_id": "bbfbbaa4-287d-4093-973c-3e1d297c8bc1"}
-eICU_df = pd.merge_asof(eICU_df, resp_chart_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
-eICU_df.head()

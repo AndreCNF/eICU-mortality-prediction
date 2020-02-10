@@ -255,7 +255,7 @@ torch = "^1.2"
 tqdm = "^4.38"
 
 [package.source]
-reference = "e0544d76d2ce1424289c7e80317eafe1a0956030"
+reference = "8bf549b6c62cbe5089eff0d6527d9ff026c178e7"
 type = "git"
 url = "https://github.com/AndreCNF/data-utils.git"
 [[package]]
@@ -1525,7 +1525,7 @@ scipy = "*"
 tqdm = ">4.25.0"
 
 [package.extras]
-all = ["ipython", "lime", "matplotlib"]
+all = ["lime", "ipython", "matplotlib"]
 others = ["lime"]
 plots = ["matplotlib", "ipython"]
 

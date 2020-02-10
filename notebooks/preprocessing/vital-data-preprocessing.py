@@ -254,7 +254,8 @@ micro_df[micro_df.patientunitstayid == 3069495].head(20)
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "18d36906-c1a2-4221-8f6c-fbf429a076b2"}
 patient_df_norm = du.data_processing.normalize_data(patient_df, embed_columns=new_cat_feat,
-                                                    id_columns=['patientunitstayid', 'ts', 'deathoffset'])
+                                                    id_columns=['patientunitstayid', 'ts', 'deathoffset'],
+                                                    inplace=True)
 patient_df_norm.head(6)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -433,7 +434,8 @@ micro_df[micro_df.patientunitstayid == 3069495].head(20)
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "c1194923-4e5f-4017-a803-f0ff82777864"}
 vital_aprdc_df_norm = du.data_processing.normalize_data(vital_aprdc_df,
-                                                        id_columns=['patientunitstayid', 'ts'])
+                                                        id_columns=['patientunitstayid', 'ts'],
+                                                        inplace=True)
 vital_aprdc_df_norm.head(6)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}

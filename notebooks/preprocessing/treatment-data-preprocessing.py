@@ -106,7 +106,8 @@ du.search_explore.dataframe_missing_values(infdrug_df)
 # Besides removing the row ID `infusiondrugid`, I'm also removing `infusionrate`, `volumeoffluid` and `drugamount` as they seem redundant with `drugrate` although with a lot more missing values.
 
 # + {"Collapsed": "false", "persistent_id": "90324c6d-0d62-432c-be74-b8f5cf41de65"}
-infdrug_df = infdrug_df.drop(['infusiondrugid', 'infusionrate', 'volumeoffluid', 'drugamount'], axis=1)
+infdrug_df = infdrug_df.drop(['infusiondrugid', 'infusionrate', 'volumeoffluid',
+                              'drugamount', 'patientweight'], axis=1)
 infdrug_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -127,7 +128,6 @@ infdrug_df.patientunitstayid = infdrug_df.patientunitstayid.astype(int)
 infdrug_df.infusionoffset = infdrug_df.infusionoffset.astype(int)
 infdrug_df.drugname = infdrug_df.drugname.astype(str)
 infdrug_df.drugrate = infdrug_df.drugrate.astype(float)
-infdrug_df.patientweight = infdrug_df.patientweight.astype(float)
 infdrug_df.head()
 
 # + {"toc-hr-collapsed": false, "Collapsed": "false", "cell_type": "markdown"}
@@ -197,13 +197,6 @@ infdrug_df = infdrug_df.rename(columns={'infusionoffset': 'ts'})
 infdrug_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# Standardize drug names:
-
-# + {"Collapsed": "false", "persistent_id": "54f14b33-c0e9-4760-a0e3-f904996eda99"}
-infdrug_df = du.data_processing.clean_categories_naming(infdrug_df, 'drugname')
-infdrug_df.head()
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
 # Remove duplicate rows:
 
 # + {"Collapsed": "false", "persistent_id": "edfbcec8-4ca6-430a-8caf-940a115f6cac"}
@@ -224,6 +217,21 @@ infdrug_df = infdrug_df.sort_values('ts')
 infdrug_df.head(6)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
+# Convert dataframe to Pandas, as the next cells aren't working properly with Modin:
+
+# + {"Collapsed": "false"}
+infdrug_df.dtypes
+
+# + {"Collapsed": "false"}
+infdrug_df, pd = du.utils.convert_dataframe(infdrug_df, to='pandas')
+
+# + {"Collapsed": "false"}
+type(infdrug_df)
+
+# + {"Collapsed": "false"}
+infdrug_df.dtypes
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Check for possible multiple rows with the same unit stay ID and timestamp:
 
 # + {"Collapsed": "false", "persistent_id": "049a3fd1-0ae4-454e-a5b5-5ce8fa94d3e1"}
@@ -238,26 +246,26 @@ infdrug_df[infdrug_df.patientunitstayid == 1785711].head(20)
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Normalize data
 
+# + {"Collapsed": "false"}
+infdrug_df.drugrate = infdrug_df.drugrate.astype(float)
+
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "5d512225-ad7e-40b4-a091-b18df3f38c4c"}
-infdrug_df_norm = du.data_processing.normalize_data(infdrug_df,
-                                                 columns_to_normalize=['patientweight'],
-                                                 columns_to_normalize_cat=[('drugname', 'drugrate')])
+infdrug_df_norm = du.data_processing.normalize_data(infdrug_df, columns_to_normalize=False,
+                                                    columns_to_normalize_categ=[('drugname', 'drugrate')],
+                                                    inplace=True)
 infdrug_df_norm.head()
 
-# + {"Collapsed": "false", "persistent_id": "48d12b1b-72f9-4884-bc0c-93a0b2a333b8"}
-infdrug_df_norm.patientweight.value_counts()
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Prevent infinite drug rate values:
+
+# + {"Collapsed": "false"}
+infdrug_df_norm = infdrug_df_norm.replace(to_replace=np.inf, value=0)
+
+# + {"Collapsed": "false"}
+infdrug_df_norm.drugrate.max()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Join rows that have the same IDs
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# Convert dataframe to Pandas, as the groupby operation in `join_categorical_enum` isn't working properly with Modin:
-
-# + {"Collapsed": "false"}
-infdrug_df_norm, pd = du.utils.convert_dataframe(infdrug_df_norm, to='pandas')
-
-# + {"Collapsed": "false"}
-type(infdrug_df_norm)
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023"}
 infdrug_df_norm = du.embedding.join_categorical_enum(infdrug_df_norm, new_cat_embed_feat, inplace=True)
@@ -288,12 +296,12 @@ infdrug_df_norm[infdrug_df_norm.patientunitstayid == 1785711].head(20)
 # ### Rename columns
 
 # + {"Collapsed": "false", "persistent_id": "9a27b7be-7a8a-435b-acdb-9407a325ac53"}
-infdrug_df = infdrug_df.rename(columns={'patientweight': 'weight', 'drugname': 'infusion_drugname',
+infdrug_df = infdrug_df.rename(columns={'drugname': 'infusion_drugname',
                                         'drugrate': 'infusion_drugrate'})
 infdrug_df.head()
 
 # + {"Collapsed": "false", "persistent_id": "8917e132-aa34-43f8-a4c9-7c38c572fc94"}
-infdrug_df_norm = infdrug_df_norm.rename(columns={'patientweight': 'weight', 'drugname': 'infusion_drugname',
+infdrug_df_norm = infdrug_df_norm.rename(columns={'drugname': 'infusion_drugname',
                                                   'drugrate': 'infusion_drugrate'})
 infdrug_df_norm.head()
 
@@ -328,27 +336,14 @@ infdrug_df_norm.to_csv(f'{data_path}cleaned/normalized/infusionDrug.csv')
 # + {"Collapsed": "false", "persistent_id": "3fe6821a-5324-4b36-94cd-7d8073c5262f"}
 infdrug_df_norm.describe().transpose()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# ### Join dataframes
-#
-# Merge dataframes by the unit stay, `patientunitstayid`, and the timestamp, `ts`, with a tolerence for a difference of up to 30 minutes.
-
-# + {"Collapsed": "false", "persistent_id": "3278496a-a6bc-4c4b-8e6d-93b6295375bd"}
-infdrug_df = pd.read_csv(f'{data_path}cleaned/normalized/infusionDrug.csv')
-infdrug_df.head()
-
-# + {"Collapsed": "false", "persistent_id": "1aa21f85-3ed9-467c-9773-958ae79d4a9a"}
-len(infdrug)
-
-# + {"Collapsed": "false", "persistent_id": "976bb278-a2b0-4558-b925-139789c46313"}
-infdrug.patientunitstayid.nunique()
-
-# + {"Collapsed": "false", "persistent_id": "5c86375e-117f-4367-ad01-67beeef3361c"}
-eICU_df = pd.merge_asof(eICU_df, infdrug_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
-eICU_df.head()
-
 # + {"toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
 # ## Admission drug data
+
+# + {"Collapsed": "false"}
+infdrug_df_norm[infdrug_df_norm.infusion_drugrate == np.inf].head()
+
+# + {"Collapsed": "false"}
+infdrug_df_norm.replace(to_replace=np.inf, value=0).infusion_drugrate.max()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Read the data
@@ -507,6 +502,15 @@ yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 # ### Create the timestamp feature and sort
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
+# Convert dataframe to Pandas, as the next cells aren't working properly with Modin:
+
+# + {"Collapsed": "false"}
+admsdrug_df, pd = du.utils.convert_dataframe(admsdrug_df, to='pandas')
+
+# + {"Collapsed": "false"}
+type(admsdrug_df)
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Create the timestamp (`ts`) feature:
 
 # + {"Collapsed": "false", "persistent_id": "ceab2ec2-9b2b-4439-9c3c-7674dd5b2445"}
@@ -550,7 +554,8 @@ admsdrug_df[admsdrug_df.patientunitstayid == 2346930].head(10)
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "417dd68c-7c54-4eaf-856c-9f6a44ee1d26"}
 admsdrug_df_norm = du.data_processing.normalize_data(admsdrug_df_norm, columns_to_normalize=False,
-                                                  columns_to_normalize_cat=[(['drughiclseqno', 'drugunit'], 'drugdosage')])
+                                                     columns_to_normalize_cat=[(['drughiclseqno', 'drugunit'], 'drugdosage')],
+                                                     inplace=True)
 admsdrug_df_norm.head()
 
 # + {"Collapsed": "false", "persistent_id": "d8f2c0a4-ba81-4958-90b7-7b5165ff1363"}
@@ -627,25 +632,6 @@ admsdrug_df_norm.to_csv(f'{data_path}cleaned/normalized/admissionDrug.csv')
 
 # + {"Collapsed": "false", "persistent_id": "bf406619-1133-4314-95ca-808f9fe81aee"}
 admsdrug_df_norm.describe().transpose()
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# ### Join dataframes
-#
-# Merge dataframes by the unit stay, `patientunitstayid`, and the timestamp, `ts`, with a tolerence for a difference of up to 30 minutes.
-
-# + {"Collapsed": "false", "persistent_id": "d813ac43-2482-489f-a168-288ff5bb4814"}
-admsdrug_df = pd.read_csv(f'{data_path}cleaned/normalized/admissionDrug.csv')
-admsdrug_df.head()
-
-# + {"Collapsed": "false", "persistent_id": "3c78b1bc-6152-4a90-9f29-1a48eeb3b402"}
-len(admsdrug_df)
-
-# + {"Collapsed": "false", "persistent_id": "867eeb9e-ecd6-4172-9266-5f3177c3fe93"}
-admsdrug_df.patientunitstayid.nunique()
-
-# + {"Collapsed": "false", "persistent_id": "2fd9114d-7062-4ad5-8a49-66e8dd1f770e"}
-eICU_df = pd.merge_asof(eICU_df, admsdrug_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
-eICU_df.head()
 
 # + {"toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
 # ## Medication data
@@ -908,7 +894,8 @@ med_df[med_df.patientunitstayid == 979183].head(10)
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "a4cd949b-e561-485d-bcb6-10fccc343352"}
 med_df_norm = du.data_processing.normalize_data(med_df_norm, columns_to_normalize=False,
-                                             columns_to_normalize_cat=[(['drughiclseqno', 'drugunit'], 'drugdosage')])
+                                                columns_to_normalize_cat=[(['drughiclseqno', 'drugunit'], 'drugdosage')],
+                                                inplace=True)
 med_df_norm.head()
 
 # + {"Collapsed": "false", "persistent_id": "93145ae0-2204-4553-a7eb-5d235552dd82"}
@@ -1004,25 +991,6 @@ med_df.nlargest(columns='drugdosage', n=5)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # [TODO] Check if these very large extreme dosage values make sense and, if not, try to fix them.
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# ### Join dataframes
-#
-# Merge dataframes by the unit stay, `patientunitstayid`, and the timestamp, `ts`, with a tolerence for a difference of up to 30 minutes.
-
-# + {"Collapsed": "false", "persistent_id": "a7c6ff09-8ff6-4347-90db-0a5193b56e5b"}
-med_df = pd.read_csv(f'{data_path}cleaned/normalized/medication.csv')
-med_df.head()
-
-# + {"Collapsed": "false", "persistent_id": "4cdb2132-f4f6-4bb2-8816-2980b789cf67"}
-len(med_df)
-
-# + {"Collapsed": "false", "persistent_id": "3acf920e-fd14-4b74-8cd0-e2eda4bc14a7"}
-med_df.patientunitstayid.nunique()
-
-# + {"Collapsed": "false", "persistent_id": "137ee51c-ef2d-4f7c-bb1d-363306b190af"}
-eICU_df = pd.merge_asof(eICU_df, med_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
-eICU_df.head()
 
 # + {"toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
 # ## Treatment data
@@ -1293,22 +1261,6 @@ treat_df.to_csv(f'{data_path}cleaned/normalized/diagnosis.csv')
 
 # + {"Collapsed": "false", "persistent_id": "23eefabe-23d7-4db4-b8e0-7c1e61ef2789"}
 treat_df.describe().transpose()
+# + {"Collapsed": "false"}
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# ### Join dataframes
-#
-# Merge dataframes by the unit stay, `patientunitstayid`, and the timestamp, `ts`, with a tolerence for a difference of up to 30 minutes.
 
-# + {"Collapsed": "false", "persistent_id": "9f483dd2-1ac4-4476-91b8-1e0433af905f"}
-treat_df = pd.read_csv(f'{data_path}cleaned/normalized/diagnosis.csv')
-treat_df.head()
-
-# + {"Collapsed": "false", "persistent_id": "93ba8928-d23a-4200-8001-252cd46481fd"}
-len(treat_df)
-
-# + {"Collapsed": "false", "persistent_id": "39d602af-5e6c-444c-af30-79b07c1d5ef2"}
-treat_df.patientunitstayid.nunique()
-
-# + {"Collapsed": "false", "persistent_id": "ccc79c6c-497d-4682-a860-6aea8dfe2944"}
-eICU_df = pd.merge_asof(eICU_df, treat_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
-eICU_df.head()
