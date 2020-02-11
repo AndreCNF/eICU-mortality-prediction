@@ -339,12 +339,6 @@ infdrug_df_norm.describe().transpose()
 # + {"toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
 # ## Admission drug data
 
-# + {"Collapsed": "false"}
-infdrug_df_norm[infdrug_df_norm.infusion_drugrate == np.inf].head()
-
-# + {"Collapsed": "false"}
-infdrug_df_norm.replace(to_replace=np.inf, value=0).infusion_drugrate.max()
-
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Read the data
 
@@ -385,8 +379,14 @@ du.search_explore.dataframe_missing_values(admsdrug_df)
 # + {"Collapsed": "false", "persistent_id": "a5e3fd48-5fa3-4d9b-aa52-e1a29d7c6523"}
 admsdrug_df.drugname.value_counts()
 
+# + {"Collapsed": "false"}
+admsdrug_df.drugname.nunique()
+
 # + {"Collapsed": "false", "persistent_id": "0c6824dc-8949-4d55-96dc-932cd84a63e6"}
 admsdrug_df.drughiclseqno.value_counts()
+
+# + {"Collapsed": "false"}
+admsdrug_df.drughiclseqno.nunique()
 
 # + {"Collapsed": "false", "persistent_id": "67466a3f-3bdc-4f91-b83a-7746b15345b4"}
 admsdrug_df.drugnotetype.value_counts()
@@ -427,6 +427,15 @@ admsdrug_df.head()
 # ### Fix missing values representation
 #
 # Replace blank and unrealistic zero values with NaNs.
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Convert dataframe to Pandas, as the next cells aren't working properly with Modin:
+
+# + {"Collapsed": "false"}
+admsdrug_df, pd = du.utils.convert_dataframe(admsdrug_df, to='pandas')
+
+# + {"Collapsed": "false"}
+type(admsdrug_df)
 
 # + {"Collapsed": "false", "persistent_id": "23d0168e-e5f3-4630-954e-3becc23307ae"}
 admsdrug_df.drugdosage = admsdrug_df.drugdosage.replace(to_replace=0, value=np.nan)
@@ -502,15 +511,6 @@ yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 # ### Create the timestamp feature and sort
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# Convert dataframe to Pandas, as the next cells aren't working properly with Modin:
-
-# + {"Collapsed": "false"}
-admsdrug_df, pd = du.utils.convert_dataframe(admsdrug_df, to='pandas')
-
-# + {"Collapsed": "false"}
-type(admsdrug_df)
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
 # Create the timestamp (`ts`) feature:
 
 # + {"Collapsed": "false", "persistent_id": "ceab2ec2-9b2b-4439-9c3c-7674dd5b2445"}
@@ -553,8 +553,8 @@ admsdrug_df[admsdrug_df.patientunitstayid == 2346930].head(10)
 # ### Normalize data
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "417dd68c-7c54-4eaf-856c-9f6a44ee1d26"}
-admsdrug_df_norm = du.data_processing.normalize_data(admsdrug_df_norm, columns_to_normalize=False,
-                                                     columns_to_normalize_cat=[(['drughiclseqno', 'drugunit'], 'drugdosage')],
+admsdrug_df_norm = du.data_processing.normalize_data(admsdrug_df, columns_to_normalize=False,
+                                                     columns_to_normalize_categ=[(['drughiclseqno', 'drugunit'], 'drugdosage')],
                                                      inplace=True)
 admsdrug_df_norm.head()
 
@@ -563,19 +563,22 @@ admsdrug_df_norm = admsdrug_df_norm.sort_values('ts')
 admsdrug_df_norm.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
+# Prevent infinite values:
+
+# + {"Collapsed": "false"}
+admsdrug_df_norm = admsdrug_df_norm.replace(to_replace=np.inf, value=0)
+
+# + {"Collapsed": "false"}
+admsdrug_df_norm = admsdrug_df_norm.replace(to_replace=-np.inf, value=0)
+
+# + {"Collapsed": "false"}
+admsdrug_df_norm.drugdosage.max()
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Join rows that have the same IDs
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Even after removing duplicates rows, there are still some that have different information for the same ID and timestamp. We have to concatenate the categorical enumerations.
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# Convert dataframe to Pandas, as the groupby operation in `join_categorical_enum` isn't working properly with Modin:
-
-# + {"Collapsed": "false"}
-admsdrug_df_norm, pd = du.utils.convert_dataframe(admsdrug_df_norm, to='pandas')
-
-# + {"Collapsed": "false"}
-type(admsdrug_df_norm)
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023"}
 admsdrug_df_norm = du.embedding.join_categorical_enum(admsdrug_df_norm, new_cat_embed_feat, inplace=True)
@@ -706,7 +709,7 @@ med_df.head()
 med_df.drugordercancelled.value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "93a3e2f3-3632-4c5d-a25b-4e9195335348"}
-med_df = med_df[~((med_df.drugordercancelled == 'Yes') | (np.isnan(med_df.drughiclseqno)))]
+med_df = med_df[~((med_df.drugordercancelled == 'Yes') | (med_df.drughiclseqno.isnull()))]
 med_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -736,11 +739,23 @@ med_df['drugunit'] = np.nan
 med_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
+# Convert dataframe to Pandas, as the next cells aren't working properly with Modin:
+
+# + {"Collapsed": "false"}
+med_df, pd = du.utils.convert_dataframe(med_df, to='pandas')
+
+# + {"Collapsed": "false"}
+type(med_df)
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Get the dosage and unit values for each row:
 
 # + {"Collapsed": "false", "persistent_id": "014b4c4e-31cb-487d-8bd9-b8f7048e981e"}
 med_df[['drugdosage', 'drugunit']] = med_df.apply(du.data_processing.set_dosage_and_units, axis=1, result_type='expand')
 med_df.head()
+
+# + {"Collapsed": "false"}
+med_df.drugunit.value_counts()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Remove the now unneeded `dosage` column:
@@ -795,7 +810,7 @@ for i in range(len(new_cat_embed_feat)):
 # + {"Collapsed": "false", "persistent_id": "e38470e5-73f7-4d35-b91d-ce0793b7f6f6"}
 med_df[new_cat_feat].head()
 
-# + {"Collapsed": "false", "persistent_id": "00b3ce19-756a-4de4-8b05-762de386aa29"}
+# + {"Collapsed": "false", "persistent_id": "00b3ce19-756a-4de4-8b05-762de386aa29", "jupyter": {"outputs_hidden": true}}
 cat_embed_feat_enum
 
 # + {"Collapsed": "false", "persistent_id": "e5615265-4372-4117-a368-ec539c871763"}
@@ -827,10 +842,10 @@ new_df.head()
 
 # + {"Collapsed": "false", "persistent_id": "6d2bf14a-b75b-4b4c-ae33-403cde6781d7"}
 new_df.drugstartoffset = new_df.drugstopoffset
-new_df.drugunit = np.nan
+new_df.drugunit = 0
 new_df.drugdosage = np.nan
-new_df.frequency = np.nan
-new_df.drughiclseqno = np.nan
+new_df.frequency = 0
+new_df.drughiclseqno = 0
 new_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -854,7 +869,7 @@ med_df.head(6)
 # Create the timestamp (`ts`) feature:
 
 # + {"Collapsed": "false", "persistent_id": "88ab8d50-b556-4c76-bb0b-33e76900018f"}
-med_df = med_df.rename(columns={'drugstopoffset': 'ts'})
+med_df = med_df.rename(columns={'drugstartoffset': 'ts'})
 med_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -893,14 +908,26 @@ med_df[med_df.patientunitstayid == 979183].head(10)
 # ### Normalize data
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "a4cd949b-e561-485d-bcb6-10fccc343352"}
-med_df_norm = du.data_processing.normalize_data(med_df_norm, columns_to_normalize=False,
-                                                columns_to_normalize_cat=[(['drughiclseqno', 'drugunit'], 'drugdosage')],
+med_df_norm = du.data_processing.normalize_data(med_df, columns_to_normalize=False,
+                                                columns_to_normalize_categ=[(['drughiclseqno', 'drugunit'], 'drugdosage')],
                                                 inplace=True)
 med_df_norm.head()
 
 # + {"Collapsed": "false", "persistent_id": "93145ae0-2204-4553-a7eb-5d235552dd82"}
 med_df_norm = med_df_norm.sort_values('ts')
 med_df_norm.head()
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Prevent infinite values:
+
+# + {"Collapsed": "false"}
+med_df_norm = med_df_norm.replace(to_replace=np.inf, value=0)
+
+# + {"Collapsed": "false"}
+med_df_norm = med_df_norm.replace(to_replace=-np.inf, value=0)
+
+# + {"Collapsed": "false"}
+med_df_norm.drugdosage.max()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Join rows that have the same IDs
@@ -910,15 +937,6 @@ med_df_norm.head()
 
 # + {"Collapsed": "false", "persistent_id": "ed86d5a7-eeb3-44c4-9a4e-6dd67af307f2"}
 list(set(med_df_norm.columns) - set(new_cat_embed_feat) - set(['patientunitstayid', 'ts']))
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# Convert dataframe to Pandas, as the groupby operation in `join_categorical_enum` isn't working properly with Modin:
-
-# + {"Collapsed": "false"}
-med_df_norm, pd = du.utils.convert_dataframe(med_df, to='pandas')
-
-# + {"Collapsed": "false"}
-type(med_df_norm)
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023"}
 med_df_norm = du.embedding.join_categorical_enum(med_df_norm, new_cat_embed_feat, inplace=True)
@@ -1262,5 +1280,4 @@ treat_df.to_csv(f'{data_path}cleaned/normalized/diagnosis.csv')
 # + {"Collapsed": "false", "persistent_id": "23eefabe-23d7-4db4-b8e0-7c1e61ef2789"}
 treat_df.describe().transpose()
 # + {"Collapsed": "false"}
-
 

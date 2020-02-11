@@ -8,7 +8,7 @@ from data_utils import embedding        # Embeddings and other categorical featu
 # variants such as embedding, time decay, regularization learning, etc
 class VanillaLSTM(nn.Module):
     def __init__(self, n_inputs, n_hidden, n_outputs, n_layers=1, p_dropout=0, embed_features=None,
-                 num_embeddings=None, embedding_dim=None):
+                 num_embeddings=None, embedding_dim=None, bidirectional=False, padding_value=999999):
         # [TODO] Add documentation for each model class
         super().__init__()
         self.n_inputs = n_inputs                # Number of input features
@@ -19,6 +19,8 @@ class VanillaLSTM(nn.Module):
         self.embed_features = embed_features    # List of features that need to go through embedding layers
         self.num_embeddings = num_embeddings    # List of the total number of unique categories for the embedding layers
         self.embedding_dim = embedding_dim      # List of embedding dimensions
+        self.bidir = bidirectional              # Indicates if the LSTM model is bidirectional
+        self.padding_value = padding_value      # Padding value used to fill input sequences with variable length
         # Embedding layers
         if self.embed_features is not None:
             if isinstance(self.embed_features, int):
@@ -56,14 +58,18 @@ class VanillaLSTM(nn.Module):
             # Have into account the new embedding columns that will be added, as well as the removal
             # of the originating categorical columns
             self.lstm_n_inputs = self.n_inputs + sum(self.embedding_dim) - len(self.embedding_dim)
-        self.lstm = nn.LSTM(self.lstm_n_inputs, self.n_hidden, self.n_layers, 
-                            batch_first=True, dropout=self.p_dropout)
+        self.lstm = nn.LSTM(self.lstm_n_inputs, self.n_hidden, self.n_layers,
+                            batch_first=True, dropout=self.p_dropout,
+                            bidirectional=self.bidir)
         # Fully connected layer which takes the LSTM's hidden units and calculates the output classification
         self.fc = nn.Linear(self.n_hidden, self.n_outputs)
         # Dropout used between the last LSTM layer and the fully connected layer
         self.dropout = nn.Dropout(p=self.p_dropout)
+        # Use the standard cross entropy function
+        self.criterion = nn.CrossEntropyLoss()
 
-    def forward(self, x, x_lengths=None, get_hidden_state=False, hidden_state=None):
+    def forward(self, x, x_lengths=None, get_hidden_state=False,
+                hidden_state=None, prob_output=True):
         if self.embed_features is not None:
             # Run each embedding layer on each respective feature, adding the
             # resulting embedding values to the tensor and removing the original,
@@ -83,52 +89,35 @@ class VanillaLSTM(nn.Module):
             self.hidden = hidden_state
         if x_lengths is not None:
             # pack_padded_sequence so that padded items in the sequence won't be shown to the LSTM
-            x = torch.nn.utils.rnn.pack_padded_sequence(x, x_lengths, batch_first=True)
+            x = nn.utils.rnn.pack_padded_sequence(x, x_lengths, batch_first=True)
         # Get the outputs and hidden states from the LSTM layer(s)
         lstm_output, self.hidden = self.lstm(x, self.hidden)
         if x_lengths is not None:
             # Undo the packing operation
-            lstm_output, _ = torch.nn.utils.rnn.pad_packed_sequence(lstm_output, batch_first=True)
+            lstm_output, _ = nn.utils.rnn.pad_packed_sequence(lstm_output, batch_first=True)
         # Apply dropout to the last LSTM layer
         lstm_output = self.dropout(lstm_output)
         # Flatten LSTM output to fit into the fully connected layer
         flat_lstm_output = lstm_output.contiguous().view(-1, self.n_hidden)
-        # Classification scores after applying the fully connected layers and softmax
-        output = torch.sigmoid(self.fc(flat_lstm_output))
+        # Apply the final fully connected layer
+        output = self.fc(flat_lstm_output)
+        if prob_output is True:
+            # Get the outputs in the form of probabilities
+            if self.n_outputs == 1:
+                output = F.sigmoid(output)
+            else:
+                # Normalize outputs on their last dimension
+                output = F.softmax(output, dim=len(output.shape)-1)
         if get_hidden_state is True:
             return output, self.hidden
         else:
             return output
 
-    def loss(self, y_pred, y_labels, x_lengths):
-        # Before we calculate the negative log likelihood, we need to mask out the activations
-        # this means we don't want to take into account padded items in the output vector
-        # simplest way to think about this is to flatten ALL sequences into a REALLY long sequence
-        # and calculate the loss on that.
-        # Flatten all the labels and make it have type long instead of float
-        y_labels = y_labels.contiguous().view(-1).long()
-        # Flatten all predictions
-        y_pred = y_pred.view(-1, self.n_outputs)
-        # Create a mask by filtering out all labels that are not a padding value
-        # Also need to make it have type float to be able to multiply with y_pred
-        mask = (y_labels <= 1)
-        # Count how many predictions we have
-        n_pred = int(torch.sum(mask).item())
-        # Check if there's only one class to classify (either it belongs to that class or it doesn't)
-        if self.n_outputs == 1:
-            # Add a column to the predictions tensor with the probability of not being part of the
-            # class being used
-            y_pred_other_class = 1 - y_pred
-            y_pred = torch.stack([y_pred_other_class, y_pred]).permute(1, 0, 2).squeeze()
-        # Pick the values for the label and zero out the rest with the mask
-        y_pred = y_pred[range(y_pred.shape[0]), y_labels * mask.long()] * mask.float()
-        # I need to get the diagonal of the tensor, which represents a vector of each
-        # score (y_pred) multiplied by its correct mask value
-        # Otherwise we get a square matrix of every score multiplied by every mask value
-        # Completely remove the padded values from the predictions using the mask
-        y_pred = torch.masked_select(y_pred, mask)
+    def loss(self, y_pred, y_labels):
+        # Make sure that the labels are in long format
+        y_labels = y_labels.long()
         # Compute cross entropy loss which ignores all padding values
-        ce_loss = -torch.sum(torch.log(y_pred)) / n_pred
+        ce_loss = self.criterion(y_pred, y_labels, ignore_index=self.padding_value)
         return ce_loss
 
     def init_hidden(self, batch_size):
@@ -197,7 +186,7 @@ class TLSTM(nn.Module):
             # Have into account the new embedding columns that will be added, as well as the removal
             # of the originating categorical columns
             self.lstm_n_inputs = self.n_inputs + sum(self.embedding_dim) - len(self.embedding_dim)
-        self.lstm = nn.LSTM(self.lstm_n_inputs, self.n_hidden, self.n_layers, 
+        self.lstm = nn.LSTM(self.lstm_n_inputs, self.n_hidden, self.n_layers,
                             batch_first=True, dropout=self.p_dropout)
         # Fully connected layer which takes the LSTM's hidden units and calculates the output classification
         self.fc = nn.Linear(self.n_hidden, self.n_outputs)
@@ -343,7 +332,7 @@ class DeepCare(nn.Module):
             # Have into account the new embedding columns that will be added, as well as the removal
             # of the originating categorical columns
             self.lstm_n_inputs = self.n_inputs + sum(self.embedding_dim) - len(self.embedding_dim)
-        self.lstm = nn.LSTM(self.lstm_n_inputs, self.n_hidden, self.n_layers, 
+        self.lstm = nn.LSTM(self.lstm_n_inputs, self.n_hidden, self.n_layers,
                             batch_first=True, dropout=self.p_dropout)
         # Fully connected layer which takes the LSTM's hidden units and calculates the output classification
         self.fc = nn.Linear(self.n_hidden, self.n_outputs)
@@ -489,7 +478,7 @@ class TransformerXL(nn.Module):
             # Have into account the new embedding columns that will be added, as well as the removal
             # of the originating categorical columns
             self.lstm_n_inputs = self.n_inputs + sum(self.embedding_dim) - len(self.embedding_dim)
-        self.lstm = nn.LSTM(self.lstm_n_inputs, self.n_hidden, self.n_layers, 
+        self.lstm = nn.LSTM(self.lstm_n_inputs, self.n_hidden, self.n_layers,
                             batch_first=True, dropout=self.p_dropout)
         # Fully connected layer which takes the LSTM's hidden units and calculates the output classification
         self.fc = nn.Linear(self.n_hidden, self.n_outputs)
