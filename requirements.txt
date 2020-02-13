@@ -31,9 +31,9 @@ chardet==3.0.4 \
 click==7.0 \
     --hash=sha256:2335065e6395b9e67ca716de5f7526736bfa6ceead690adf616d925bdc622b13 \
     --hash=sha256:5b94b49521f6456670fdb30cd82a4eca9412788a93fa6dd6df72c94d5a8ff2d7
-cloudpickle==1.2.2 \
-    --hash=sha256:f3ef2c9d438f1553ce7795afb18c1f190d8146132496169ef6aa9b7b65caa4c3 \
-    --hash=sha256:922401d7140e133253ff5fab4faa4a1166416066453a783b00b507dca93f8859
+cloudpickle==1.3.0 \
+    --hash=sha256:8664761f810efc07dbb301459e413c99b68fcc6d8703912bd39d86618ac631e3 \
+    --hash=sha256:38af54d0e7705d87a287bdefe1df00f936aadb1f629dca383e825cca927fa753
 colorama==0.4.3 \
     --hash=sha256:7d73d2a99753107a36ac6b455ee49046802e59d9d076ef8e47b61499fa29afff \
     --hash=sha256:e96da0d330793e2cb9485e9ddfd918d456036c7149416295932478192f4436a1
@@ -43,10 +43,10 @@ colorlover==0.3.0 \
 colour==0.1.5 \
     --hash=sha256:33f6db9d564fadc16e59921a56999b79571160ce09916303d35346dddc17978c \
     --hash=sha256:af20120fefd2afede8b001fbef2ea9da70ad7d49fafdb6489025dae8745c3aee
-comet-git-pure==0.19.14 \
-    --hash=sha256:f4d419157103703fc52fb3b1e6a1ef12b7ca6520a510d7585f712fe949cf1bba \
-    --hash=sha256:96e3fdc6fbedb615df77660a48e84633d1dcf6fe09c48e3b804a511129f8c974 \
-    --hash=sha256:82d292a1253e7a022155ed7688542cb4155b49d580880aaf4359f3c2d7f694fd
+comet-git-pure==0.19.15 \
+    --hash=sha256:9f0ba658703254cdef40593396b42fe6818234cd9fe2fb549d7d2bbc2871050d \
+    --hash=sha256:ec798c1d6a22c52c7755c0d08af64ce5b522d0f3d63b19505a5296656b04dbd9 \
+    --hash=sha256:84c16b7efdcae50211cc27edf377efa9cf67aeecad334e43c28cda8a8f093ab5
 comet-ml==3.0.2 \
     --hash=sha256:2ac36800ec6ace557bcf0bba781404f5b82242a64b920ed64e7611ab42cb9436 \
     --hash=sha256:f5fb4850a816a59b0e004f87ffd4976190cfaf6eef05cf8909187db0942e74c4
@@ -56,7 +56,7 @@ cycler==0.10.0 \
 dask==2.10.1 \
     --hash=sha256:cf9ebd3797e69350cfa463aaeefe20f58c07d84d6fa9548367cd102b5f9b61bb \
     --hash=sha256:b20d7dfb8f9f23de9c6c810e0e8b44c3cd83c49f52d26e6d6a0679ed2867de2b
--e git+https://github.com/AndreCNF/data-utils.git@bcd6f61da4294cde40b53f1da44ef07798be8672#egg=data-utils
+-e git+https://github.com/AndreCNF/data-utils.git@8bf549b6c62cbe5089eff0d6527d9ff026c178e7#egg=data-utils
 datetime==4.3 \
     --hash=sha256:371dba07417b929a4fa685c2f7a3eaa6a62d60c02947831f97d4df9a9e70dfd0 \
     --hash=sha256:5cef605bab8259ff61281762cdf3290e459fbf0b4719951d5fab967d5f2ea0ea
@@ -165,8 +165,8 @@ jupyter-client==5.3.4 \
 jupyter-core==4.6.1 \
     --hash=sha256:464769f7387d7a62a2403d067f1ddc616655b7f77f5d810c0dd62cb54bfd0fb9 \
     --hash=sha256:a183e0ec2e8f6adddf62b0a3fc6a2237e3e0056d381e536d3e7c7ecc3067e244
-jupyter-lsp==0.7.0b0 \
-    --hash=sha256:1fa25c2f540992b9fca197144478efb0698c58fb3c6fef032dff664c40f97041
+jupyter-lsp==0.7.0 \
+    --hash=sha256:18d79881ab34eeb6e5f42930dc369e23b0d2240da94a0e2416317eb50cbdfaa1
 jupytext==1.3.3 \
     --hash=sha256:5d7b089c67e54d097c92a40559a94b098bd8aa2a987ec15fd0d6d2328a7679bf
 kiwisolver==1.1.0 \
@@ -716,9 +716,9 @@ snowballstemmer==2.0.0 \
 sortedcontainers==2.1.0 \
     --hash=sha256:d9e96492dd51fae31e60837736b38fe42a187b5404c16606ff7ee7cd582d4c60 \
     --hash=sha256:974e9a32f56b17c1bac2aebd9dcf197f3eb9cd30553c5852a3187ad162e1a03a
-sphinx==2.3.1 \
-    --hash=sha256:298537cb3234578b2d954ff18c5608468229e116a9757af3b831c2b2b4819159 \
-    --hash=sha256:e6e766b74f85f37a5f3e0773a1e1be8db3fcb799deb58ca6d18b70b0b44542a5
+sphinx==2.4.0 \
+    --hash=sha256:b3feeed2da588adabd0db5329a309f27317e98382122721511e901833d092028 \
+    --hash=sha256:fb2ce74c28154872757925edda0060b4c4102cdc86b8b30063f23399678de2ca
 sphinxcontrib-applehelp==1.0.1 \
     --hash=sha256:edaa0ab2b2bc74403149cb0209d6775c96de797dfd5b5e2a71981309efab3897 \
     --hash=sha256:fb8dee85af95e5c30c91f10e7eb3c8967308518e0f7488a2828ef7bc191d0d5d

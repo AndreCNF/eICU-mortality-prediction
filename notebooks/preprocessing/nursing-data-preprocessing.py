@@ -71,14 +71,14 @@ cat_embed_feat_enum = dict()               # Dictionary of the enumerations of t
 # ### Read the data
 
 # + {"Collapsed": "false", "persistent_id": "4a37073a-b357-4079-b6af-72125689781d"}
-nursecare_df = pd.read_csv(f'{data_path}original/nurseCare.csv')
-nursecare_df.head()
+nurse_care_df = pd.read_csv(f'{data_path}original/nurseCare.csv')
+nurse_care_df.head()
 
 # + {"Collapsed": "false", "persistent_id": "6566d20f-9fcb-4d92-879b-55a0cefe54ae"}
-len(nursecare_df)
+len(nurse_care_df)
 
 # + {"Collapsed": "false", "persistent_id": "e267e007-4b72-4551-a9d2-7c916956235c"}
-nursecare_df.patientunitstayid.nunique()
+nurse_care_df.patientunitstayid.nunique()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Only 13052 unit stays have nurse care data. Might not be useful to include them.
@@ -87,66 +87,66 @@ nursecare_df.patientunitstayid.nunique()
 # Get an overview of the dataframe through the `describe` method:
 
 # + {"Collapsed": "false", "persistent_id": "b4f282b2-e5f4-4cfb-83c5-c79944367d70"}
-nursecare_df.describe().transpose()
+nurse_care_df.describe().transpose()
 
 # + {"Collapsed": "false", "persistent_id": "6a382a6d-709e-4cdf-a586-c0cc751ff853"}
-nursecare_df.columns
+nurse_care_df.columns
 
 # + {"Collapsed": "false", "persistent_id": "f06e6c16-7c54-40c0-9055-0d8717661e4c"}
-nursecare_df.dtypes
+nurse_care_df.dtypes
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Check for missing values
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "3cc624bc-6dac-4cd0-9d64-f329e29940fa"}
-du.search_explore.dataframe_missing_values(nursecare_df)
+du.search_explore.dataframe_missing_values(nurse_care_df)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Remove unneeded features
 
 # + {"Collapsed": "false", "persistent_id": "ba513734-4c7e-455d-bfa8-9b805c59b530"}
-nursecare_df.celllabel.value_counts()
+nurse_care_df.celllabel.value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "4d028a9e-38e8-496e-805a-ed3f2304a07f"}
-nursecare_df.cellattribute.value_counts()
+nurse_care_df.cellattribute.value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "d61a9031-35b3-4c51-a141-a820f6ed70a8"}
-nursecare_df.cellattributevalue.value_counts()
+nurse_care_df.cellattributevalue.value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "502ee5b2-8eba-407e-a0c3-158c27cb9fab"}
-nursecare_df.cellattributepath.value_counts()
+nurse_care_df.cellattributepath.value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "056c6696-d254-4012-9446-cad509788c0b"}
-nursecare_df[nursecare_df.celllabel == 'Nutrition'].cellattributevalue.value_counts()
+nurse_care_df[nurse_care_df.celllabel == 'Nutrition'].cellattributevalue.value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "f7be37c4-ee8a-4e58-8cf9-ee17cf36f46c"}
-nursecare_df[nursecare_df.celllabel == 'Activity'].cellattributevalue.value_counts()
+nurse_care_df[nurse_care_df.celllabel == 'Activity'].cellattributevalue.value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "e39d2950-3c4c-4895-b5f4-8e865c927cb7"}
-nursecare_df[nursecare_df.celllabel == 'Hygiene/ADLs'].cellattributevalue.value_counts()
+nurse_care_df[nurse_care_df.celllabel == 'Hygiene/ADLs'].cellattributevalue.value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "6da5000e-cfe8-4179-a0bf-159cb14240e2"}
-nursecare_df[nursecare_df.celllabel == 'Safety'].cellattributevalue.value_counts()
+nurse_care_df[nurse_care_df.celllabel == 'Safety'].cellattributevalue.value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "70c3fc3a-e7a8-4e04-b38c-a24a5f45eb91"}
-nursecare_df[nursecare_df.celllabel == 'Treatments'].cellattributevalue.value_counts()
+nurse_care_df[nurse_care_df.celllabel == 'Treatments'].cellattributevalue.value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "443bb56c-2c54-4af7-901f-2d094f736859"}
-nursecare_df[nursecare_df.celllabel == 'Isolation Precautions'].cellattributevalue.value_counts()
+nurse_care_df[nurse_care_df.celllabel == 'Isolation Precautions'].cellattributevalue.value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "dc2db80c-0a0c-436d-9db5-105ef2bd28b8"}
-nursecare_df[nursecare_df.celllabel == 'Restraints'].cellattributevalue.value_counts()
+nurse_care_df[nurse_care_df.celllabel == 'Restraints'].cellattributevalue.value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "8c71653e-7b4f-4afc-bcf3-46b0fa1f013c"}
-nursecare_df[nursecare_df.celllabel == 'Equipment'].cellattributevalue.value_counts()
+nurse_care_df[nurse_care_df.celllabel == 'Equipment'].cellattributevalue.value_counts()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Besides the usual removal of row identifier, `nursecareid`, and the timestamp when data was added, `nursecareentryoffset`, I'm also removing `cellattributepath` and `cellattribute`, which have redundant info with `celllabel`.
 
 # + {"Collapsed": "false", "persistent_id": "48f10eea-6c36-4188-91d9-4def749f2486"}
-nursecare_df = nursecare_df.drop(['nursecareid', 'nursecareentryoffset',
+nurse_care_df = nurse_care_df.drop(['nursecareid', 'nursecareentryoffset',
                                   'cellattributepath', 'cellattribute'], axis=1)
-nursecare_df.head()
+nurse_care_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Additionally, some information like "Equipment" and "Restraints" seem to be unnecessary. So let's remove them:
@@ -156,11 +156,11 @@ categories_to_remove = ['Safety', 'Restraints', 'Equipment', 'Airway Type',
                         'Isolation Precautions', 'Airway Size']
 
 # + {"Collapsed": "false", "persistent_id": "d8b7cf79-bda7-411f-a800-e4769eb0ec00"}
-~(nursecare_df.celllabel.isin(categories_to_remove)).head()
+~(nurse_care_df.celllabel.isin(categories_to_remove)).head()
 
 # + {"Collapsed": "false", "persistent_id": "8f0a890f-ad85-457c-888e-37f9cddfe4e8"}
-nursecare_df = nursecare_df[~(nursecare_df.celllabel.isin(categories_to_remove))]
-nursecare_df.head()
+nurse_care_df = nurse_care_df[~(nurse_care_df.celllabel.isin(categories_to_remove))]
+nurse_care_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Convert categories to features
@@ -169,9 +169,9 @@ nursecare_df.head()
 # Transform the `celllabel` categories and `cellattributevalue` values into separate features:
 
 # + {"Collapsed": "false"}
-nursecare_df = du.data_processing.category_to_feature(nursecare_df, categories_feature='celllabel',
+nurse_care_df = du.data_processing.category_to_feature(nurse_care_df, categories_feature='celllabel',
                                                       values_feature='cellattributevalue', min_len=1000, inplace=True)
-nursecare_df.head()
+nurse_care_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Now we have the categories separated into their own features, as desired.
@@ -180,20 +180,20 @@ nursecare_df.head()
 # Remove the old `celllabel` and `cellattributevalue` columns:
 
 # + {"Collapsed": "false", "persistent_id": "d42cb91d-3a85-4ad6-a3c0-4e87c951781f"}
-nursecare_df = nursecare_df.drop(['celllabel', 'cellattributevalue'], axis=1)
-nursecare_df.head()
+nurse_care_df = nurse_care_df.drop(['celllabel', 'cellattributevalue'], axis=1)
+nurse_care_df.head()
 
 # + {"Collapsed": "false", "persistent_id": "2be490c2-82d9-44dc-897f-6417e41cfe96"}
-nursecare_df['Nutrition'].value_counts()
+nurse_care_df['Nutrition'].value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "cc5a84b3-994f-490a-97d5-4f4edf5b0497"}
-nursecare_df['Treatments'].value_counts()
+nurse_care_df['Treatments'].value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "6488d69a-45e1-4b67-9d1c-1ce6e6c7f31a"}
-nursecare_df['Hygiene/ADLs'].value_counts()
+nurse_care_df['Hygiene/ADLs'].value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "6ae6e48f-2b69-445a-9dd7-f5875e8d1cd5"}
-nursecare_df['Activity'].value_counts()
+nurse_care_df['Activity'].value_counts()
 
 # + {"toc-hr-collapsed": false, "Collapsed": "false", "cell_type": "markdown"}
 # ### Discretize categorical features
@@ -213,7 +213,7 @@ new_cat_feat = ['Nutrition', 'Treatments', 'Hygiene/ADLs', 'Activity']
 [cat_feat.append(col) for col in new_cat_feat]
 
 # + {"Collapsed": "false", "persistent_id": "dae05725-2f44-48f6-924b-6db328111cca"}
-cat_feat_nunique = [nursecare_df[feature].nunique() for feature in new_cat_feat]
+cat_feat_nunique = [nurse_care_df[feature].nunique() for feature in new_cat_feat]
 cat_feat_nunique
 
 # + {"Collapsed": "false", "persistent_id": "8493c9a1-3607-4924-87fb-21e4559f6e0f"}
@@ -225,22 +225,22 @@ for i in range(len(new_cat_feat)):
         new_cat_embed_feat.append(new_cat_feat[i])
 
 # + {"Collapsed": "false", "persistent_id": "19066f2a-58d5-4edb-a33d-6d830424f40c"}
-nursecare_df[new_cat_feat].head()
+nurse_care_df[new_cat_feat].head()
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "51c18fe2-7b70-41c1-95d2-f423b3d7836b"}
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
     # Prepare for embedding, i.e. enumerate categories
-    nursecare_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(nursecare_df, feature, nan_value=0)
+    nurse_care_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(nurse_care_df, feature, nan_value=0)
 
 # + {"Collapsed": "false", "persistent_id": "9ceba9e2-6821-4a73-8875-5ddebef03516"}
-nursecare_df[new_cat_feat].head()
+nurse_care_df[new_cat_feat].head()
 
 # + {"Collapsed": "false", "persistent_id": "56d49f40-97fe-47d5-ad9d-ef35a4453266"}
 cat_embed_feat_enum
 
 # + {"Collapsed": "false", "persistent_id": "49f71013-ebc1-472e-b91b-2a96233b207b"}
-nursecare_df[new_cat_feat].dtypes
+nurse_care_df[new_cat_feat].dtypes
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # #### Save enumeration encoding mapping
@@ -258,37 +258,37 @@ yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 # Create the timestamp (`ts`) feature:
 
 # + {"Collapsed": "false", "persistent_id": "d0647504-f554-4d1f-8eba-d87851eb5695"}
-nursecare_df = nursecare_df.rename(columns={'nursecareoffset': 'ts'})
-nursecare_df.head()
+nurse_care_df = nurse_care_df.rename(columns={'nursecareoffset': 'ts'})
+nurse_care_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Remove duplicate rows:
 
 # + {"Collapsed": "false", "persistent_id": "a4cc356c-5c63-41e3-b906-20a4d51ef912"}
-len(nursecare_df)
+len(nurse_care_df)
 
 # + {"Collapsed": "false", "persistent_id": "0ed1deff-4607-4456-af14-95ae472a6e05"}
-nursecare_df = nursecare_df.drop_duplicates()
-nursecare_df.head()
+nurse_care_df = nurse_care_df.drop_duplicates()
+nurse_care_df.head()
 
 # + {"Collapsed": "false", "persistent_id": "e864c533-0f0d-4bde-9021-2302ea459260"}
-len(nursecare_df)
+len(nurse_care_df)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Sort by `ts` so as to be easier to merge with other dataframes later:
 
 # + {"Collapsed": "false", "persistent_id": "9fbb6262-2cdc-4809-a2b2-ce8847793cca"}
-nursecare_df = nursecare_df.sort_values('ts')
-nursecare_df.head()
+nurse_care_df = nurse_care_df.sort_values('ts')
+nurse_care_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Check for possible multiple rows with the same unit stay ID and timestamp:
 
 # + {"Collapsed": "false", "persistent_id": "ec32dcd9-8bec-4077-9392-0f7430ddaae2"}
-nursecare_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='Nutrition', n=5).head()
+nurse_care_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='Nutrition', n=5).head()
 
 # + {"Collapsed": "false", "persistent_id": "9baab531-96da-40e3-8bde-c4657bdc950e"}
-nursecare_df[nursecare_df.patientunitstayid == 2798325].head(10)
+nurse_care_df[nurse_care_df.patientunitstayid == 2798325].head(10)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # We can see that there are up to 21 categories per set of `patientunitstayid` and `ts`. As such, we must join them. However, this is a different scenario than in the other cases. Since we created the features from one categorical column, it doesn't have repeated values, only different rows to indicate each of the new features' values. As such, we just need to sum the features.
@@ -300,32 +300,32 @@ nursecare_df[nursecare_df.patientunitstayid == 2798325].head(10)
 # Convert dataframe to Pandas, as the groupby operation in `join_categorical_enum` isn't working properly with Modin:
 
 # + {"Collapsed": "false"}
-nursecare_df, pd = du.utils.convert_dataframe(nursecare_df, to='pandas')
+nurse_care_df, pd = du.utils.convert_dataframe(nurse_care_df, to='pandas')
 
 # + {"Collapsed": "false"}
-type(nursecare_df)
+type(nurse_care_df)
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023"}
-nursecare_df = du.embedding.join_categorical_enum(nursecare_df, new_cat_embed_feat, inplace=True)
-nursecare_df.head()
+nurse_care_df = du.embedding.join_categorical_enum(nurse_care_df, new_cat_embed_feat, inplace=True)
+nurse_care_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Reconvert dataframe to Modin:
 
 # + {"Collapsed": "false"}
-nursecare_df, pd = du.utils.convert_dataframe(nursecare_df, to='modin')
+nurse_care_df, pd = du.utils.convert_dataframe(nurse_care_df, to='modin')
 
 # + {"Collapsed": "false"}
-type(nursecare_df)
+type(nurse_care_df)
 
 # + {"Collapsed": "false", "persistent_id": "0b782718-8a92-4780-abbe-f8cab9efdfce"}
-nursecare_df.dtypes
+nurse_care_df.dtypes
 
 # + {"Collapsed": "false", "persistent_id": "1d5d3435-7ebf-4d13-8fdb-ac1a09f847b3"}
-nursecare_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='Nutrition', n=5).head()
+nurse_care_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='Nutrition', n=5).head()
 
 # + {"Collapsed": "false", "persistent_id": "c4269670-2a2a-4e69-8800-ac737eaa3ebc"}
-nursecare_df[nursecare_df.patientunitstayid == 2798325].head(10)
+nurse_care_df[nurse_care_df.patientunitstayid == 2798325].head(10)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
@@ -334,8 +334,8 @@ nursecare_df[nursecare_df.patientunitstayid == 2798325].head(10)
 # ### Rename columns
 
 # + {"Collapsed": "false", "persistent_id": "9b090273-1c22-4122-9979-8ee2b91f0dfe"}
-nursecare_df = nursecare_df.rename(columns={'Treatments':'nurse_treatments'})
-nursecare_df.head()
+nurse_care_df = nurse_care_df.rename(columns={'Treatments':'nurse_treatments'})
+nurse_care_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Clean column names
@@ -343,8 +343,8 @@ nursecare_df.head()
 # Standardize all column names to be on lower case, have spaces replaced by underscores and remove comas.
 
 # + {"Collapsed": "false", "persistent_id": "a12ee2e9-13d9-44ce-999c-846f320e8bfd"}
-nursecare_df.columns = du.data_processing.clean_naming(nursecare_df.columns)
-nursecare_df.head()
+nurse_care_df.columns = du.data_processing.clean_naming(nurse_care_df.columns)
+nurse_care_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Save the dataframe
@@ -353,19 +353,19 @@ nursecare_df.head()
 # Save the dataframe before normalizing:
 
 # + {"Collapsed": "false", "persistent_id": "584b72a4-0de9-433b-b27f-6304a0db2b52"}
-nursecare_df.to_csv(f'{data_path}cleaned/unnormalized/nurseCare.csv')
+nurse_care_df.to_csv(f'{data_path}cleaned/unnormalized/nurseCare.csv')
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Save the dataframe after normalizing:
 
 # + {"Collapsed": "false", "persistent_id": "b9f11ee9-cd10-44df-961f-c7bc3642710f"}
-nursecare_df.to_csv(f'{data_path}cleaned/normalized/nurseCare.csv')
+nurse_care_df.to_csv(f'{data_path}cleaned/normalized/nurseCare.csv')
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Confirm that everything is ok through the `describe` method:
 
 # + {"Collapsed": "false", "persistent_id": "edafc000-e516-49fe-b8f6-ea4ce3969129"}
-nursecare_df.describe().transpose()
+nurse_care_df.describe().transpose()
 
 # + {"toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
 # ## Nurse assessment data
@@ -374,14 +374,14 @@ nursecare_df.describe().transpose()
 # ### Read the data
 
 # + {"Collapsed": "false", "persistent_id": "51281341-db28-43a0-8f85-cd3ae11aae06"}
-nurseassess_df = pd.read_csv(f'{data_path}original/nurseAssessment.csv')
-nurseassess_df.head()
+nurse_assess_df = pd.read_csv(f'{data_path}original/nurseAssessment.csv')
+nurse_assess_df.head()
 
 # + {"Collapsed": "false", "persistent_id": "6573ec98-4a25-4b83-b875-626d555def4e"}
-len(nurseassess_df)
+len(nurse_assess_df)
 
 # + {"Collapsed": "false", "persistent_id": "cd9958e3-dd35-4a18-b2d0-01f5dc59a708"}
-nurseassess_df.patientunitstayid.nunique()
+nurse_assess_df.patientunitstayid.nunique()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Only 13001 unit stays have nurse assessment data. Might not be useful to include them.
@@ -390,82 +390,82 @@ nurseassess_df.patientunitstayid.nunique()
 # Get an overview of the dataframe through the `describe` method:
 
 # + {"Collapsed": "false", "persistent_id": "a63bd49a-1ea0-4f3e-bb25-98040cb31c28"}
-nurseassess_df.describe().transpose()
+nurse_assess_df.describe().transpose()
 
 # + {"Collapsed": "false", "persistent_id": "baebbad8-8e0a-4a54-92f2-a1a3c8b63e28"}
-nurseassess_df.columns
+nurse_assess_df.columns
 
 # + {"Collapsed": "false", "persistent_id": "127f78c7-5fa1-4161-b1aa-085631f74a7b"}
-nurseassess_df.dtypes
+nurse_assess_df.dtypes
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Check for missing values
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "6a7adc72-3d2e-4cd5-841c-299a3a94d043"}
-du.search_explore.dataframe_missing_values(nurseassess_df)
+du.search_explore.dataframe_missing_values(nurse_assess_df)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Remove unneeded features
 
 # + {"Collapsed": "false", "persistent_id": "38ac8914-ae50-45ce-9585-77263c79af06"}
-nurseassess_df.celllabel.value_counts()
+nurse_assess_df.celllabel.value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "5d345361-e2b7-415f-8b0e-6f706d29c4db"}
-nurseassess_df.cellattribute.value_counts()
+nurse_assess_df.cellattribute.value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "bae7f1bf-dd1f-4d3f-8cb0-f70365412fbc"}
-nurseassess_df.cellattributevalue.value_counts()
+nurse_assess_df.cellattributevalue.value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "50b31b51-bee1-49e6-86eb-c24d97830844"}
-nurseassess_df.cellattributepath.value_counts()
+nurse_assess_df.cellattributepath.value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "f952c852-c8d4-4313-baa6-e0f0e33adcfc"}
-nurseassess_df[nurseassess_df.celllabel == 'Intervention'].cellattributevalue.value_counts()
+nurse_assess_df[nurse_assess_df.celllabel == 'Intervention'].cellattributevalue.value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "1bfe013d-8f9a-496f-9bea-3091e2f01b61"}
-nurseassess_df[nurseassess_df.celllabel == 'Neurologic'].cellattributevalue.value_counts()
+nurse_assess_df[nurse_assess_df.celllabel == 'Neurologic'].cellattributevalue.value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "8984d2fa-3cac-486e-b029-ab7da972ebef"}
-nurseassess_df[nurseassess_df.celllabel == 'Pupils'].cellattributevalue.value_counts()
+nurse_assess_df[nurse_assess_df.celllabel == 'Pupils'].cellattributevalue.value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "463936ef-481d-467e-beba-606f880dce40"}
-nurseassess_df[nurseassess_df.celllabel == 'Edema'].cellattributevalue.value_counts()
+nurse_assess_df[nurse_assess_df.celllabel == 'Edema'].cellattributevalue.value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "55680a6d-7fab-4fce-8eed-66dd44d011f1"}
-nurseassess_df[nurseassess_df.celllabel == 'Secretions'].cellattributevalue.value_counts()
+nurse_assess_df[nurse_assess_df.celllabel == 'Secretions'].cellattributevalue.value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "7e511548-989e-4c78-a6bd-a56b4811dd0e"}
-nurseassess_df[nurseassess_df.celllabel == 'Cough'].cellattributevalue.value_counts()
+nurse_assess_df[nurse_assess_df.celllabel == 'Cough'].cellattributevalue.value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "b75398ad-65f5-4aac-a00b-4f1034c1558c"}
-nurseassess_df[nurseassess_df.celllabel == 'Neurologic'].cellattribute.value_counts()
+nurse_assess_df[nurse_assess_df.celllabel == 'Neurologic'].cellattribute.value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "d0592960-b088-4491-81d7-697cee55df06"}
-nurseassess_df[nurseassess_df.celllabel == 'Pupils'].cellattribute.value_counts()
+nurse_assess_df[nurse_assess_df.celllabel == 'Pupils'].cellattribute.value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "b461df0f-36ef-4bdf-9eda-2a9c57bf1a44"}
-nurseassess_df[nurseassess_df.celllabel == 'Secretions'].cellattribute.value_counts()
+nurse_assess_df[nurse_assess_df.celllabel == 'Secretions'].cellattribute.value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "c118b8b5-4c96-45d6-b2f5-a2cc2ce8ba93"}
-nurseassess_df[nurseassess_df.celllabel == 'Cough'].cellattribute.value_counts()
+nurse_assess_df[nurse_assess_df.celllabel == 'Cough'].cellattribute.value_counts()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Besides the usual removal of row identifier, `nurseAssessID`, and the timestamp when data was added, `nurseAssessEntryOffset`, I'm also removing `cellattributepath` and `cellattribute`, which have redundant info with `celllabel`. Regarding data categories, I'm only keeping `Neurologic`, `Pupils`, `Secretions` and `Cough`, as the remaining ones either don't add much value, have too little data or are redundant with data from other tables.
 
 # + {"Collapsed": "false", "persistent_id": "be9a8747-0209-4e96-a55a-5587f1d09882"}
-nurseassess_df = nurseassess_df.drop(['nurseassessid', 'nurseassessentryoffset',
+nurse_assess_df = nurse_assess_df.drop(['nurseassessid', 'nurseassessentryoffset',
                                       'cellattributepath', 'cellattribute'], axis=1)
-nurseassess_df.head()
+nurse_assess_df.head()
 
 # + {"Collapsed": "false", "persistent_id": "1a520f05-7d41-4a71-a9ee-a7c359c7b84f"}
 categories_to_keep = ['Neurologic', 'Pupils', 'Secretions', 'Cough']
 
 # + {"Collapsed": "false", "persistent_id": "be99810d-b848-4966-99a8-e31c9189d173"}
-nurseassess_df.celllabel.isin(categories_to_keep).head()
+nurse_assess_df.celllabel.isin(categories_to_keep).head()
 
 # + {"Collapsed": "false", "persistent_id": "288e8cc5-c11e-4742-950c-ee2acb0d0d41"}
-nurseassess_df = nurseassess_df[nurseassess_df.celllabel.isin(categories_to_keep)]
-nurseassess_df.head()
+nurse_assess_df = nurse_assess_df[nurse_assess_df.celllabel.isin(categories_to_keep)]
+nurse_assess_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Convert categories to features
@@ -474,9 +474,9 @@ nurseassess_df.head()
 # Transform the `celllabel` categories and `cellattributevalue` values into separate features:
 
 # + {"Collapsed": "false"}
-nurseassess_df = du.data_processing.category_to_feature(nurseassess_df, categories_feature='celllabel',
+nurse_assess_df = du.data_processing.category_to_feature(nurse_assess_df, categories_feature='celllabel',
                                                         values_feature='cellattributevalue', min_len=1000, inplace=True)
-nurseassess_df.head()
+nurse_assess_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Now we have the categories separated into their own features, as desired.
@@ -485,20 +485,20 @@ nurseassess_df.head()
 # Remove the old `celllabel` and `cellattributevalue` columns:
 
 # + {"Collapsed": "false", "persistent_id": "d4762de3-df60-4c93-acb4-125d08c31c45"}
-nurseassess_df = nurseassess_df.drop(['celllabel', 'cellattributevalue'], axis=1)
-nurseassess_df.head()
+nurse_assess_df = nurse_assess_df.drop(['celllabel', 'cellattributevalue'], axis=1)
+nurse_assess_df.head()
 
 # + {"Collapsed": "false", "persistent_id": "b789153f-6a30-43dc-b8cc-5775b21dd7c1"}
-nurseassess_df['Neurologic'].value_counts()
+nurse_assess_df['Neurologic'].value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "7bbe2fb5-20fa-4ff5-b7f0-f5fb2a7f26e9"}
-nurseassess_df['Pupils'].value_counts()
+nurse_assess_df['Pupils'].value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "465fe194-8649-49f5-9bf5-0943e2a29d9e"}
-nurseassess_df['Secretions'].value_counts()
+nurse_assess_df['Secretions'].value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "ef065236-1712-4dc1-aef0-f383c93a0251"}
-nurseassess_df['Cough'].value_counts()
+nurse_assess_df['Cough'].value_counts()
 
 # + {"toc-hr-collapsed": false, "Collapsed": "false", "cell_type": "markdown"}
 # ### Discretize categorical features
@@ -518,7 +518,7 @@ new_cat_feat = ['Pupils', 'Neurologic', 'Secretions', 'Cough']
 [cat_feat.append(col) for col in new_cat_feat]
 
 # + {"Collapsed": "false", "persistent_id": "2fccdfbf-9fd3-4e90-abe9-8f6463dc8eb8"}
-cat_feat_nunique = [nurseassess_df[feature].nunique() for feature in new_cat_feat]
+cat_feat_nunique = [nurse_assess_df[feature].nunique() for feature in new_cat_feat]
 cat_feat_nunique
 
 # + {"Collapsed": "false", "persistent_id": "41b8f1fb-2bed-4a5c-9b4d-ab5b4ab07335"}
@@ -530,22 +530,22 @@ for i in range(len(new_cat_feat)):
         new_cat_embed_feat.append(new_cat_feat[i])
 
 # + {"Collapsed": "false", "persistent_id": "29703baf-cba2-4f41-86e5-74912610503c"}
-nurseassess_df[new_cat_feat].head()
+nurse_assess_df[new_cat_feat].head()
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "c7f73853-ecf8-409e-9351-191e07444213"}
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
     # Prepare for embedding, i.e. enumerate categories
-    nurseassess_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(nurseassess_df, feature, nan_value=0)
+    nurse_assess_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(nurse_assess_df, feature, nan_value=0)
 
 # + {"Collapsed": "false", "persistent_id": "6101e468-8fdc-48c2-90f7-7a8db94c1b58"}
-nurseassess_df[new_cat_feat].head()
+nurse_assess_df[new_cat_feat].head()
 
 # + {"Collapsed": "false", "persistent_id": "b21d68b6-f26b-469c-9139-b746f027758d"}
 cat_embed_feat_enum
 
 # + {"Collapsed": "false", "persistent_id": "9951459d-c61d-49cf-a9d7-630ced7dfef6"}
-nurseassess_df[new_cat_feat].dtypes
+nurse_assess_df[new_cat_feat].dtypes
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # #### Save enumeration encoding mapping
@@ -563,37 +563,37 @@ yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 # Create the timestamp (`ts`) feature:
 
 # + {"Collapsed": "false", "persistent_id": "b1781127-4235-4097-9bb0-5d7dfa965735"}
-nurseassess_df = nurseassess_df.rename(columns={'nurseassessoffset': 'ts'})
-nurseassess_df.head()
+nurse_assess_df = nurse_assess_df.rename(columns={'nurseassessoffset': 'ts'})
+nurse_assess_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Remove duplicate rows:
 
 # + {"Collapsed": "false", "persistent_id": "3483fd1d-3ad6-4e93-a583-5ddeb38ad6c5"}
-len(nurseassess_df)
+len(nurse_assess_df)
 
 # + {"Collapsed": "false", "persistent_id": "ffb1df48-8666-41c0-9a74-32f39d8d37cf"}
-nurseassess_df = nurseassess_df.drop_duplicates()
-nurseassess_df.head()
+nurse_assess_df = nurse_assess_df.drop_duplicates()
+nurse_assess_df.head()
 
 # + {"Collapsed": "false", "persistent_id": "a7dbc589-c48e-45a6-9044-67b586b11fad"}
-len(nurseassess_df)
+len(nurse_assess_df)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Sort by `ts` so as to be easier to merge with other dataframes later:
 
 # + {"Collapsed": "false", "persistent_id": "c8ba14f1-d5d7-4e2b-be19-3ec645351c8e"}
-nurseassess_df = nurseassess_df.sort_values('ts')
-nurseassess_df.head()
+nurse_assess_df = nurse_assess_df.sort_values('ts')
+nurse_assess_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Check for possible multiple rows with the same unit stay ID and timestamp:
 
 # + {"Collapsed": "false", "persistent_id": "28bb9396-7d50-42a9-a807-b4408c62f815"}
-nurseassess_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='Cough', n=5).head()
+nurse_assess_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='Cough', n=5).head()
 
 # + {"Collapsed": "false", "persistent_id": "473b8ca5-32f0-45e0-ad54-c3b7ae008653"}
-nurseassess_df[nurseassess_df.patientunitstayid == 2553254].head(10)
+nurse_assess_df[nurse_assess_df.patientunitstayid == 2553254].head(10)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # We can see that there are up to 80 categories per set of `patientunitstayid` and `ts`. As such, we must join them.
@@ -605,32 +605,32 @@ nurseassess_df[nurseassess_df.patientunitstayid == 2553254].head(10)
 # Convert dataframe to Pandas, as the groupby operation in `join_categorical_enum` isn't working properly with Modin:
 
 # + {"Collapsed": "false"}
-nurseassess_df, pd = du.utils.convert_dataframe(nurseassess_df, to='pandas')
+nurse_assess_df, pd = du.utils.convert_dataframe(nurse_assess_df, to='pandas')
 
 # + {"Collapsed": "false"}
-type(nurseassess_df)
+type(nurse_assess_df)
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023"}
-nurseassess_df = du.embedding.join_categorical_enum(nurseassess_df, new_cat_embed_feat, inplace=True)
-nurseassess_df.head()
+nurse_assess_df = du.embedding.join_categorical_enum(nurse_assess_df, new_cat_embed_feat, inplace=True)
+nurse_assess_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Reconvert dataframe to Modin:
 
 # + {"Collapsed": "false"}
-nurseassess_df, pd = du.utils.convert_dataframe(nurseassess_df, to='modin')
+nurse_assess_df, pd = du.utils.convert_dataframe(nurse_assess_df, to='modin')
 
 # + {"Collapsed": "false"}
-type(nurseassess_df)
+type(nurse_assess_df)
 
 # + {"Collapsed": "false", "persistent_id": "decebaec-f14b-4521-adcc-24f485a0a781"}
-nurseassess_df.dtypes
+nurse_assess_df.dtypes
 
 # + {"Collapsed": "false", "persistent_id": "0ba6b50e-69db-489c-a1f1-6f324a662a68"}
-nurseassess_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='Cough', n=5).head()
+nurse_assess_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='Cough', n=5).head()
 
 # + {"Collapsed": "false", "persistent_id": "41c057d5-3d9e-454e-b71b-1f125d63842e"}
-nurseassess_df[nurseassess_df.patientunitstayid == 2553254].head(10)
+nurse_assess_df[nurse_assess_df.patientunitstayid == 2553254].head(10)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
@@ -641,8 +641,8 @@ nurseassess_df[nurseassess_df.patientunitstayid == 2553254].head(10)
 # Standardize all column names to be on lower case, have spaces replaced by underscores and remove comas.
 
 # + {"Collapsed": "false", "persistent_id": "8b8eb574-108e-4f73-b8b8-d0314c295d7b"}
-nurseassess_df.columns = du.data_processing.clean_naming(nurseassess_df.columns)
-nurseassess_df.head()
+nurse_assess_df.columns = du.data_processing.clean_naming(nurse_assess_df.columns)
+nurse_assess_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Save the dataframe
@@ -651,19 +651,19 @@ nurseassess_df.head()
 # Save the dataframe before normalizing:
 
 # + {"Collapsed": "false", "persistent_id": "70d6ca28-9b03-400e-a218-0bab68904b50"}
-nurseassess_df.to_csv(f'{data_path}cleaned/unnormalized/nurseAssessment.csv')
+nurse_assess_df.to_csv(f'{data_path}cleaned/unnormalized/nurseAssessment.csv')
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Save the dataframe after normalizing:
 
 # + {"Collapsed": "false", "persistent_id": "c8a9c87e-64db-4852-86ff-8f9952ba63ed"}
-nurseassess_df.to_csv(f'{data_path}cleaned/normalized/nurseAssessment.csv')
+nurse_assess_df.to_csv(f'{data_path}cleaned/normalized/nurseAssessment.csv')
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Confirm that everything is ok through the `describe` method:
 
 # + {"Collapsed": "false", "persistent_id": "b009d13b-05d3-4b2b-9b35-1b9bba3dac28"}
-nurseassess_df.describe().transpose()
+nurse_assess_df.describe().transpose()
 
 # + {"toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
 # ## Nurse charting data
