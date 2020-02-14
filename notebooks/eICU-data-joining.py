@@ -549,36 +549,80 @@ eICU_df.patientunitstayid.nunique()
 set([col.split('_x')[0].split('_y')[0] for col in eICU_df.columns if col.endswith('_x') or col.endswith('_y')])
 
 # + {"Collapsed": "false"}
-eICU_df[['drugadmitfrequency_x', 'drugdosage_x', 'drughiclseqno_x', 'drugunit_x',
-         'drugadmitfrequency_y', 'drugdosage_y', 'drughiclseqno_y', 'drugunit_y']].head(20)
+eICU_df[['drugdosage_x', 'drughiclseqno_x',
+         'drugdosage_y', 'drughiclseqno_y']].head(20)
 
 # + {"Collapsed": "false"}
-eICU_df[eICU_df.index == 2564878][['drugadmitfrequency_x', 'drugdosage_x', 'drughiclseqno_x', 'drugunit_x',
-                                   'drugadmitfrequency_y', 'drugdosage_y', 'drughiclseqno_y', 'drugunit_y']]
+eICU_df[eICU_df.index == 2564878][['drugdosage_x', 'drughiclseqno_x',
+                                   'drugdosage_y', 'drughiclseqno_y']]
 
-# + {"Collapsed": "false"}
-eICU_df = du.data_processing.merge_multi_columns(df)
+# + {"Collapsed": "false", "pixiedust": {"displayParams": {}}}
+# # %%pixie_debugger
+eICU_df = du.data_processing.merge_columns(eICU_df, cols_to_merge=['drugdosage', 'drughiclseqno'])
 eICU_df.sample(20)
 
 # + {"Collapsed": "false"}
-eICU_df[['drugadmitfrequency', 'drugdosage', 'drughiclseqno', 'drugunit']].head(20)
+eICU_df[['drugdosage', 'drughiclseqno',
+         'drugdosage_x', 'drughiclseqno_x',
+         'drugdosage_y', 'drughiclseqno_y']].head(20)
 
 # + {"Collapsed": "false"}
-eICU_df[eICU_df.index == 2564878][['drugadmitfrequency_x', 'drugdosage_x', 'drughiclseqno_x', 'drugunit_x',
-                                   'drugadmitfrequency_y', 'drugdosage_y', 'drughiclseqno_y', 'drugunit_y']]
-
-# + {"Collapsed": "false"}
-# col = 'drugadmitfrequency'
-# eICU_df[col] = eICU_df.apply(lambda df: np.nanmean(np.array([df[f'{col}_x'], df[f'{col}_y']], dtype='float64')), axis=1)
-# eICU_df[col, f'{col}_x', f'{col}_y'].sample(20)
+eICU_df[eICU_df.index == 2564878][['drugdosage', 'drughiclseqno',
+                                   'drugdosage_x', 'drughiclseqno_x',
+                                   'drugdosage_y', 'drughiclseqno_y']]
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # #### Categorical features
 #
 # Join encodings of the same features, from different tables.
 
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Load encoding dictionaries:
+
 # + {"Collapsed": "false"}
-# [TODO] Use methods such as `invert_dict` to merge encodings of features; check previous notebooks (including sandbox ones)
+stream_adms_drug = open(f'{data_path}/cleaned/cat_embed_feat_enum_adms_drug.yaml', 'r')
+stream_med = open(f'{data_path}/cleaned/cat_embed_feat_enum_med.yaml', 'r')
+cat_embed_feat_enum_adms_drug = yaml.load(stream_adms_drug)
+cat_embed_feat_enum_med = yaml.load(stream_med)
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Standardize the encoding of similar columns:
+
+# + {"Collapsed": "false"}
+eICU_df, cat_embed_feat_enum['drugadmitfrequency'] = du.embedding.converge_enum(eICU_df, cat_feat_name=['drugadmitfrequency_x', 
+                                                                                                        'drugadmitfrequency_y'], 
+                                                                                dict1=cat_embed_feat_enum_adms_drug['drugadmitfrequency'],
+                                                                                dict2=cat_embed_feat_enum_med['drugadmitfrequency'],
+                                                                                nan_value=0, sort=True, inplace=True)
+
+# + {"Collapsed": "false"}
+eICU_df, cat_embed_feat_enum['drugunit'] = du.embedding.converge_enum(eICU_df, cat_feat_name=['drugunit_x', 
+                                                                                              'drugunit_y'],
+                                                                      dict1=cat_embed_feat_enum_adms_drug['drugunit'],
+                                                                      dict2=cat_embed_feat_enum_med['drugunit'],
+                                                                      nan_value=0, sort=True, inplace=True)
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Merge the features:
+
+# + {"Collapsed": "false"}
+eICU_df = du.data_processing.merge_columns(eICU_df, cols_to_merge=['drugadmitfrequency', 'drugunit'])
+eICU_df.sample(20)
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# ### Creating a single encoding dictionary for the complete dataframe
+#
+# Combine the encoding dictionaries of all tables, having in account the converged ones, into a single dictionary representative of all the categorical features in the resulting dataframe.
+
+# + {"Collapsed": "false"}
+# [TODO] Add dictionaries if their keys aren't already in the overall dictionary `cat_embed_feat_enum`
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Save the final encoding dictionary:
+
+# + {"Collapsed": "false"}
+stream = open(f'{data_path}/cleaned/cat_embed_feat_enum_eICU.yaml', 'w')
+yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Removing columns with too many missing values

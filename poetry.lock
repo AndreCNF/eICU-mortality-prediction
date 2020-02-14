@@ -181,7 +181,7 @@ description = "Supercharging Machine Learning"
 name = "comet-ml"
 optional = false
 python-versions = "*"
-version = "3.0.2"
+version = "3.0.3"
 
 [package.dependencies]
 comet-git-pure = ">=0.19.11"
@@ -255,7 +255,7 @@ torch = "^1.2"
 tqdm = "^4.38"
 
 [package.source]
-reference = "8bf549b6c62cbe5089eff0d6527d9ff026c178e7"
+reference = "d555b6bcd80e4c73330c546780a37278d3ad33e7"
 type = "git"
 url = "https://github.com/AndreCNF/data-utils.git"
 [[package]]
@@ -673,8 +673,8 @@ category = "main"
 description = "Jupyter core package. A base package on which Jupyter projects rely."
 name = "jupyter-core"
 optional = false
-python-versions = ">=2.7, !=3.0, !=3.1, !=3.2"
-version = "4.6.1"
+python-versions = "!=3.0,!=3.1,!=3.2,!=3.3,!=3.4,>=2.7"
+version = "4.6.2"
 
 [package.dependencies]
 pywin32 = ">=1.0"
@@ -778,7 +778,7 @@ description = "Python implementation of Markdown."
 name = "markdown"
 optional = false
 python-versions = ">=3.5"
-version = "3.2"
+version = "3.2.1"
 
 [package.dependencies]
 setuptools = ">=36"
@@ -862,7 +862,7 @@ description = "An MkDocs plugin to minify HTML and/or JS files prior to being wr
 name = "mkdocs-minify-plugin"
 optional = false
 python-versions = ">=2.7"
-version = "0.2.1"
+version = "0.2.3"
 
 [package.dependencies]
 htmlmin = ">=0.1.4"
@@ -1525,7 +1525,7 @@ scipy = "*"
 tqdm = ">4.25.0"
 
 [package.extras]
-all = ["ipython", "matplotlib", "lime"]
+all = ["lime", "matplotlib", "ipython"]
 others = ["lime"]
 plots = ["matplotlib", "ipython"]
 
@@ -1582,7 +1582,7 @@ description = "Python documentation generator"
 name = "sphinx"
 optional = false
 python-versions = ">=3.5"
-version = "2.4.0"
+version = "2.4.1"
 
 [package.dependencies]
 Jinja2 = ">=2.3"
@@ -2002,8 +2002,8 @@ comet-git-pure = [
     {file = "comet_git_pure-0.19.15-py3-none-any.whl", hash = "sha256:84c16b7efdcae50211cc27edf377efa9cf67aeecad334e43c28cda8a8f093ab5"},
 ]
 comet-ml = [
-    {file = "comet_ml-3.0.2-py3-none-any.whl", hash = "sha256:2ac36800ec6ace557bcf0bba781404f5b82242a64b920ed64e7611ab42cb9436"},
-    {file = "comet_ml-3.0.2.tar.gz", hash = "sha256:f5fb4850a816a59b0e004f87ffd4976190cfaf6eef05cf8909187db0942e74c4"},
+    {file = "comet_ml-3.0.3-py3-none-any.whl", hash = "sha256:3d5462e3470c50ecbdfebee3e412a9a3872538e8162e3a1e64463bc770d57070"},
+    {file = "comet_ml-3.0.3.tar.gz", hash = "sha256:0b6927d1e9df62c545d89e61dc90b141444f8411819b9a10500f65276cffaf34"},
 ]
 cycler = [
     {file = "cycler-0.10.0-py2.py3-none-any.whl", hash = "sha256:1d8a5ae1ff6c5cf9b93e8811e581232ad8920aeec647c37316ceac982b08cb2d"},
@@ -2156,8 +2156,8 @@ jupyter-client = [
     {file = "jupyter_client-5.3.4.tar.gz", hash = "sha256:60e6faec1031d63df57f1cc671ed673dced0ed420f4377ea33db37b1c188b910"},
 ]
 jupyter-core = [
-    {file = "jupyter_core-4.6.1-py2.py3-none-any.whl", hash = "sha256:464769f7387d7a62a2403d067f1ddc616655b7f77f5d810c0dd62cb54bfd0fb9"},
-    {file = "jupyter_core-4.6.1.tar.gz", hash = "sha256:a183e0ec2e8f6adddf62b0a3fc6a2237e3e0056d381e536d3e7c7ecc3067e244"},
+    {file = "jupyter_core-4.6.2-py2.py3-none-any.whl", hash = "sha256:e91785b8bd7f752711c0c20e5ec6ba0d42178d6321a61396082c55818991caee"},
+    {file = "jupyter_core-4.6.2.tar.gz", hash = "sha256:185dfe42800585ca860aa47b5fe0211ee2c33246576d2d664b0b0b8d22aacf3a"},
 ]
 jupyter-lsp = [
     {file = "jupyter-lsp-0.7.0.tar.gz", hash = "sha256:18d79881ab34eeb6e5f42930dc369e23b0d2240da94a0e2416317eb50cbdfaa1"},
@@ -2292,8 +2292,8 @@ mako = [
     {file = "Mako-1.1.1.tar.gz", hash = "sha256:2984a6733e1d472796ceef37ad48c26f4a984bb18119bb2dbc37a44d8f6e75a4"},
 ]
 markdown = [
-    {file = "Markdown-3.2-py2.py3-none-any.whl", hash = "sha256:9c71241ec237505535eabff7a38b1307250f16cea174bb1e505c3e032f108867"},
-    {file = "Markdown-3.2.tar.gz", hash = "sha256:5ad7180c3ec16422a764568ad6409ec82460c40d1631591fa53d597033cc98bf"},
+    {file = "Markdown-3.2.1-py2.py3-none-any.whl", hash = "sha256:e4795399163109457d4c5af2183fbe6b60326c17cfdf25ce6e7474c6624f725d"},
+    {file = "Markdown-3.2.1.tar.gz", hash = "sha256:90fee683eeabe1a92e149f7ba74e5ccdc81cd397bd6c516d93a8da0ef90b6902"},
 ]
 markupsafe = [
     {file = "MarkupSafe-1.1.1-cp27-cp27m-macosx_10_6_intel.whl", hash = "sha256:09027a7803a62ca78792ad89403b1b7a73a01c8cb65909cd876f7fcebd79b161"},
@@ -2363,8 +2363,8 @@ mkdocs-material = [
     {file = "mkdocs_material-4.6.2-py2.py3-none-any.whl", hash = "sha256:294275c4d3f3e5711b27645b013a0afe8b22a8ace8db81099cb1403ad47b4af5"},
 ]
 mkdocs-minify-plugin = [
-    {file = "mkdocs-minify-plugin-0.2.1.tar.gz", hash = "sha256:3000a5069dd0f42f56a8aaf7fd5ea1222c67487949617e39585d6b6434b074b6"},
-    {file = "mkdocs_minify_plugin-0.2.1-py2-none-any.whl", hash = "sha256:d54fdd5be6843dd29fd7af2f7fdd20a9eb4db46f1f6bed914e03b2f58d2d488e"},
+    {file = "mkdocs-minify-plugin-0.2.3.tar.gz", hash = "sha256:12fc10173f1e13470e8ac66564dd43a33326b911c9d5c4bf92be62fe06ff19f4"},
+    {file = "mkdocs_minify_plugin-0.2.3-py2-none-any.whl", hash = "sha256:14cdee6dd71b149a47e8d8dc3630e8c1c3bc8ada3ba159bea9990bf382651e2c"},
 ]
 model-interpreter = []
 modin = [
@@ -2809,8 +2809,8 @@ sortedcontainers = [
     {file = "sortedcontainers-2.1.0.tar.gz", hash = "sha256:974e9a32f56b17c1bac2aebd9dcf197f3eb9cd30553c5852a3187ad162e1a03a"},
 ]
 sphinx = [
-    {file = "Sphinx-2.4.0-py3-none-any.whl", hash = "sha256:b3feeed2da588adabd0db5329a309f27317e98382122721511e901833d092028"},
-    {file = "Sphinx-2.4.0.tar.gz", hash = "sha256:fb2ce74c28154872757925edda0060b4c4102cdc86b8b30063f23399678de2ca"},
+    {file = "Sphinx-2.4.1-py3-none-any.whl", hash = "sha256:5024a67f065fe60d9db2005580074d81f22a02dd8f00a5b1ec3d5f4d42bc88d8"},
+    {file = "Sphinx-2.4.1.tar.gz", hash = "sha256:f929b72e0cfe45fa581b8964d54457117863a6a6c9369ecc1a65b8827abd3bf2"},
 ]
 sphinxcontrib-applehelp = [
     {file = "sphinxcontrib-applehelp-1.0.1.tar.gz", hash = "sha256:edaa0ab2b2bc74403149cb0209d6775c96de797dfd5b5e2a71981309efab3897"},
