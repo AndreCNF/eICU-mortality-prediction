@@ -39,10 +39,8 @@ import pixiedust                           # Debugging in Jupyter Notebook cells
 # + {"Collapsed": "false", "persistent_id": "a1f6ee7f-36d4-489d-b2dd-ec2a38f15d11", "last_executed_text": "# Change to parent directory (presumably \"Documents\")\nos.chdir(\"../../..\")\n\n# Path to the CSV dataset files\ndata_path = 'Documents/Datasets/Thesis/eICU/uncompressed/'\n\n# Path to the code files\nproject_path = 'Documents/GitHub/eICU-mortality-prediction/'", "execution_event_id": "baeb346a-1c34-42d1-a501-7ae37369255e"}
 # Change to parent directory (presumably "Documents")
 os.chdir("../../../..")
-
 # Path to the CSV dataset files
 data_path = 'Datasets/Thesis/eICU/uncompressed/'
-
 # Path to the code files
 project_path = 'GitHub/eICU-mortality-prediction/'
 
@@ -56,16 +54,16 @@ import data_utils as du                    # Data science and machine learning r
 # + {"Collapsed": "false", "persistent_id": "39b552cd-6948-4ec8-ac04-42f850c1e05a", "last_executed_text": "du.set_random_seed(42)", "execution_event_id": "29ab85ce-b7fd-4c5a-a110-5841e741c369"}
 du.set_random_seed(42)
 
+# + {"toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
+# ## Allergy data
+
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# ## Initialize variables
+# ### Initialize variables
 
 # + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82"}
 cat_feat = []                              # List of categorical features
 cat_embed_feat = []                        # List of categorical features that will be embedded
 cat_embed_feat_enum = dict()               # Dictionary of the enumerations of the categorical features that will be embedded
-
-# + {"toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
-# ## Allergy data
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Read the data
@@ -173,11 +171,9 @@ alrg_df[alrg_df.allergyname.str.contains('unknown')].allergyname.value_counts()
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "9c0217cf-66d8-467b-b0df-b75441b1c0dc"}
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
-    # Skip the 'drughiclseqno' from enumeration encoding
-    if feature == 'drughiclseqno':
-        continue
     # Prepare for embedding, i.e. enumerate categories
-    alrg_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(alrg_df, feature, nan_value=0)
+    alrg_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(alrg_df, feature, nan_value=0,
+                                                                                           forbidden_digit=0)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Fill missing values of the drug and allergies data with 0, so as to prepare for embedding:
@@ -372,6 +368,14 @@ alrg_df.describe().transpose()
 # ## Past history data
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
+# ### Initialize variables
+
+# + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82"}
+cat_feat = []                              # List of categorical features
+cat_embed_feat = []                        # List of categorical features that will be embedded
+cat_embed_feat_enum = dict()               # Dictionary of the enumerations of the categorical features that will be embedded
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Read the data
 
 # + {"Collapsed": "false", "persistent_id": "db086782-764c-4f63-b32f-6246f7c49a9b"}
@@ -406,36 +410,36 @@ du.search_explore.dataframe_missing_values(past_hist_df)
 # ### Remove unneeded features
 
 # + {"Collapsed": "false", "persistent_id": "156f2c4b-029d-483f-ae2f-efc88ee80b88"}
-past_hist_df.past_historypath.value_counts().head(20)
+past_hist_df.pasthistorypath.value_counts().head(20)
 
 # + {"Collapsed": "false", "persistent_id": "a4e04c0a-863a-4b60-8028-5f6a384dc057"}
-past_hist_df.past_historypath.value_counts().tail(20)
+past_hist_df.pasthistorypath.value_counts().tail(20)
 
 # + {"Collapsed": "false", "persistent_id": "be0eea31-5880-4233-b223-47401d6ac827"}
-past_hist_df.past_historyvalue.value_counts()
+past_hist_df.pasthistoryvalue.value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "acb0333c-2b3f-4aca-88b2-2b1cf7c479e4"}
-past_hist_df.past_historynotetype.value_counts()
+past_hist_df.pasthistorynotetype.value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "c141a8e0-2af2-4d2c-aee8-60700ddc5301"}
-past_hist_df[past_hist_df.past_historypath == 'notes/Progress Notes/Past History/Past History Obtain Options/Performed'].past_historyvalue.value_counts()
+past_hist_df[past_hist_df.pasthistorypath == 'notes/Progress Notes/Past History/Past History Obtain Options/Performed'].pasthistoryvalue.value_counts()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # In this case, considering that it regards past diagnosis of the patients, the timestamp when that was observed probably isn't very reliable nor useful. As such, I'm going to remove the offset variables. Furthermore, `past_historyvaluetext` is redundant with `past_historyvalue`, while `past_historynotetype` and the past history path 'notes/Progress Notes/Past History/Past History Obtain Options/Performed' seem to be irrelevant.
 
 # + {"Collapsed": "false", "persistent_id": "cce8b969-b435-45e5-a3aa-2f646f816491"}
-past_hist_df = past_hist_df.drop(['past_historyid', 'past_historyoffset', 'past_historyenteredoffset',
-                                'past_historynotetype', 'past_historyvaluetext'], axis=1)
+past_hist_df = past_hist_df.drop(['pasthistoryid', 'pasthistoryoffset', 'pasthistoryenteredoffset',
+                                  'pasthistorynotetype', 'pasthistoryvaluetext'], axis=1)
 past_hist_df.head()
 
 # + {"Collapsed": "false", "persistent_id": "787315bf-b470-4538-9ad1-adcc6ef93c65"}
 categories_to_remove = ['notes/Progress Notes/Past History/Past History Obtain Options/Performed']
 
 # + {"Collapsed": "false", "persistent_id": "ce524b85-8006-4c1a-af08-aa1c6094b152"}
-~(past_hist_df.past_historypath.isin(categories_to_remove)).head()
+~(past_hist_df.pasthistorypath.isin(categories_to_remove)).head()
 
 # + {"Collapsed": "false", "persistent_id": "23926113-127a-442a-8c33-33deb5efa772"}
-past_hist_df = past_hist_df[~(past_hist_df.past_historypath.isin(categories_to_remove))]
+past_hist_df = past_hist_df[~(past_hist_df.pasthistorypath.isin(categories_to_remove))]
 past_hist_df.head()
 
 # + {"Collapsed": "false", "persistent_id": "e9374a3c-b2be-428c-a853-0ded647a6c70"}
@@ -445,13 +449,13 @@ len(past_hist_df)
 past_hist_df.patientunitstayid.nunique()
 
 # + {"Collapsed": "false", "persistent_id": "ac4e7984-b356-4696-9ba7-ef5763aeac89"}
-past_hist_df.past_historypath.value_counts().head(20)
+past_hist_df.pasthistorypath.value_counts().head(20)
 
 # + {"Collapsed": "false", "persistent_id": "b8a9f87a-0259-4094-8f03-eb2d64aeea8b"}
-past_hist_df.past_historypath.value_counts().tail(20)
+past_hist_df.pasthistorypath.value_counts().tail(20)
 
 # + {"Collapsed": "false", "persistent_id": "4f93d732-2641-4ded-83b0-fbb8eb7f2421"}
-past_hist_df.past_historyvalue.value_counts()
+past_hist_df.pasthistoryvalue.value_counts()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # There's still plenty of data left, affecting around 81.87% of the unit stays, even after removing several categories.
@@ -460,120 +464,120 @@ past_hist_df.past_historyvalue.value_counts()
 # ### Separate high level notes
 
 # + {"Collapsed": "false", "persistent_id": "e6f07ded-5aa3-4efc-9fc8-3c7a35eadb25"}
-past_hist_df.past_historypath.map(lambda x: x.split('/')).head().values
+past_hist_df.pasthistorypath.map(lambda x: x.split('/')).head().values
 
 # + {"Collapsed": "false", "persistent_id": "d4d5ecbb-5b79-4a15-a997-7863b3facb38"}
-past_hist_df.past_historypath.map(lambda x: len(x.split('/'))).min()
+past_hist_df.pasthistorypath.map(lambda x: len(x.split('/'))).min()
 
 # + {"Collapsed": "false", "persistent_id": "26a98b9f-0972-482d-956f-57c3b7eac41a"}
-past_hist_df.past_historypath.map(lambda x: len(x.split('/'))).max()
+past_hist_df.pasthistorypath.map(lambda x: len(x.split('/'))).max()
 
 # + {"Collapsed": "false", "persistent_id": "ae522e1e-8465-4e53-8299-c0fc1f3757c1"}
-past_hist_df.past_historypath.apply(lambda x: du.search_explore.get_element_from_split(x, 0, separator='/')).value_counts()
+past_hist_df.pasthistorypath.apply(lambda x: du.search_explore.get_element_from_split(x, 0, separator='/')).value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "e72babaa-63b4-4804-87b5-f9ee67fd7118"}
-past_hist_df.past_historypath.apply(lambda x: du.search_explore.get_element_from_split(x, 1, separator='/')).value_counts()
+past_hist_df.pasthistorypath.apply(lambda x: du.search_explore.get_element_from_split(x, 1, separator='/')).value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "bf504856-1e69-40a8-9677-1878144e00f7"}
-past_hist_df.past_historypath.apply(lambda x: du.search_explore.get_element_from_split(x, 2, separator='/')).value_counts()
+past_hist_df.pasthistorypath.apply(lambda x: du.search_explore.get_element_from_split(x, 2, separator='/')).value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "5f79fcc3-0dfa-40fa-b2f9-4e2f1211feab"}
-past_hist_df.past_historypath.apply(lambda x: du.search_explore.get_element_from_split(x, 3, separator='/')).value_counts()
+past_hist_df.pasthistorypath.apply(lambda x: du.search_explore.get_element_from_split(x, 3, separator='/')).value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "271ee812-3434-47b0-9dd0-6edfea59c5fe"}
-past_hist_df.past_historypath.apply(lambda x: du.search_explore.get_element_from_split(x, 4, separator='/')).value_counts()
+past_hist_df.pasthistorypath.apply(lambda x: du.search_explore.get_element_from_split(x, 4, separator='/')).value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "4b03a6bd-ea02-456e-9d28-095f2b10fea0"}
-past_hist_df.past_historypath.apply(lambda x: du.search_explore.get_element_from_split(x, 5, separator='/')).value_counts()
+past_hist_df.pasthistorypath.apply(lambda x: du.search_explore.get_element_from_split(x, 5, separator='/')).value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "954a240a-a4b1-4e5a-b2d0-1f1864040aac"}
-past_hist_df.past_historypath.apply(lambda x: du.search_explore.get_element_from_split(x, 6, separator='/')).value_counts()
+past_hist_df.pasthistorypath.apply(lambda x: du.search_explore.get_element_from_split(x, 6, separator='/')).value_counts()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # There are always at least 5 levels of the notes. As the first 4 ones are essentially always the same ("notes/Progress Notes/Past History/Organ Systems/") and the 5th one tends to not be very specific (only indicates which organ system it affected, when it isn't just a case of no health problems detected), it's best to preserve the 5th and isolate the remaining string as a new feature. This way, the split provides further insight to the model on similar notes.
 
 # + {"Collapsed": "false", "persistent_id": "abfe7998-c744-4653-96d4-752c3c7c62a8"}
-past_hist_df['past_historytype'] = past_hist_df.past_historypath.apply(lambda x: du.search_explore.get_element_from_split(x, 4, separator='/'))
-past_hist_df['past_historydetails'] = past_hist_df.past_historypath.apply(lambda x: du.search_explore.get_element_from_split(x, 5, separator='/', till_the_end=True))
+past_hist_df['pasthistorytype'] = past_hist_df.pasthistorypath.apply(lambda x: du.search_explore.get_element_from_split(x, 4, separator='/'))
+past_hist_df['pasthistorydetails'] = past_hist_df.pasthistorypath.apply(lambda x: du.search_explore.get_element_from_split(x, 5, separator='/', till_the_end=True))
 past_hist_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# `past_historyvalue` seems to correspond to the last element of `past_historydetails`. Let's confirm it:
+# `pasthistoryvalue` seems to correspond to the last element of `pasthistorydetails`. Let's confirm it:
 
 # + {"Collapsed": "false", "persistent_id": "d299e5c1-9355-4c3d-9af4-c54e24f289ad"}
-past_hist_df['past_historydetails_last'] = past_hist_df.past_historydetails.map(lambda x: x.split('/')[-1])
+past_hist_df['pasthistorydetails_last'] = past_hist_df.pasthistorydetails.map(lambda x: x.split('/')[-1])
 past_hist_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Compare columns `past_historyvalue` and `past_historydetails`'s last element:
 
 # + {"Collapsed": "false", "persistent_id": "f62af377-9237-4005-80b8-47aa0c83570a"}
-past_hist_df[past_hist_df.past_historyvalue != past_hist_df.past_historydetails_last]
+past_hist_df[past_hist_df.pasthistoryvalue != past_hist_df.pasthistorydetails_last]
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# The previous output confirms that the newly created `past_historydetails` feature's last elememt (last string in the symbol separated lists) is almost exactly equal to the already existing `past_historyvalue` feature, with the differences that `past_historyvalue` takes into account the scenarios of no health problems detected and behaves correctly in strings that contain the separator symbol in them. So, we should remove `past_historydetails`'s last element:
+# The previous output confirms that the newly created `pasthistorydetails` feature's last elememt (last string in the symbol separated lists) is almost exactly equal to the already existing `pasthistoryvalue` feature, with the differences that `pasthistoryvalue` takes into account the scenarios of no health problems detected and behaves correctly in strings that contain the separator symbol in them. So, we should remove `pasthistorydetails`'s last element:
 
 # + {"Collapsed": "false", "persistent_id": "40418862-5680-4dc5-9348-62e98599a638"}
-past_hist_df = past_hist_df.drop('past_historydetails_last', axis=1)
+past_hist_df = past_hist_df.drop('pasthistorydetails_last', axis=1)
 past_hist_df.head()
 
 # + {"Collapsed": "false", "persistent_id": "5022385b-8935-436e-a82b-8c402c0808f5"}
-past_hist_df['past_historydetails'] = past_hist_df.past_historydetails.apply(lambda x: '/'.join(x.split('/')[:-1]))
+past_hist_df['pasthistorydetails'] = past_hist_df.pasthistorydetails.apply(lambda x: '/'.join(x.split('/')[:-1]))
 past_hist_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Remove irrelevant `Not Obtainable` and `Not Performed` values:
 
 # + {"Collapsed": "false", "persistent_id": "634e9588-7d76-46d5-a152-c1b73660d558"}
-past_hist_df[past_hist_df.past_historyvalue == 'Not Obtainable'].past_historydetails.value_counts()
+past_hist_df[past_hist_df.pasthistoryvalue == 'Not Obtainable'].pasthistorydetails.value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "490b10c9-202d-4d5e-830d-cbb84272486a"}
-past_hist_df[past_hist_df.past_historyvalue == 'Not Performed'].past_historydetails.value_counts()
+past_hist_df[past_hist_df.pasthistoryvalue == 'Not Performed'].pasthistorydetails.value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "20746db6-d74f-49eb-bceb-d46fc0c981c0"}
-past_hist_df = past_hist_df[~((past_hist_df.past_historyvalue == 'Not Obtainable') | (past_hist_df.past_historyvalue == 'Not Performed'))]
+past_hist_df = past_hist_df[~((past_hist_df.pasthistoryvalue == 'Not Obtainable') | (past_hist_df.pasthistoryvalue == 'Not Performed'))]
 past_hist_df.head()
 
 # + {"Collapsed": "false", "persistent_id": "aa099682-9266-4567-8c7c-11043ca3d932"}
-past_hist_df.past_historytype.unique()
+past_hist_df.pasthistorytype.unique()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# Replace blank `past_historydetails` values:
+# Replace blank `pasthistorydetails` values:
 
 # + {"Collapsed": "false", "persistent_id": "8a7f891f-2f84-45ac-a2d5-856531eba2bb"}
-past_hist_df[past_hist_df.past_historyvalue == 'No Health Problems'].past_historydetails.value_counts()
+past_hist_df[past_hist_df.pasthistoryvalue == 'No Health Problems'].pasthistorydetails.value_counts()
 
 # + {"Collapsed": "false", "persistent_id": "9fb3ddad-84bb-44c9-b76f-ff2d7475b38a"}
-past_hist_df[past_hist_df.past_historyvalue == 'No Health Problems'].past_historydetails.value_counts().index
+past_hist_df[past_hist_df.pasthistoryvalue == 'No Health Problems'].pasthistorydetails.value_counts().index
 
 # + {"Collapsed": "false", "persistent_id": "781296cb-c8fa-49e5-826d-c9e297553c0e"}
-past_hist_df[past_hist_df.past_historydetails == ''].head()
+past_hist_df[past_hist_df.pasthistorydetails == ''].head()
 
 # + {"Collapsed": "false", "persistent_id": "23607e71-135a-4281-baaa-ccff0f9765ad"}
-past_hist_df['past_historydetails'] = past_hist_df.apply(lambda df: 'No Health Problems' if df['past_historytype'] == 'No Health Problems'
-                                                                 else df['past_historydetails'], axis=1)
+past_hist_df['pasthistorydetails'] = past_hist_df.apply(lambda df: 'No Health Problems' if df['pasthistorytype'] == 'No Health Problems'
+                                                                 else df['pasthistorydetails'], axis=1)
 past_hist_df.head()
 
 # + {"Collapsed": "false", "persistent_id": "6a32a636-2c60-45c4-b20f-8b82c9921cb4"}
-past_hist_df[past_hist_df.past_historydetails == '']
+past_hist_df[past_hist_df.pasthistorydetails == '']
 
 # + {"Collapsed": "false"}
-past_hist_df.past_historyvalue.value_counts()
+past_hist_df.pasthistoryvalue.value_counts()
 
 # + {"Collapsed": "false"}
-past_hist_df.past_historydetails.value_counts()
+past_hist_df.pasthistorydetails.value_counts()
 
 # + {"Collapsed": "false"}
-past_hist_df.past_historyvalue.nunique()
+past_hist_df.pasthistoryvalue.nunique()
 
 # + {"Collapsed": "false"}
-past_hist_df.past_historydetails.nunique()
+past_hist_df.pasthistorydetails.nunique()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# Remove the now redundant `past_historypath` column:
+# Remove the now redundant `pasthistorypath` column:
 
 # + {"Collapsed": "false", "persistent_id": "9268a24d-f3e7-407c-9c99-65020d7c17f0"}
-past_hist_df = past_hist_df.drop('past_historypath', axis=1)
+past_hist_df = past_hist_df.drop('pasthistorypath', axis=1)
 past_hist_df.head()
 
 # + {"toc-hr-collapsed": false, "Collapsed": "false", "cell_type": "markdown"}
@@ -590,7 +594,7 @@ past_hist_df.head()
 # Update list of categorical features and add those that will need embedding (features with more than 5 unique values):
 
 # + {"Collapsed": "false", "persistent_id": "e6083094-1f99-408d-9b12-dfe4d88ee39a"}
-new_cat_feat = ['past_historyvalue', 'past_historytype', 'past_historydetails']
+new_cat_feat = ['pasthistoryvalue', 'pasthistorytype', 'pasthistorydetails']
 [cat_feat.append(col) for col in new_cat_feat]
 
 # + {"Collapsed": "false", "persistent_id": "7d6962aa-6294-4e84-a136-1a04057781da"}
@@ -612,7 +616,8 @@ past_hist_df[new_cat_feat].head()
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
     # Prepare for embedding, i.e. enumerate categories
-    past_hist_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(past_hist_df, feature, nan_value=0)
+    past_hist_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(past_hist_df, feature, nan_value=0,
+                                                                                                forbidden_digit=0)
 
 # + {"Collapsed": "false", "persistent_id": "7ee06a1a-cb99-4a94-9271-6f67948fd2a6"}
 past_hist_df[new_cat_feat].head()
@@ -652,7 +657,7 @@ len(past_hist_df)
 # Check for possible multiple rows with the same unit stay ID and timestamp:
 
 # + {"Collapsed": "false", "persistent_id": "acae2295-6f7e-4290-b8a7-12d13042b65d"}
-past_hist_df.groupby('patientunitstayid').count().nlargest(columns='past_historyvalue', n=5).head()
+past_hist_df.groupby('patientunitstayid').count().nlargest(columns='pasthistoryvalue', n=5).head()
 
 # + {"Collapsed": "false", "persistent_id": "1c71ea45-4026-43ac-8433-bd70d567bee9"}
 past_hist_df[past_hist_df.patientunitstayid == 1558102].head(10)
@@ -676,12 +681,6 @@ type(past_hist_df)
 past_hist_df = du.embedding.join_categorical_enum(past_hist_df, new_cat_embed_feat, id_columns=['patientunitstayid'], inplace=True)
 past_hist_df.head()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# Reconvert dataframe to Modin:
-
-# + {"Collapsed": "false"}
-past_hist_df, pd = du.utils.convert_dataframe(past_hist_df, to='modin')
-
 # + {"Collapsed": "false"}
 type(past_hist_df)
 
@@ -689,7 +688,7 @@ type(past_hist_df)
 past_hist_df.dtypes
 
 # + {"Collapsed": "false", "persistent_id": "61f2c4df-d3b6-459b-9632-194e2736ff27"}
-past_hist_df.groupby(['patientunitstayid']).count().nlargest(columns='past_historyvalue', n=5).head()
+past_hist_df.groupby(['patientunitstayid']).count().nlargest(columns='pasthistoryvalue', n=5).head()
 
 # + {"Collapsed": "false", "persistent_id": "aa5f247a-8e4b-4527-a265-2af71b0f8e06"}
 past_hist_df[past_hist_df.patientunitstayid == 1558102].head(10)
@@ -729,6 +728,14 @@ past_hist_df.describe().transpose()
 
 # + {"toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
 # ## Diagnosis data
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# ### Initialize variables
+
+# + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82"}
+cat_feat = []                              # List of categorical features
+cat_embed_feat = []                        # List of categorical features that will be embedded
+cat_embed_feat_enum = dict()               # Dictionary of the enumerations of the categorical features that will be embedded
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Read the data
@@ -833,7 +840,8 @@ diagn_df[new_cat_feat].head()
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
     # Prepare for embedding, i.e. enumerate categories
-    diagn_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(diagn_df, feature, nan_value=0)
+    diagn_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(diagn_df, feature, nan_value=0,
+                                                                                            forbidden_digit=0)
 
 # + {"Collapsed": "false", "persistent_id": "64118894-5fb4-4e31-91cf-695d64a7e633"}
 diagn_df[new_cat_feat].head()
@@ -963,3 +971,4 @@ diagn_df.to_csv(f'{data_path}cleaned/normalized/diagnosis.csv')
 diagn_df.describe().transpose()
 
 # + {"Collapsed": "false"}
+

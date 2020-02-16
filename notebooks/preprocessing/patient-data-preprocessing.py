@@ -38,10 +38,8 @@ import pixiedust                           # Debugging in Jupyter Notebook cells
 # + {"Collapsed": "false", "persistent_id": "a1f6ee7f-36d4-489d-b2dd-ec2a38f15d11", "last_executed_text": "# Change to parent directory (presumably \"Documents\")\nos.chdir(\"../../../..\")\n\n# Path to the CSV dataset files\ndata_path = 'Datasets/Thesis/eICU/uncompressed/'\n\n# Path to the code files\nproject_path = 'GitHub/eICU-mortality-prediction/'", "execution_event_id": "46042469-3ab8-4a47-9e1c-76eda99b5075"}
 # Change to parent directory (presumably "Documents")
 os.chdir("../../../..")
-
 # Path to the CSV dataset files
 data_path = 'Datasets/Thesis/eICU/uncompressed/'
-
 # Path to the code files
 project_path = 'GitHub/eICU-mortality-prediction/'
 
@@ -55,16 +53,16 @@ import data_utils as du                    # Data science and machine learning r
 # + {"Collapsed": "false", "persistent_id": "39b552cd-6948-4ec8-ac04-42f850c1e05a", "last_executed_text": "du.set_random_seed(42)", "execution_event_id": "9f0e32aa-08d7-4d35-bde8-7855e1788d5e"}
 du.set_random_seed(42)
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# ## Initialize variables
+# + {"toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
+# ## Patient data
 
-# + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82", "last_executed_text": "cat_feat = []                              # List of categorical features\ncat_embed_feat = []                        # List of categorical features that will be embedded\ncat_embed_feat_enum = dict()               # Dictionary of the enumerations of the categorical features that will be embedded", "execution_event_id": "8af9a22d-8ce9-4875-a602-29e263a6df4a"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# ### Initialize variables
+
+# + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82"}
 cat_feat = []                              # List of categorical features
 cat_embed_feat = []                        # List of categorical features that will be embedded
 cat_embed_feat_enum = dict()               # Dictionary of the enumerations of the categorical features that will be embedded
-
-# + {"toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
-# ## Patient data
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Read the data
@@ -180,7 +178,8 @@ patient_df[new_cat_feat].head()
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
     # Prepare for embedding, i.e. enumerate categories
-    patient_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(patient_df, feature, nan_value=0)
+    patient_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(patient_df, feature, nan_value=0,
+                                                                                              forbidden_digit=0)
 
 # + {"Collapsed": "false", "persistent_id": "66530762-67c7-4547-953a-b5848c9e4be2", "last_executed_text": "patient_df[new_cat_feat].head()", "execution_event_id": "5a66c551-ae55-4c93-b418-7d3010895def"}
 patient_df[new_cat_feat].head()
@@ -346,6 +345,14 @@ patient_df_norm.describe().transpose()
 
 # + {"toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
 # ## Notes data
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# ### Initialize variables
+
+# + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82"}
+cat_feat = []                              # List of categorical features
+cat_embed_feat = []                        # List of categorical features that will be embedded
+cat_embed_feat_enum = dict()               # Dictionary of the enumerations of the categorical features that will be embedded
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Read the data
@@ -607,7 +614,8 @@ note_df[new_cat_feat].head()
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
     # Prepare for embedding, i.e. enumerate categories
-    note_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(note_df, feature, nan_value=0)
+    note_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(note_df, feature, nan_value=0,
+                                                                                           forbidden_digit=0)
 
 # + {"Collapsed": "false", "persistent_id": "781ff06e-15f5-495c-967d-97c3dd790be7"}
 note_df[new_cat_feat].head()
@@ -725,3 +733,4 @@ note_df.to_csv(f'{data_path}cleaned/normalized/note.csv')
 note_df.describe().transpose()
 
 # + {"Collapsed": "false"}
+

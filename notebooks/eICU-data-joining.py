@@ -36,17 +36,22 @@ import pixiedust                           # Debugging in Jupyter Notebook cells
 # + {"Collapsed": "false", "persistent_id": "a1f6ee7f-36d4-489d-b2dd-ec2a38f15d11", "last_executed_text": "# Change to parent directory (presumably \"Documents\")\nos.chdir(\"../../..\")\n\n# Path to the CSV dataset files\ndata_path = 'Documents/Datasets/Thesis/eICU/uncompressed/'\n\n# Path to the code files\nproject_path = 'Documents/GitHub/eICU-mortality-prediction/'", "execution_event_id": "baeb346a-1c34-42d1-a501-7ae37369255e"}
 # Change to parent directory (presumably "Documents")
 os.chdir("../../..")
-
 # Path to the CSV dataset files
 data_path = 'Datasets/Thesis/eICU/uncompressed/cleaned/'
-
 # Path to the code files
 project_path = 'GitHub/eICU-mortality-prediction/'
 
 # + {"Collapsed": "false", "persistent_id": "c0c2e356-d4f4-4a9d-bec2-88bdf9eb6a38", "last_executed_text": "import modin.pandas as pd                  # Optimized distributed version of Pandas\nimport data_utils as du                    # Data science and machine learning relevant methods", "execution_event_id": "82ef68be-443a-4bb8-8abd-7457a7005b4d"}
+# import ray                                 # Parallelization backend used by Modin
 # import modin.pandas as pd                  # Optimized distributed version of Pandas
 import pandas as pd
 import data_utils as du                    # Data science and machine learning relevant methods
+
+# + {"Collapsed": "false"}
+# Setting ray's object size limit to 5GB
+# ray.shutdown()
+# ray.init(memory=8000 * 1024 * 1024,
+#          object_store_memory=5000 * 1024 * 1024)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Set the random seed for reproducibility
@@ -486,6 +491,9 @@ eICU_df.head()
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Removing unit stays that are too short
 
+# + {"Collapsed": "false"}
+eICU_df.info()
+
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Make sure that the dataframe is ordered by time `ts`:
 
@@ -557,19 +565,14 @@ eICU_df[eICU_df.index == 2564878][['drugdosage_x', 'drughiclseqno_x',
                                    'drugdosage_y', 'drughiclseqno_y']]
 
 # + {"Collapsed": "false", "pixiedust": {"displayParams": {}}}
-# # %%pixie_debugger
 eICU_df = du.data_processing.merge_columns(eICU_df, cols_to_merge=['drugdosage', 'drughiclseqno'])
 eICU_df.sample(20)
 
 # + {"Collapsed": "false"}
-eICU_df[['drugdosage', 'drughiclseqno',
-         'drugdosage_x', 'drughiclseqno_x',
-         'drugdosage_y', 'drughiclseqno_y']].head(20)
+eICU_df[['drugdosage', 'drughiclseqno']].head(20)
 
 # + {"Collapsed": "false"}
-eICU_df[eICU_df.index == 2564878][['drugdosage', 'drughiclseqno',
-                                   'drugdosage_x', 'drughiclseqno_x',
-                                   'drugdosage_y', 'drughiclseqno_y']]
+eICU_df[eICU_df.index == 2564878][['drugdosage', 'drughiclseqno']]
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # #### Categorical features
@@ -580,19 +583,36 @@ eICU_df[eICU_df.index == 2564878][['drugdosage', 'drughiclseqno',
 # Load encoding dictionaries:
 
 # + {"Collapsed": "false"}
-stream_adms_drug = open(f'{data_path}/cleaned/cat_embed_feat_enum_adms_drug.yaml', 'r')
-stream_med = open(f'{data_path}/cleaned/cat_embed_feat_enum_med.yaml', 'r')
-cat_embed_feat_enum_adms_drug = yaml.load(stream_adms_drug)
-cat_embed_feat_enum_med = yaml.load(stream_med)
+stream_adms_drug = open(f'{data_path}cat_embed_feat_enum_adms_drug.yaml', 'r')
+stream_med = open(f'{data_path}cat_embed_feat_enum_med.yaml', 'r')
+cat_embed_feat_enum_adms_drug = yaml.load(stream_adms_drug, Loader=yaml.FullLoader)
+cat_embed_feat_enum_med = yaml.load(stream_med, Loader=yaml.FullLoader)
+
+# + {"Collapsed": "false"}
+eICU_df[['drugadmitfrequency_x', 'drugunit_x',
+         'drugadmitfrequency_y', 'drugunit_y']].head(20)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Standardize the encoding of similar columns:
 
 # + {"Collapsed": "false"}
+list(cat_embed_feat_enum_adms_drug.keys())
+
+# + {"Collapsed": "false"}
+list(cat_embed_feat_enum_med.keys())
+
+# + {"Collapsed": "false"}
+eICU_df.to_csv(f'{data_path}normalized/eICU_post_merge_continuous_cols.csv')
+
+# + {"Collapsed": "false"}
+eICU_df = pd.read_csv(f'{data_path}normalized/eICU_post_merge_continuous_cols.csv')
+eICU_df.head()
+
+# + {"Collapsed": "false", "pixiedust": {"displayParams": {}}}
 eICU_df, cat_embed_feat_enum['drugadmitfrequency'] = du.embedding.converge_enum(eICU_df, cat_feat_name=['drugadmitfrequency_x', 
                                                                                                         'drugadmitfrequency_y'], 
                                                                                 dict1=cat_embed_feat_enum_adms_drug['drugadmitfrequency'],
-                                                                                dict2=cat_embed_feat_enum_med['drugadmitfrequency'],
+                                                                                dict2=cat_embed_feat_enum_med['frequency'],
                                                                                 nan_value=0, sort=True, inplace=True)
 
 # + {"Collapsed": "false"}
@@ -608,6 +628,12 @@ eICU_df, cat_embed_feat_enum['drugunit'] = du.embedding.converge_enum(eICU_df, c
 # + {"Collapsed": "false"}
 eICU_df = du.data_processing.merge_columns(eICU_df, cols_to_merge=['drugadmitfrequency', 'drugunit'])
 eICU_df.sample(20)
+
+# + {"Collapsed": "false"}
+eICU_df[['drugadmitfrequency', 'drugunit']].head(20)
+
+# + {"Collapsed": "false"}
+eICU_df.to_csv(f'{data_path}normalized/eICU_post_merge_categorical_cols.csv')
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Creating a single encoding dictionary for the complete dataframe
@@ -676,7 +702,45 @@ eICU_df.head()
 # Consider removing all unit stays that have, combining rows and columns, a very high percentage of missing values.
 
 # + {"Collapsed": "false"}
-# [TODO]
+n_features = len(eICU_df.columns)
+n_features
+# -
+
+# Create a temporary column that counts each row's number of missing values:
+
+eICU_df['row_msng_val'] = eICU_df.isnull().sum(axis=1)
+eICU_df[['patientunitstay', 'ts', 'row_msng_val']].head()
+
+# Check each unit stay's percentage of missing data points:
+
+# Number of possible data points in each unit stay
+n_data_points = eICU_df.groupby('patientunitstayid').ts.count() * n_features
+n_data_points
+
+# Number of missing values in each unit stay
+n_msng_val = eICU_df.groupby('patientunitstayid').row_msng_val.sum()
+n_msng_val
+
+# Percentage of missing values in each unit stay
+msng_val_prct = (n_msng_val / n_data_points) * 100
+msng_val_prct
+
+msng_val_prct.describe()
+
+# Remove unit stays that have too many missing values (>70% of their respective data points):
+
+# + {"Collapsed": "false"}
+unit_stay_high_msgn = set(msng_val_prct[msng_val_prct > 70].index)
+unit_stay_high_msgn
+
+# + {"Collapsed": "false"}
+eICU_df.patientunitstayid.nunique()
+# -
+
+eICU_df = eICU_df[~eICU_df.patientunitstayid.isin(unit_stay_high_msgn)]
+
+# + {"Collapsed": "false"}
+eICU_df.patientunitstayid.nunique()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Performing imputation
@@ -685,6 +749,8 @@ eICU_df.head()
 du.search_explore.dataframe_missing_values(eICU_df)
 
 # + {"Collapsed": "false"}
+# [TODO] Be careful to avoid interpolating categorical features (e.g. `drugunit`); these must only 
+# be imputated through zero filling
 eICU_df = du.data_processing.missing_values_imputation(eICU_df, method='interpolation', 
                                                        id_column='patientunitstay', inplace=True)
 eICU_df.head()

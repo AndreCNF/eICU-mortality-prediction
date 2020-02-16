@@ -55,9 +55,6 @@ import data_utils as du                    # Data science and machine learning r
 # + {"Collapsed": "false", "persistent_id": "39b552cd-6948-4ec8-ac04-42f850c1e05a", "last_executed_text": "du.set_random_seed(42)", "execution_event_id": "29ab85ce-b7fd-4c5a-a110-5841e741c369"}
 du.set_random_seed(42)
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# ## Initialize variables
-
 # + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82"}
 cat_feat = []                              # List of categorical features
 cat_embed_feat = []                        # List of categorical features that will be embedded
@@ -65,6 +62,14 @@ cat_embed_feat_enum = dict()               # Dictionary of the enumerations of t
 
 # + {"toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
 # ## Vital signs periodic data
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# ### Initialize variables
+
+# + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82"}
+cat_feat = []                              # List of categorical features
+cat_embed_feat = []                        # List of categorical features that will be embedded
+cat_embed_feat_enum = dict()               # Dictionary of the enumerations of the categorical features that will be embedded
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Read the data
@@ -149,7 +154,8 @@ patient_df[new_cat_feat].head()
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
     # Prepare for embedding, i.e. enumerate categories
-    patient_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(patient_df, feature, nan_value=0)
+    patient_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(patient_df, feature, nan_value=0,
+                                                                                              forbidden_digit=0)
 
 # + {"Collapsed": "false", "persistent_id": "b3b2937b-c97c-4f5f-a38e-0b7cdeb1d252"}
 patient_df[new_cat_feat].head()
@@ -314,6 +320,14 @@ eICU_df.head()
 
 # + {"toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
 # ## Vital signs aperiodic data
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# ### Initialize variables
+
+# + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82"}
+cat_feat = []                              # List of categorical features
+cat_embed_feat = []                        # List of categorical features that will be embedded
+cat_embed_feat_enum = dict()               # Dictionary of the enumerations of the categorical features that will be embedded
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Read the data

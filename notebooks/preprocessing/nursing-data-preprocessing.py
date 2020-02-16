@@ -56,16 +56,16 @@ import data_utils as du                    # Data science and machine learning r
 # + {"Collapsed": "false", "persistent_id": "39b552cd-6948-4ec8-ac04-42f850c1e05a", "last_executed_text": "du.set_random_seed(42)", "execution_event_id": "29ab85ce-b7fd-4c5a-a110-5841e741c369"}
 du.set_random_seed(42)
 
+# + {"toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
+# ## Nurse care data
+
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# ## Initialize variables
+# ### Initialize variables
 
 # + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82"}
 cat_feat = []                              # List of categorical features
 cat_embed_feat = []                        # List of categorical features that will be embedded
 cat_embed_feat_enum = dict()               # Dictionary of the enumerations of the categorical features that will be embedded
-
-# + {"toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
-# ## Nurse care data
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Read the data
@@ -231,7 +231,8 @@ nurse_care_df[new_cat_feat].head()
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
     # Prepare for embedding, i.e. enumerate categories
-    nurse_care_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(nurse_care_df, feature, nan_value=0)
+    nurse_care_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(nurse_care_df, feature, nan_value=0,
+                                                                                                 forbidden_digit=0)
 
 # + {"Collapsed": "false", "persistent_id": "9ceba9e2-6821-4a73-8875-5ddebef03516"}
 nurse_care_df[new_cat_feat].head()
@@ -369,6 +370,14 @@ nurse_care_df.describe().transpose()
 
 # + {"toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
 # ## Nurse assessment data
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# ### Initialize variables
+
+# + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82"}
+cat_feat = []                              # List of categorical features
+cat_embed_feat = []                        # List of categorical features that will be embedded
+cat_embed_feat_enum = dict()               # Dictionary of the enumerations of the categorical features that will be embedded
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Read the data
@@ -536,7 +545,8 @@ nurse_assess_df[new_cat_feat].head()
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
     # Prepare for embedding, i.e. enumerate categories
-    nurse_assess_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(nurse_assess_df, feature, nan_value=0)
+    nurse_assess_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(nurse_assess_df, feature, nan_value=0,
+                                                                                                   forbidden_digit=0)
 
 # + {"Collapsed": "false", "persistent_id": "6101e468-8fdc-48c2-90f7-7a8db94c1b58"}
 nurse_assess_df[new_cat_feat].head()
@@ -667,6 +677,14 @@ nurse_assess_df.describe().transpose()
 
 # + {"toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
 # ## Nurse charting data
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# ### Initialize variables
+
+# + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82"}
+cat_feat = []                              # List of categorical features
+cat_embed_feat = []                        # List of categorical features that will be embedded
+cat_embed_feat_enum = dict()               # Dictionary of the enumerations of the categorical features that will be embedded
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Read the data
@@ -962,7 +980,8 @@ nursechart_df[new_cat_feat].head()
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
     # Prepare for embedding, i.e. enumerate categories
-    nursechart_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(nursechart_df, feature, nan_value=0)
+    nursechart_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(nursechart_df, feature, nan_value=0,
+                                                                                                 forbidden_digit=0)
 
 # + {"Collapsed": "false", "persistent_id": "d45b3fbd-7152-4b99-94c1-328a97af385f"}
 nursechart_df[new_cat_feat].head()

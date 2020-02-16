@@ -6,15 +6,15 @@
 #     text_representation:
 #       extension: .py
 #       format_name: light
-#       format_version: '1.5'
-#       jupytext_version: 1.3.2
+#       format_version: '1.4'
+#       jupytext_version: 1.2.1
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: eicu-mortality-prediction
 #     language: python
-#     name: python3
+#     name: eicu-mortality-prediction
 # ---
 
-# + [markdown] {"toc-hr-collapsed": false, "Collapsed": "false"}
+# + {"Collapsed": "false", "toc-hr-collapsed": false, "cell_type": "markdown"}
 # # Treatment Data Preprocessing
 # ---
 #
@@ -27,50 +27,48 @@
 # * treatment
 # * intakeOutput
 
-# + [markdown] {"colab_type": "text", "id": "KOdmFzXqF7nq", "toc-hr-collapsed": true, "Collapsed": "false"}
+# + {"Collapsed": "false", "colab_type": "text", "id": "KOdmFzXqF7nq", "toc-hr-collapsed": true, "cell_type": "markdown"}
 # ## Importing the necessary packages
 
-# + {"colab": {}, "colab_type": "code", "id": "G5RrWE9R_Nkl", "Collapsed": "false", "persistent_id": "522745b5-b5bf-479f-b697-5c7e9e12fc33", "last_executed_text": "import os                                  # os handles directory/workspace changes\nimport numpy as np                         # NumPy to handle numeric and NaN operations\nimport yaml                                # Save and load YAML files", "execution_event_id": "deb57b39-6a79-4b3a-95ed-02f8089ff593"}
+# + {"Collapsed": "false", "colab": {}, "colab_type": "code", "execution_event_id": "deb57b39-6a79-4b3a-95ed-02f8089ff593", "id": "G5RrWE9R_Nkl", "last_executed_text": "import os                                  # os handles directory/workspace changes\nimport numpy as np                         # NumPy to handle numeric and NaN operations\nimport yaml                                # Save and load YAML files", "persistent_id": "522745b5-b5bf-479f-b697-5c7e9e12fc33"}
 import os                                  # os handles directory/workspace changes
 import numpy as np                         # NumPy to handle numeric and NaN operations
 import yaml                                # Save and load YAML files
 
-# + {"Collapsed": "false", "persistent_id": "02accdbf-be7e-415c-ba11-165906e66c50", "last_executed_text": "# Debugging packages\nimport pixiedust                           # Debugging in Jupyter Notebook cells", "execution_event_id": "fa33a2f7-7127-49c6-bbe9-f89555b1f2be"}
+# + {"Collapsed": "false", "execution_event_id": "fa33a2f7-7127-49c6-bbe9-f89555b1f2be", "last_executed_text": "# Debugging packages\nimport pixiedust                           # Debugging in Jupyter Notebook cells", "persistent_id": "02accdbf-be7e-415c-ba11-165906e66c50"}
 # Debugging packages
 import pixiedust                           # Debugging in Jupyter Notebook cells
 
-# + {"Collapsed": "false", "persistent_id": "a1f6ee7f-36d4-489d-b2dd-ec2a38f15d11", "last_executed_text": "# Change to parent directory (presumably \"Documents\")\nos.chdir(\"../../..\")\n\n# Path to the CSV dataset files\ndata_path = 'Documents/Datasets/Thesis/eICU/uncompressed/'\n\n# Path to the code files\nproject_path = 'Documents/GitHub/eICU-mortality-prediction/'", "execution_event_id": "baeb346a-1c34-42d1-a501-7ae37369255e"}
+# + {"Collapsed": "false", "execution_event_id": "baeb346a-1c34-42d1-a501-7ae37369255e", "last_executed_text": "# Change to parent directory (presumably \"Documents\")\nos.chdir(\"../../..\")\n\n# Path to the CSV dataset files\ndata_path = 'Documents/Datasets/Thesis/eICU/uncompressed/'\n\n# Path to the code files\nproject_path = 'Documents/GitHub/eICU-mortality-prediction/'", "persistent_id": "a1f6ee7f-36d4-489d-b2dd-ec2a38f15d11"}
 # Change to parent directory (presumably "Documents")
 os.chdir("../../../..")
-
 # Path to the CSV dataset files
-data_path = 'data/eICU/uncompressed/'
-
+data_path = 'Datasets/Thesis/eICU/uncompressed/'
 # Path to the code files
-project_path = 'code/eICU-mortality-prediction/'
+project_path = 'GitHub/eICU-mortality-prediction/'
 
-# + {"Collapsed": "false", "persistent_id": "c0c2e356-d4f4-4a9d-bec2-88bdf9eb6a38", "last_executed_text": "import modin.pandas as pd                  # Optimized distributed version of Pandas\nimport data_utils as du                    # Data science and machine learning relevant methods", "execution_event_id": "82ef68be-443a-4bb8-8abd-7457a7005b4d"}
+# + {"Collapsed": "false", "execution_event_id": "82ef68be-443a-4bb8-8abd-7457a7005b4d", "last_executed_text": "import modin.pandas as pd                  # Optimized distributed version of Pandas\nimport data_utils as du                    # Data science and machine learning relevant methods", "persistent_id": "c0c2e356-d4f4-4a9d-bec2-88bdf9eb6a38"}
 import modin.pandas as pd                  # Optimized distributed version of Pandas
 import data_utils as du                    # Data science and machine learning relevant methods
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Set the random seed for reproducibility
 
-# + {"Collapsed": "false", "persistent_id": "39b552cd-6948-4ec8-ac04-42f850c1e05a", "last_executed_text": "du.set_random_seed(42)", "execution_event_id": "29ab85ce-b7fd-4c5a-a110-5841e741c369"}
+# + {"Collapsed": "false", "execution_event_id": "29ab85ce-b7fd-4c5a-a110-5841e741c369", "last_executed_text": "du.set_random_seed(42)", "persistent_id": "39b552cd-6948-4ec8-ac04-42f850c1e05a"}
 du.set_random_seed(42)
 
-# + [markdown] {"Collapsed": "false"}
-# ## Initialize variables
+# + {"Collapsed": "false", "toc-hr-collapsed": true, "cell_type": "markdown"}
+# ## Infusion drug data
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# ### Initialize variables
 
 # + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82"}
 cat_feat = []                              # List of categorical features
 cat_embed_feat = []                        # List of categorical features that will be embedded
 cat_embed_feat_enum = dict()               # Dictionary of the enumerations of the categorical features that will be embedded
 
-# + [markdown] {"toc-hr-collapsed": true, "Collapsed": "false"}
-# ## Infusion drug data
-
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Read the data
 
 # + {"Collapsed": "false", "persistent_id": "36c79435-0530-4459-8832-cb924012b62e"}
@@ -83,7 +81,7 @@ len(inf_drug_df)
 # + {"Collapsed": "false", "persistent_id": "fe500a2c-f9b0-41ff-a833-b61de0e87728"}
 inf_drug_df.patientunitstayid.nunique()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Get an overview of the dataframe through the `describe` method:
 
 # + {"Collapsed": "false", "persistent_id": "08b8557e-0837-45a2-a462-3e05528756f1"}
@@ -95,13 +93,13 @@ inf_drug_df.columns
 # + {"Collapsed": "false", "persistent_id": "77be4fb5-821f-4ab0-b1ee-3e4288565439"}
 inf_drug_df.dtypes
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Check for missing values
 
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "7b3530da-0b79-4bed-935b-3a48af63d92e"}
+# + {"Collapsed": "false", "persistent_id": "7b3530da-0b79-4bed-935b-3a48af63d92e", "pixiedust": {"displayParams": {}}}
 du.search_explore.dataframe_missing_values(inf_drug_df)
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Remove unneeded features
 #
 # Besides removing the row ID `infusiondrugid`, I'm also removing `infusionrate`, `volumeoffluid` and `drugamount` as they seem redundant with `drugrate` although with a lot more missing values.
@@ -111,7 +109,7 @@ inf_drug_df = inf_drug_df.drop(['infusiondrugid', 'infusionrate', 'volumeoffluid
                               'drugamount', 'patientweight'], axis=1)
 inf_drug_df.head()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Remove string drug rate values
 
 # + {"Collapsed": "false", "persistent_id": "a786da73-2e65-437b-a215-7f2ed3964df5"}
@@ -131,17 +129,17 @@ inf_drug_df.drugname = inf_drug_df.drugname.astype(str)
 inf_drug_df.drugrate = inf_drug_df.drugrate.astype(float)
 inf_drug_df.head()
 
-# + [markdown] {"toc-hr-collapsed": false, "Collapsed": "false"}
+# + {"Collapsed": "false", "toc-hr-collapsed": false, "cell_type": "markdown"}
 # ### Discretize categorical features
 #
 # Convert binary categorical features into simple numberings, one hot encode features with a low number of categories (in this case, 5) and enumerate sparse categorical features that will be embedded.
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # #### Separate and prepare features for embedding
 #
 # Identify categorical features that have more than 5 unique categories, which will go through an embedding layer afterwards, and enumerate them.
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Update list of categorical features and add those that will need embedding (features with more than 5 unique values):
 
 # + {"Collapsed": "false", "persistent_id": "d080567b-0609-4069-aecc-293e98c3277b"}
@@ -163,11 +161,12 @@ for i in range(len(new_cat_feat)):
 # + {"Collapsed": "false", "persistent_id": "82bf9aa5-c5de-433a-97d3-01d6af81e2e4"}
 inf_drug_df[new_cat_feat].head()
 
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "8b0f065b-fb2b-4330-b155-d86769ac1635"}
+# + {"Collapsed": "false", "persistent_id": "8b0f065b-fb2b-4330-b155-d86769ac1635", "pixiedust": {"displayParams": {}}}
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
     # Prepare for embedding, i.e. enumerate categories
-    inf_drug_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(inf_drug_df, feature, nan_value=0)
+    inf_drug_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(inf_drug_df, feature, nan_value=0,
+                                                                                               forbidden_digit=0)
 
 # + {"Collapsed": "false", "persistent_id": "c5c8d717-87c8-408d-b018-d6b6b1575549"}
 inf_drug_df[new_cat_feat].head()
@@ -178,7 +177,7 @@ cat_embed_feat_enum
 # + {"Collapsed": "false", "persistent_id": "b0e7a06d-f451-470f-8cf5-d154f76e83a2"}
 inf_drug_df[new_cat_feat].dtypes
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # #### Save enumeration encoding mapping
 #
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
@@ -187,17 +186,17 @@ inf_drug_df[new_cat_feat].dtypes
 stream = open(f'{data_path}/cleaned/cat_embed_feat_enum_inf_drug.yaml', 'w')
 yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Create the timestamp feature and sort
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Create the timestamp (`ts`) feature:
 
 # + {"Collapsed": "false", "persistent_id": "b1ea5e2a-d7eb-41e6-9cad-4dcbf5997ca7"}
 inf_drug_df = inf_drug_df.rename(columns={'infusionoffset': 'ts'})
 inf_drug_df.head()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Remove duplicate rows:
 
 # + {"Collapsed": "false", "persistent_id": "edfbcec8-4ca6-430a-8caf-940a115f6cac"}
@@ -210,14 +209,14 @@ inf_drug_df.head()
 # + {"Collapsed": "false", "persistent_id": "1cd6a490-f63f-458f-a274-30170c70fc66"}
 len(inf_drug_df)
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Sort by `ts` so as to be easier to merge with other dataframes later:
 
 # + {"Collapsed": "false", "persistent_id": "b3eb5c69-d034-45d7-ab48-0217169a48fb"}
 inf_drug_df = inf_drug_df.sort_values('ts')
 inf_drug_df.head(6)
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Convert dataframe to Pandas, as the next cells aren't working properly with Modin:
 
 # + {"Collapsed": "false"}
@@ -232,7 +231,7 @@ type(inf_drug_df)
 # + {"Collapsed": "false"}
 inf_drug_df.dtypes
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Check for possible multiple rows with the same unit stay ID and timestamp:
 
 # + {"Collapsed": "false", "persistent_id": "049a3fd1-0ae4-454e-a5b5-5ce8fa94d3e1"}
@@ -241,22 +240,22 @@ inf_drug_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='drugn
 # + {"Collapsed": "false", "persistent_id": "29b5843e-679e-4c4c-941f-e39a92965d1f"}
 inf_drug_df[inf_drug_df.patientunitstayid == 1785711].head(20)
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # We can see that there are up to 17 categories per set of `patientunitstayid` and `ts`. As such, we must join them. But first, as we shouldn't mix absolute values of drug rates from different drugs, we better normalize it first.
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Normalize data
 
 # + {"Collapsed": "false"}
 inf_drug_df.drugrate = inf_drug_df.drugrate.astype(float)
 
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "5d512225-ad7e-40b4-a091-b18df3f38c4c"}
+# + {"Collapsed": "false", "persistent_id": "5d512225-ad7e-40b4-a091-b18df3f38c4c", "pixiedust": {"displayParams": {}}}
 inf_drug_df_norm = du.data_processing.normalize_data(inf_drug_df, columns_to_normalize=False,
                                                     columns_to_normalize_categ=[('drugname', 'drugrate')],
                                                     inplace=True)
 inf_drug_df_norm.head()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Prevent infinite drug rate values:
 
 # + {"Collapsed": "false"}
@@ -265,14 +264,14 @@ inf_drug_df_norm = inf_drug_df_norm.replace(to_replace=np.inf, value=0)
 # + {"Collapsed": "false"}
 inf_drug_df_norm.drugrate.max()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Join rows that have the same IDs
 
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023"}
+# + {"Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023", "pixiedust": {"displayParams": {}}}
 inf_drug_df_norm = du.embedding.join_categorical_enum(inf_drug_df_norm, new_cat_embed_feat, inplace=True)
 inf_drug_df_norm.head()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Reconvert dataframe to Modin:
 
 # + {"Collapsed": "false"}
@@ -290,10 +289,10 @@ inf_drug_df_norm.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='
 # + {"Collapsed": "false", "persistent_id": "b64df6bc-254f-40b8-97cf-15737ce27db1"}
 inf_drug_df_norm[inf_drug_df_norm.patientunitstayid == 1785711].head(20)
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Rename columns
 
 # + {"Collapsed": "false", "persistent_id": "9a27b7be-7a8a-435b-acdb-9407a325ac53"}
@@ -306,7 +305,7 @@ inf_drug_df_norm = inf_drug_df_norm.rename(columns={'drugname': 'infusion_drugna
                                                   'drugrate': 'infusion_drugrate'})
 inf_drug_df_norm.head()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Clean column names
 #
 # Standardize all column names to be on lower case, have spaces replaced by underscores and remove comas.
@@ -316,31 +315,39 @@ inf_drug_df.columns = du.data_processing.clean_naming(inf_drug_df.columns)
 inf_drug_df_norm.columns = du.data_processing.clean_naming(inf_drug_df_norm.columns)
 inf_drug_df_norm.head()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Save the dataframe
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Save the dataframe before normalizing:
 
 # + {"Collapsed": "false", "persistent_id": "767d2077-112b-483a-bd2c-4b578d61ba1a"}
 inf_drug_df.to_csv(f'{data_path}cleaned/unnormalized/infusionDrug.csv')
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Save the dataframe after normalizing:
 
 # + {"Collapsed": "false", "persistent_id": "615e3df8-d467-4042-801f-a296a528b77a"}
 inf_drug_df_norm.to_csv(f'{data_path}cleaned/normalized/infusionDrug.csv')
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Confirm that everything is ok through the `describe` method:
 
 # + {"Collapsed": "false", "persistent_id": "3fe6821a-5324-4b36-94cd-7d8073c5262f"}
 inf_drug_df_norm.describe().transpose()
 
-# + [markdown] {"toc-hr-collapsed": true, "Collapsed": "false"}
+# + {"Collapsed": "false", "toc-hr-collapsed": true, "cell_type": "markdown"}
 # ## Admission drug data
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# ### Initialize variables
+
+# + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82"}
+cat_feat = []                              # List of categorical features
+cat_embed_feat = []                        # List of categorical features that will be embedded
+cat_embed_feat_enum = dict()               # Dictionary of the enumerations of the categorical features that will be embedded
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Read the data
 
 # + {"Collapsed": "false", "persistent_id": "d75bab34-d386-49fb-b6b7-273035226f86"}
@@ -353,10 +360,10 @@ len(adms_drug_df)
 # + {"Collapsed": "false", "persistent_id": "65855dd5-c78f-4596-8b10-4ad9ca706403"}
 adms_drug_df.patientunitstayid.nunique()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # There's not much admission drug data (only around 20% of the unit stays have this data). However, it might be useful, considering also that it complements the medication table.
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Get an overview of the dataframe through the `describe` method:
 
 # + {"Collapsed": "false", "persistent_id": "cdca1bbc-5fe1-4823-8828-f2adcc14d9b5"}
@@ -368,13 +375,13 @@ adms_drug_df.columns
 # + {"Collapsed": "false", "persistent_id": "7d0197fe-9d63-4ffb-b0ce-8c15f5231b52"}
 adms_drug_df.dtypes
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Check for missing values
 
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "e6b1e527-f089-4418-98cc-497cc63f2454"}
+# + {"Collapsed": "false", "persistent_id": "e6b1e527-f089-4418-98cc-497cc63f2454", "pixiedust": {"displayParams": {}}}
 du.search_explore.dataframe_missing_values(adms_drug_df)
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Remove unneeded features
 
 # + {"Collapsed": "false", "persistent_id": "a5e3fd48-5fa3-4d9b-aa52-e1a29d7c6523"}
@@ -413,10 +420,10 @@ adms_drug_df[adms_drug_df.drugdosage == 0].drugadmitfrequency.value_counts()
 # + {"Collapsed": "false", "persistent_id": "d2eba66b-33c6-4427-a88b-c4ec28174653"}
 adms_drug_df[adms_drug_df.drugunit == ' '].drugdosage.value_counts()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Oddly, `drugunit` and `drugadmitfrequency` have several blank values. At the same time, when this happens, `drugdosage` tends to be 0 (which is also an unrealistic value). Considering that no NaNs are reported, these blanks and zeros probably represent missing values.
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Besides removing irrelevant or hospital staff related data (e.g. `usertype`), I'm also removing the `drugname` column, which is redundant with the codes `drughiclseqno`, while also being brand dependant.
 
 # + {"Collapsed": "false", "persistent_id": "69129157-8c81-42bc-bc88-00df3249bc86"}
@@ -424,12 +431,12 @@ adms_drug_df = adms_drug_df[['patientunitstayid', 'drugoffset', 'drugdosage',
                            'drugunit', 'drugadmitfrequency', 'drughiclseqno']]
 adms_drug_df.head()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Fix missing values representation
 #
 # Replace blank and unrealistic zero values with NaNs.
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Convert dataframe to Pandas, as the next cells aren't working properly with Modin:
 
 # + {"Collapsed": "false"}
@@ -444,22 +451,22 @@ adms_drug_df.drugunit = adms_drug_df.drugunit.replace(to_replace=' ', value=np.n
 adms_drug_df.drugadmitfrequency = adms_drug_df.drugadmitfrequency.replace(to_replace=' ', value=np.nan)
 adms_drug_df.head()
 
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "10eab8e7-1ef2-46cb-8d41-7953dd66ef15"}
+# + {"Collapsed": "false", "persistent_id": "10eab8e7-1ef2-46cb-8d41-7953dd66ef15", "pixiedust": {"displayParams": {}}}
 du.search_explore.dataframe_missing_values(adms_drug_df)
 
-# + [markdown] {"toc-hr-collapsed": false, "Collapsed": "false"}
+# + {"Collapsed": "false", "toc-hr-collapsed": false, "cell_type": "markdown"}
 # ### Discretize categorical features
 #
 # Convert binary categorical features into simple numberings, one hot encode features with a low number of categories (in this case, 5) and enumerate sparse categorical features that will be embedded.
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # #### Separate and prepare features for embedding
 #
 # Identify categorical features that have more than 5 unique categories, which will go through an embedding layer afterwards, and enumerate them.
 #
 # In the case of microbiology data, we're also going to embed the antibiotic `sensitivitylevel`, not because it has many categories, but because there can be several rows of data per timestamp (which would be impractical on one hot encoded data).
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Update list of categorical features and add those that will need embedding (features with more than 5 unique values):
 
 # + {"Collapsed": "false", "persistent_id": "96f4f32e-9442-4705-acbc-37060bfba492"}
@@ -481,14 +488,12 @@ for i in range(len(new_cat_feat)):
 # + {"Collapsed": "false", "persistent_id": "a33e788b-d6ba-4d79-9fee-54a32959d453"}
 adms_drug_df[new_cat_feat].head()
 
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "8f69d437-6fec-4e7e-ae76-226b742b03a7"}
+# + {"Collapsed": "false", "persistent_id": "8f69d437-6fec-4e7e-ae76-226b742b03a7", "pixiedust": {"displayParams": {}}}
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
-    # Skip the 'drughiclseqno' from enumeration encoding
-    if feature == 'drughiclseqno':
-        continue
     # Prepare for embedding, i.e. enumerate categories
-    adms_drug_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(adms_drug_df, feature, nan_value=0)
+    adms_drug_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(adms_drug_df, feature, nan_value=0,
+                                                                                                forbidden_digit=0)
 
 # + {"Collapsed": "false", "persistent_id": "11a4cd2e-86f0-4637-a8dc-b7bf456d2bbe"}
 adms_drug_df[new_cat_feat].head()
@@ -499,7 +504,7 @@ cat_embed_feat_enum
 # + {"Collapsed": "false", "persistent_id": "b54a0213-dfda-46d3-aef5-a7a5ed8c2810"}
 adms_drug_df[new_cat_feat].dtypes
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # #### Save enumeration encoding mapping
 #
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
@@ -508,17 +513,17 @@ adms_drug_df[new_cat_feat].dtypes
 stream = open(f'{data_path}/cleaned/cat_embed_feat_enum_adms_drug.yaml', 'w')
 yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Create the timestamp feature and sort
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Create the timestamp (`ts`) feature:
 
 # + {"Collapsed": "false", "persistent_id": "ceab2ec2-9b2b-4439-9c3c-7674dd5b2445"}
 adms_drug_df = adms_drug_df.rename(columns={'drugoffset': 'ts'})
 adms_drug_df.head()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Remove duplicate rows:
 
 # + {"Collapsed": "false", "persistent_id": "387be9a1-51bf-43fd-9a7c-df32b5f6bfc6"}
@@ -531,14 +536,14 @@ adms_drug_df.head()
 # + {"Collapsed": "false", "persistent_id": "abf09d5e-b24e-46cd-968b-4a1051ee8504"}
 len(adms_drug_df)
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Sort by `ts` so as to be easier to merge with other dataframes later:
 
 # + {"Collapsed": "false", "persistent_id": "d35d4953-51aa-46ec-8107-1d4d7f3651a8"}
 adms_drug_df = adms_drug_df.sort_values('ts')
 adms_drug_df.head()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Check for possible multiple rows with the same unit stay ID and timestamp:
 
 # + {"Collapsed": "false", "persistent_id": "b656a52b-271c-42fd-b8ff-2c4c01a7d2dc"}
@@ -547,13 +552,13 @@ adms_drug_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='drug
 # + {"Collapsed": "false", "persistent_id": "84c0cc0a-72eb-4fab-93e3-4c9cb83b4fc4"}
 adms_drug_df[adms_drug_df.patientunitstayid == 2346930].head(10)
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # We can see that there are up to 48 categories per set of `patientunitstayid` and `ts`. As such, we must join them. But first, we need to normalize the dosage by the respective sets of drug code and units, so as to avoid mixing different absolute values.
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Normalize data
 
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "417dd68c-7c54-4eaf-856c-9f6a44ee1d26"}
+# + {"Collapsed": "false", "persistent_id": "417dd68c-7c54-4eaf-856c-9f6a44ee1d26", "pixiedust": {"displayParams": {}}}
 adms_drug_df_norm = du.data_processing.normalize_data(adms_drug_df, columns_to_normalize=False,
                                                      columns_to_normalize_categ=[(['drughiclseqno', 'drugunit'], 'drugdosage')],
                                                      inplace=True)
@@ -563,7 +568,7 @@ adms_drug_df_norm.head()
 adms_drug_df_norm = adms_drug_df_norm.sort_values('ts')
 adms_drug_df_norm.head()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Prevent infinite values:
 
 # + {"Collapsed": "false"}
@@ -575,17 +580,17 @@ adms_drug_df_norm = adms_drug_df_norm.replace(to_replace=-np.inf, value=0)
 # + {"Collapsed": "false"}
 adms_drug_df_norm.drugdosage.max()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Join rows that have the same IDs
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Even after removing duplicates rows, there are still some that have different information for the same ID and timestamp. We have to concatenate the categorical enumerations.
 
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023"}
+# + {"Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023", "pixiedust": {"displayParams": {}}}
 adms_drug_df_norm = du.embedding.join_categorical_enum(adms_drug_df_norm, new_cat_embed_feat, inplace=True)
 adms_drug_df_norm.head()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Reconvert dataframe to Modin:
 
 # + {"Collapsed": "false"}
@@ -603,10 +608,10 @@ adms_drug_df_norm.groupby(['patientunitstayid', 'ts']).count().nlargest(columns=
 # + {"Collapsed": "false", "persistent_id": "d6663be1-591b-4c35-b446-978dbc205444"}
 adms_drug_df_norm[adms_drug_df_norm.patientunitstayid == 2346930].head(10)
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Clean column names
 #
 # Standardize all column names to be on lower case, have spaces replaced by underscores and remove comas.
@@ -616,31 +621,39 @@ adms_drug_df.columns = du.data_processing.clean_naming(adms_drug_df.columns)
 adms_drug_df_norm.columns = du.data_processing.clean_naming(adms_drug_df_norm.columns)
 adms_drug_df_norm.head()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Save the dataframe
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Save the dataframe before normalizing:
 
 # + {"Collapsed": "false", "persistent_id": "15ca1a3f-614e-49da-aa1d-7ac42bceee73"}
 adms_drug_df.to_csv(f'{data_path}cleaned/unnormalized/admissionDrug.csv')
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Save the dataframe after normalizing:
 
 # + {"Collapsed": "false", "persistent_id": "9a20e4a3-a8d6-4842-8470-e6bfccd03267"}
 adms_drug_df_norm.to_csv(f'{data_path}cleaned/normalized/admissionDrug.csv')
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Confirm that everything is ok through the `describe` method:
 
 # + {"Collapsed": "false", "persistent_id": "bf406619-1133-4314-95ca-808f9fe81aee"}
 adms_drug_df_norm.describe().transpose()
 
-# + [markdown] {"toc-hr-collapsed": true, "Collapsed": "false"}
+# + {"Collapsed": "false", "toc-hr-collapsed": true, "cell_type": "markdown"}
 # ## Medication data
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# ### Initialize variables
+
+# + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82"}
+cat_feat = []                              # List of categorical features
+cat_embed_feat = []                        # List of categorical features that will be embedded
+cat_embed_feat_enum = dict()               # Dictionary of the enumerations of the categorical features that will be embedded
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Read the data
 
 # + {"Collapsed": "false", "persistent_id": "37d12a8d-d08c-41cd-b904-f005b1497fe1"}
@@ -653,10 +666,10 @@ len(med_df)
 # + {"Collapsed": "false", "persistent_id": "675a744b-8308-4a4d-89fb-3f8ba150343f"}
 med_df.patientunitstayid.nunique()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # There's not much admission drug data (only around 20% of the unit stays have this data). However, it might be useful, considering also that it complements the medication table.
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Get an overview of the dataframe through the `describe` method:
 
 # + {"Collapsed": "false", "persistent_id": "2eda81ce-69df-4328-96f0-4f770bd683d3"}
@@ -668,13 +681,13 @@ med_df.columns
 # + {"Collapsed": "false", "persistent_id": "86c4c435-d002-41ac-a635-78c7973d2aa9"}
 med_df.dtypes
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Check for missing values
 
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "095dbcb4-a4c4-4b9a-baca-41b954126f19"}
+# + {"Collapsed": "false", "persistent_id": "095dbcb4-a4c4-4b9a-baca-41b954126f19", "pixiedust": {"displayParams": {}}}
 du.search_explore.dataframe_missing_values(med_df)
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Remove unneeded features
 
 # + {"Collapsed": "false", "persistent_id": "5cb3ea02-b35b-43dc-9f72-d040f53def73"}
@@ -695,7 +708,7 @@ med_df.drugstartoffset.value_counts()
 # + {"Collapsed": "false", "persistent_id": "8427b730-79a9-4c87-b44b-ab784cee15a1"}
 med_df[med_df.drugstartoffset == 0].head()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Besides removing less interesting data (e.g. `drugivadmixture`), I'm also removing the `drugname` column, which is redundant with the codes `drughiclseqno`, while also being brand dependant.
 
 # + {"Collapsed": "false", "persistent_id": "b31b8605-5a88-4821-a65c-5337128f4264"}
@@ -703,7 +716,7 @@ med_df = med_df[['patientunitstayid', 'drugstartoffset', 'drugstopoffset',
                  'drugordercancelled', 'dosage', 'frequency', 'drughiclseqno']]
 med_df.head()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Remove rows of which the drug has been cancelled or not specified
 
 # + {"Collapsed": "false", "persistent_id": "4ffb498c-d6b5-46f3-9863-d74f672dd9be"}
@@ -713,25 +726,25 @@ med_df.drugordercancelled.value_counts()
 med_df = med_df[~((med_df.drugordercancelled == 'Yes') | (med_df.drughiclseqno.isnull()))]
 med_df.head()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Remove the now unneeded `drugordercancelled` column:
 
 # + {"Collapsed": "false", "persistent_id": "8c832678-d7eb-46d9-9521-a8a389cacc06"}
 med_df = med_df.drop('drugordercancelled', axis=1)
 med_df.head()
 
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "413613d9-1166-414d-a0c5-c51b1824d93e"}
+# + {"Collapsed": "false", "persistent_id": "413613d9-1166-414d-a0c5-c51b1824d93e", "pixiedust": {"displayParams": {}}}
 du.search_explore.dataframe_missing_values(med_df)
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Separating units from dosage
 #
 # In order to properly take into account the dosage quantities, as well as to standardize according to other tables like admission drugs, we should take the original `dosage` column and separate it to just the `drugdosage` values and the `drugunit`.
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # No need to create a separate `pyxis` feature, which would indicate the use of the popular automated medications manager, as the frequency embedding will have that into account.
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Create dosage and unit features:
 
 # + {"Collapsed": "false", "persistent_id": "68f9ce27-4230-4f52-b7f9-51c67ef4afea"}
@@ -739,7 +752,7 @@ med_df['drugdosage'] = np.nan
 med_df['drugunit'] = np.nan
 med_df.head()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Convert dataframe to Pandas, as the next cells aren't working properly with Modin:
 
 # + {"Collapsed": "false"}
@@ -748,7 +761,7 @@ med_df, pd = du.utils.convert_dataframe(med_df, to='pandas')
 # + {"Collapsed": "false"}
 type(med_df)
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Get the dosage and unit values for each row:
 
 # + {"Collapsed": "false", "persistent_id": "014b4c4e-31cb-487d-8bd9-b8f7048e981e"}
@@ -758,26 +771,26 @@ med_df.head()
 # + {"Collapsed": "false"}
 med_df.drugunit.value_counts()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Remove the now unneeded `dosage` column:
 
 # + {"Collapsed": "false", "persistent_id": "61c02af1-fa9e-49d7-81e1-abd56d133510"}
 med_df = med_df.drop('dosage', axis=1)
 med_df.head()
 
-# + [markdown] {"toc-hr-collapsed": true, "Collapsed": "false"}
+# + {"Collapsed": "false", "toc-hr-collapsed": true, "cell_type": "markdown"}
 # ### Discretize categorical features
 #
 # Convert binary categorical features into simple numberings, one hot encode features with a low number of categories (in this case, 5) and enumerate sparse categorical features that will be embedded.
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # #### Separate and prepare features for embedding
 #
 # Identify categorical features that have more than 5 unique categories, which will go through an embedding layer afterwards, and enumerate them.
 #
 # In the case of microbiology data, we're also going to embed the antibiotic `sensitivitylevel`, not because it has many categories, but because there can be several rows of data per timestamp (which would be impractical on one hot encoded data).
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Update list of categorical features and add those that will need embedding (features with more than 5 unique values):
 
 # + {"Collapsed": "false", "persistent_id": "d714ff24-c50b-4dff-9b21-832d030d050f"}
@@ -799,14 +812,12 @@ for i in range(len(new_cat_feat)):
 # + {"Collapsed": "false", "persistent_id": "ed09c3dd-50b3-48cf-aa04-76534feaf767"}
 med_df[new_cat_feat].head()
 
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "51ac8fd1-cbd2-4f59-a737-f0fcc13043fd"}
+# + {"Collapsed": "false", "persistent_id": "51ac8fd1-cbd2-4f59-a737-f0fcc13043fd", "pixiedust": {"displayParams": {}}}
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
-    # Skip the 'drughiclseqno' from enumeration encoding
-    if feature == 'drughiclseqno':
-        continue
     # Prepare for embedding, i.e. enumerate categories
-    med_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(med_df, feature, nan_value=0)
+    med_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(med_df, feature, nan_value=0,
+                                                                                          forbidden_digit=0)
 
 # + {"Collapsed": "false", "persistent_id": "e38470e5-73f7-4d35-b91d-ce0793b7f6f6"}
 med_df[new_cat_feat].head()
@@ -817,7 +828,7 @@ cat_embed_feat_enum
 # + {"Collapsed": "false", "persistent_id": "e5615265-4372-4117-a368-ec539c871763"}
 med_df[new_cat_feat].dtypes
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # #### Save enumeration encoding mapping
 #
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
@@ -826,19 +837,19 @@ med_df[new_cat_feat].dtypes
 stream = open(f'{data_path}/cleaned/cat_embed_feat_enum_med.yaml', 'w')
 yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Create drug stop event
 #
 # Add a timestamp corresponding to when each patient stops taking each medication.
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Duplicate every row, so as to create a discharge event:
 
 # + {"Collapsed": "false", "persistent_id": "db8e91ff-cfd7-4ddd-8873-20c20e1f9e46"}
 new_df = med_df.copy()
 new_df.head()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Set the new dataframe's rows to have the drug stop timestamp, with no more information on the drug that was being used:
 
 # + {"Collapsed": "false", "persistent_id": "6d2bf14a-b75b-4b4c-ae33-403cde6781d7"}
@@ -849,31 +860,31 @@ new_df.frequency = 0
 new_df.drughiclseqno = 0
 new_df.head()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Join the new rows to the remaining dataframe:
 
 # + {"Collapsed": "false", "persistent_id": "321fe743-eae2-4b2c-a4ef-5e1c3350a231"}
 med_df = med_df.append(new_df)
 med_df.head()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Remove the now unneeded medication stop column:
 
 # + {"Collapsed": "false", "persistent_id": "6b1a48ca-fecc-467f-8071-534fbd4944bb"}
 med_df = med_df.drop('drugstopoffset', axis=1)
 med_df.head(6)
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Create the timestamp feature and sort
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Create the timestamp (`ts`) feature:
 
 # + {"Collapsed": "false", "persistent_id": "88ab8d50-b556-4c76-bb0b-33e76900018f"}
 med_df = med_df.rename(columns={'drugstartoffset': 'ts'})
 med_df.head()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Remove duplicate rows:
 
 # + {"Collapsed": "false", "persistent_id": "74b9d214-8083-4d37-acbe-6ce26d6b1629"}
@@ -886,14 +897,14 @@ med_df.head()
 # + {"Collapsed": "false", "persistent_id": "be199b11-006c-4619-ac80-b3d86fd10f3b"}
 len(med_df)
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Sort by `ts` so as to be easier to merge with other dataframes later:
 
 # + {"Collapsed": "false", "persistent_id": "81712e88-3b96-4f10-a536-a80268bfe805"}
 med_df = med_df.sort_values('ts')
 med_df.head()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Check for possible multiple rows with the same unit stay ID and timestamp:
 
 # + {"Collapsed": "false", "persistent_id": "ac2b0e4b-d2bd-4eb5-a629-637361a85457"}
@@ -902,13 +913,13 @@ med_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='drughiclse
 # + {"Collapsed": "false", "persistent_id": "da5e70d7-0514-4bdb-a5e2-12b6e8a1b197"}
 med_df[med_df.patientunitstayid == 979183].head(10)
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # We can see that there are up to 41 categories per set of `patientunitstayid` and `ts`. As such, we must join them. But first, we need to normalize the dosage by the respective sets of drug code and units, so as to avoid mixing different absolute values.
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Normalize data
 
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "a4cd949b-e561-485d-bcb6-10fccc343352"}
+# + {"Collapsed": "false", "persistent_id": "a4cd949b-e561-485d-bcb6-10fccc343352", "pixiedust": {"displayParams": {}}}
 med_df_norm = du.data_processing.normalize_data(med_df, columns_to_normalize=False,
                                                 columns_to_normalize_categ=[(['drughiclseqno', 'drugunit'], 'drugdosage')],
                                                 inplace=True)
@@ -918,7 +929,7 @@ med_df_norm.head()
 med_df_norm = med_df_norm.sort_values('ts')
 med_df_norm.head()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Prevent infinite values:
 
 # + {"Collapsed": "false"}
@@ -930,20 +941,20 @@ med_df_norm = med_df_norm.replace(to_replace=-np.inf, value=0)
 # + {"Collapsed": "false"}
 med_df_norm.drugdosage.max()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Join rows that have the same IDs
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Even after removing duplicates rows, there are still some that have different information for the same ID and timestamp. We have to concatenate the categorical enumerations.
 
 # + {"Collapsed": "false", "persistent_id": "ed86d5a7-eeb3-44c4-9a4e-6dd67af307f2"}
 list(set(med_df_norm.columns) - set(new_cat_embed_feat) - set(['patientunitstayid', 'ts']))
 
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023"}
+# + {"Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023", "pixiedust": {"displayParams": {}}}
 med_df_norm = du.embedding.join_categorical_enum(med_df_norm, new_cat_embed_feat, inplace=True)
 med_df_norm.head()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Reconvert dataframe to Modin:
 
 # + {"Collapsed": "false"}
@@ -961,17 +972,17 @@ med_df_norm.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='drugh
 # + {"Collapsed": "false", "persistent_id": "85536a51-d31a-4b25-aaee-9c9d4ec392f6"}
 med_df_norm[med_df_norm.patientunitstayid == 979183].head(10)
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Rename columns
 
 # + {"Collapsed": "false", "persistent_id": "356775df-9204-4fef-b7a0-b82edf4ba85f"}
 med_df_norm = med_df_norm.rename(columns={'frequency':'drugadmitfrequency'})
 med_df_norm.head()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Clean column names
 #
 # Standardize all column names to be on lower case, have spaces replaced by underscores and remove comas.
@@ -981,22 +992,22 @@ med_df.columns = du.data_processing.clean_naming(med_df.columns)
 med_df_norm.columns = du.data_processing.clean_naming(med_df_norm.columns)
 med_df_norm.head()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Save the dataframe
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Save the dataframe before normalizing:
 
 # + {"Collapsed": "false", "persistent_id": "7c95b423-0fd8-4e65-ac07-a0117f0c36bd"}
 med_df.to_csv(f'{data_path}cleaned/unnormalized/medication.csv')
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Save the dataframe after normalizing:
 
 # + {"Collapsed": "false", "persistent_id": "eae5d63f-5635-4fa0-8c42-ff6081336e18"}
 med_df_norm.to_csv(f'{data_path}cleaned/normalized/medication.csv')
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Confirm that everything is ok through the `describe` method:
 
 # + {"Collapsed": "false", "persistent_id": "2cdabf5e-7df3-441b-b8ed-a06c404df27e"}
@@ -1005,16 +1016,24 @@ med_df_norm.describe().transpose()
 # + {"Collapsed": "false", "persistent_id": "9255fb38-ba28-4bc2-8f97-7596e8acbc5a"}
 med_df.nlargest(columns='drugdosage', n=5)
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Although the `drugdosage` looks good on mean (close to 0) and standard deviation (close to 1), it has very large magnitude minimum (-88.9) and maximum (174.1) values. Furthermore, these don't seem to be because of NaN values, whose groupby normalization could have been unideal. As such, it's hard to say if these are outliers or realistic values.
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # [TODO] Check if these very large extreme dosage values make sense and, if not, try to fix them.
 
-# + [markdown] {"toc-hr-collapsed": true, "Collapsed": "false"}
+# + {"Collapsed": "false", "toc-hr-collapsed": true, "cell_type": "markdown"}
 # ## Treatment data
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# ### Initialize variables
+
+# + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82"}
+cat_feat = []                              # List of categorical features
+cat_embed_feat = []                        # List of categorical features that will be embedded
+cat_embed_feat_enum = dict()               # Dictionary of the enumerations of the categorical features that will be embedded
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Read the data
 
 # + {"Collapsed": "false", "persistent_id": "d0a4e172-9a38-4bef-a052-6310b7fb5214"}
@@ -1027,7 +1046,7 @@ len(treat_df)
 # + {"Collapsed": "false", "persistent_id": "ad5c7291-d2ba-4e05-baea-5a887de8f535"}
 treat_df.patientunitstayid.nunique()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Get an overview of the dataframe through the `describe` method:
 
 # + {"Collapsed": "false", "persistent_id": "594cd2ff-12e5-4c90-83e7-722818eaa39e"}
@@ -1039,23 +1058,23 @@ treat_df.columns
 # + {"Collapsed": "false", "persistent_id": "ce410a02-9154-40e5-bf5f-ddbdf1724bcb"}
 treat_df.dtypes
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Check for missing values
 
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "ba586d2f-b03e-4a8d-942f-a2440be92101"}
+# + {"Collapsed": "false", "persistent_id": "ba586d2f-b03e-4a8d-942f-a2440be92101", "pixiedust": {"displayParams": {}}}
 du.search_explore.dataframe_missing_values(treat_df)
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Remove unneeded features
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Besides the usual removal of row identifier, `treatmentid`, I'm also removing `activeupondischarge`, as we don't have complete information as to when diagnosis end.
 
 # + {"Collapsed": "false", "persistent_id": "64f644db-fb9b-45c2-9c93-e4878850ed08"}
 treat_df = treat_df.drop(['treatmentid', 'activeupondischarge'], axis=1)
 treat_df.head()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Separate high level diagnosis
 
 # + {"Collapsed": "false", "persistent_id": "99292fb1-2fff-46c0-9f57-e686a52bce75"}
@@ -1070,7 +1089,7 @@ treat_df.treatmentstring.map(lambda x: len(x.split('|'))).min()
 # + {"Collapsed": "false", "persistent_id": "0fb9adae-17a9-433d-aa4a-9367511846c1"}
 treat_df.treatmentstring.map(lambda x: len(x.split('|'))).max()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # There are always at least 3 higher level diagnosis. It could be beneficial to extract those first 3 levels to separate features, with the last one getting values until the end of the string, so as to avoid the need for the model to learn similarities that are already known.
 
 # + {"Collapsed": "false", "persistent_id": "aee50693-322a-4a01-9ef2-fac27c51e45f"}
@@ -1091,7 +1110,7 @@ treat_df.treatmentstring.apply(lambda x: du.search_explore.get_element_from_spli
 # + {"Collapsed": "false", "persistent_id": "7a30e647-0d39-480e-82ec-897defcfac38"}
 treat_df.treatmentstring.apply(lambda x: du.search_explore.get_element_from_split(x, 5, separator='|')).value_counts()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # <!-- There are always 8 levels of the notes. As the first 6 ones are essentially always the same ("notes/Progress Notes/Social History / Family History/Social History/Social History/"), it's best to just preserve the 7th one and isolate the 8th in a new feature. This way, the split provides further insight to the model on similar notes. However, it's also worth taking note that the 8th level of `notepath` seems to be identical to the feature `notevalue`. We'll look more into it later. -->
 
 # + {"Collapsed": "false", "persistent_id": "44721e19-f088-4cf3-be69-5201d1260d52"}
@@ -1100,7 +1119,7 @@ treat_df['treatmenttherapy'] = treat_df.treatmentstring.apply(lambda x: du.searc
 treat_df['treatmentdetails'] = treat_df.treatmentstring.apply(lambda x: du.search_explore.get_element_from_split(x, 2, separator='|', till_the_end=True))
 treat_df.head()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Remove the now redundant `treatmentstring` column:
 
 # + {"Collapsed": "false", "persistent_id": "5e8dd6a3-d086-442e-9845-ea701b36ecf8"}
@@ -1116,17 +1135,17 @@ treat_df.treatmenttherapy.value_counts()
 # + {"Collapsed": "false", "persistent_id": "8c77797f-a1af-4d87-a37d-3b1fa7e0132c"}
 treat_df.treatmentdetails.value_counts()
 
-# + [markdown] {"toc-hr-collapsed": false, "Collapsed": "false"}
+# + {"Collapsed": "false", "toc-hr-collapsed": false, "cell_type": "markdown"}
 # ### Discretize categorical features
 #
 # Convert binary categorical features into simple numberings, one hot encode features with a low number of categories (in this case, 5) and enumerate sparse categorical features that will be embedded.
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # #### Separate and prepare features for embedding
 #
 # Identify categorical features that have more than 5 unique categories, which will go through an embedding layer afterwards, and enumerate them.
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Update list of categorical features and add those that will need embedding (features with more than 5 unique values):
 
 # + {"Collapsed": "false", "persistent_id": "e015c37e-1537-409f-b67e-9eaabf295873"}
@@ -1148,11 +1167,12 @@ for i in range(len(new_cat_feat)):
 # + {"Collapsed": "false", "persistent_id": "29451e32-cf24-47b0-a783-9acc9b71b1c3"}
 treat_df[new_cat_feat].head()
 
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "3c0aa3dc-34e6-4a10-b01e-439fe2c6f991"}
+# + {"Collapsed": "false", "persistent_id": "3c0aa3dc-34e6-4a10-b01e-439fe2c6f991", "pixiedust": {"displayParams": {}}}
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
     # Prepare for embedding, i.e. enumerate categories
-    treat_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(treat_df, feature, nan_value=0)
+    treat_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(treat_df, feature, nan_value=0,
+                                                                                            forbidden_digit=0)
 
 # + {"Collapsed": "false", "persistent_id": "a69a1a9d-9330-4f68-9c17-e8af92847439"}
 treat_df[new_cat_feat].head()
@@ -1163,7 +1183,7 @@ cat_embed_feat_enum
 # + {"Collapsed": "false", "persistent_id": "ff54e442-e896-4310-8a95-c205cd2cbf93"}
 treat_df[new_cat_feat].dtypes
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # #### Save enumeration encoding mapping
 #
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
@@ -1172,17 +1192,17 @@ treat_df[new_cat_feat].dtypes
 stream = open(f'{data_path}/cleaned/cat_embed_feat_enum_treat.yaml', 'w')
 yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Create the timestamp feature and sort
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Create the timestamp (`ts`) feature:
 
 # + {"Collapsed": "false", "persistent_id": "e9364015-9dc8-45ed-a526-fbfd85a7d249"}
 treat_df = treat_df.rename(columns={'treatmentoffset': 'ts'})
 treat_df.head()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Remove duplicate rows:
 
 # + {"Collapsed": "false", "persistent_id": "a833b09c-2fb0-46fc-af33-629e67113663"}
@@ -1195,14 +1215,14 @@ treat_df.head()
 # + {"Collapsed": "false", "persistent_id": "6f07e6d2-788a-4c5b-a0d8-0fced42215a7"}
 len(treat_df)
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Sort by `ts` so as to be easier to merge with other dataframes later:
 
 # + {"Collapsed": "false", "persistent_id": "79121961-77a1-4657-a374-dd5d389174ed"}
 treat_df = treat_df.sort_values('ts')
 treat_df.head()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Check for possible multiple rows with the same unit stay ID and timestamp:
 
 # + {"Collapsed": "false", "persistent_id": "8672872e-aea3-480c-b5a2-383843db6e3e"}
@@ -1211,13 +1231,13 @@ treat_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='treatmen
 # + {"Collapsed": "false", "persistent_id": "ab644c5b-831a-4b57-a95c-fbac810e59f4"}
 treat_df[treat_df.patientunitstayid == 1352520].head(10)
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # We can see that there are up to 105 categories per set of `patientunitstayid` and `ts`. As such, we must join them.
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Join rows that have the same IDs
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Convert dataframe to Pandas, as the groupby operation in `join_categorical_enum` isn't working properly with Modin:
 
 # + {"Collapsed": "false"}
@@ -1226,11 +1246,11 @@ treat_df, pd = du.utils.convert_dataframe(treat_df, to='pandas')
 # + {"Collapsed": "false"}
 type(treat_df)
 
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023"}
+# + {"Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023", "pixiedust": {"displayParams": {}}}
 treat_df = du.embedding.join_categorical_enum(treat_df, new_cat_embed_feat, inplace=True)
 treat_df.head()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Reconvert dataframe to Modin:
 
 # + {"Collapsed": "false"}
@@ -1248,10 +1268,10 @@ treat_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='treatmen
 # + {"Collapsed": "false", "persistent_id": "ef1b7d12-4dd4-4c9c-9204-55ad5ac98443"}
 treat_df[treat_df.patientunitstayid == 1352520].head(10)
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Clean column names
 #
 # Standardize all column names to be on lower case, have spaces replaced by underscores and remove comas.
@@ -1260,24 +1280,25 @@ treat_df[treat_df.patientunitstayid == 1352520].head(10)
 treat_df.columns = du.data_processing.clean_naming(treat_df.columns)
 treat_df.head()
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Save the dataframe
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Save the dataframe before normalizing:
 
 # + {"Collapsed": "false", "persistent_id": "7fecf050-a520-499d-ba70-96bc406e0a7e"}
 treat_df.to_csv(f'{data_path}cleaned/unnormalized/treatment.csv')
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Save the dataframe after normalizing:
 
 # + {"Collapsed": "false", "persistent_id": "8ec7af26-406d-4870-8475-0acca2b92876"}
 treat_df.to_csv(f'{data_path}cleaned/normalized/treatment.csv')
 
-# + [markdown] {"Collapsed": "false"}
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Confirm that everything is ok through the `describe` method:
 
 # + {"Collapsed": "false", "persistent_id": "23eefabe-23d7-4db4-b8e0-7c1e61ef2789"}
 treat_df.describe().transpose()
 # + {"Collapsed": "false"}
+

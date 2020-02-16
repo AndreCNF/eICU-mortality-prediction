@@ -67,6 +67,14 @@ cat_embed_feat_enum = dict()               # Dictionary of the enumerations of t
 # ## Respiratory care data
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
+# ### Initialize variables
+
+# + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82"}
+cat_feat = []                              # List of categorical features
+cat_embed_feat = []                        # List of categorical features that will be embedded
+cat_embed_feat_enum = dict()               # Dictionary of the enumerations of the categorical features that will be embedded
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Read the data
 
 # + {"Collapsed": "false", "persistent_id": "31b57ee7-87a4-4461-9364-7eaf4abc43fb"}
@@ -317,6 +325,14 @@ resp_care_df.describe().transpose()
 # ## Respiratory charting data
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
+# ### Initialize variables
+
+# + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82"}
+cat_feat = []                              # List of categorical features
+cat_embed_feat = []                        # List of categorical features that will be embedded
+cat_embed_feat_enum = dict()               # Dictionary of the enumerations of the categorical features that will be embedded
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Read the data
 
 # + {"Collapsed": "false", "persistent_id": "f8771315-8278-43fa-8c33-a8748c269d5a"}
@@ -486,7 +502,8 @@ resp_chart_df[new_cat_feat].head()
 for i in range(len(new_cat_embed_feat)):
     feature = new_cat_embed_feat[i]
     # Prepare for embedding, i.e. enumerate categories
-    resp_chart_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(resp_chart_df, feature, nan_value=0)
+    resp_chart_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(resp_chart_df, feature, nan_value=0,
+                                                                                                 forbidden_digit=0)
 
 # + {"Collapsed": "false", "persistent_id": "151d0866-afbb-486c-b4b4-204fda79a0b8"}
 resp_chart_df[new_cat_feat].head()
