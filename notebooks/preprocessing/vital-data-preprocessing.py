@@ -38,15 +38,14 @@ import pixiedust                           # Debugging in Jupyter Notebook cells
 # + {"Collapsed": "false", "persistent_id": "a1f6ee7f-36d4-489d-b2dd-ec2a38f15d11", "last_executed_text": "# Change to parent directory (presumably \"Documents\")\nos.chdir(\"../../..\")\n\n# Path to the CSV dataset files\ndata_path = 'Documents/Datasets/Thesis/eICU/uncompressed/'\n\n# Path to the code files\nproject_path = 'Documents/GitHub/eICU-mortality-prediction/'", "execution_event_id": "baeb346a-1c34-42d1-a501-7ae37369255e"}
 # Change to parent directory (presumably "Documents")
 os.chdir("../../../..")
-
 # Path to the CSV dataset files
 data_path = 'Datasets/Thesis/eICU/uncompressed/'
-
 # Path to the code files
 project_path = 'GitHub/eICU-mortality-prediction/'
 
 # + {"Collapsed": "false", "persistent_id": "c0c2e356-d4f4-4a9d-bec2-88bdf9eb6a38", "last_executed_text": "import modin.pandas as pd                  # Optimized distributed version of Pandas\nimport data_utils as du                    # Data science and machine learning relevant methods", "execution_event_id": "82ef68be-443a-4bb8-8abd-7457a7005b4d"}
-import modin.pandas as pd                  # Optimized distributed version of Pandas
+# import modin.pandas as pd                  # Optimized distributed version of Pandas
+import pandas as pd
 import data_utils as du                    # Data science and machine learning relevant methods
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -55,316 +54,72 @@ import data_utils as du                    # Data science and machine learning r
 # + {"Collapsed": "false", "persistent_id": "39b552cd-6948-4ec8-ac04-42f850c1e05a", "last_executed_text": "du.set_random_seed(42)", "execution_event_id": "29ab85ce-b7fd-4c5a-a110-5841e741c369"}
 du.set_random_seed(42)
 
-# + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82"}
-cat_feat = []                              # List of categorical features
-cat_embed_feat = []                        # List of categorical features that will be embedded
-cat_embed_feat_enum = dict()               # Dictionary of the enumerations of the categorical features that will be embedded
-
-# + {"toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
-# ## Vital signs periodic data
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# ### Initialize variables
-
-# + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82"}
-cat_feat = []                              # List of categorical features
-cat_embed_feat = []                        # List of categorical features that will be embedded
-cat_embed_feat_enum = dict()               # Dictionary of the enumerations of the categorical features that will be embedded
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# ### Read the data
-
-# + {"Collapsed": "false", "persistent_id": "cd9178cd-d41f-450e-9db4-c1ff4fd4935c"}
-vital_prdc_df = pd.read_csv(f'{data_path}original/vitalPeriodic.csv')
-vital_prdc_df.head()
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# Get an overview of the dataframe through the `describe` method:
-
-# + {"Collapsed": "false", "persistent_id": "b1274441-3c94-48b3-9bf5-e1f133f4f593"}
-vital_prdc_df.describe().transpose()
-
-# + {"Collapsed": "false", "persistent_id": "20479b2d-615f-4fdd-b1e2-f257dadabd32"}
-vital_prdc_df.columns
-
-# + {"Collapsed": "false", "persistent_id": "27313084-9469-4638-979d-9003881b5fa5"}
-vital_prdc_df.dtypes
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# ### Check for missing values
-
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "a97b6e41-4560-440e-885a-4d33aa44c7b8"}
-du.search_explore.dataframe_missing_values(patient_df)
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# ### Remove unneeded features
-
-# + {"Collapsed": "false", "persistent_id": "222c3734-547f-4fb0-afa9-2e9e4de27d80"}
-patient_df = patient_df[['patientunitstayid', 'gender', 'age', 'ethnicity', 'apacheadmissiondx',  'admissionheight',
-                         'hospitaldischargeoffset', 'hospitaldischargelocation', 'hospitaldischargestatus',
-                         'admissionweight', 'dischargeweight', 'unitdischargeoffset']]
-patient_df.head()
-
-# + {"toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
-# ### Discretize categorical features
-#
-# Convert binary categorical features into simple numberings, one hot encode features with a low number of categories (in this case, 5) and enumerate sparse categorical features that will be embedded.
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# #### Convert binary categorical features into numeric
-
-# + {"Collapsed": "false", "persistent_id": "dde8c14e-d26b-4cc3-b34b-2f1b720a7880"}
-patient_df.gender.value_counts()
-
-# + {"Collapsed": "false", "persistent_id": "be4d23c5-f4a5-496e-b1a9-576c23238c93"}
-patient_df.gender = patient_df.gender.map(lambda x: 1 if x == 'Male' else 0 if x == 'Female' else np.nan)
-
-# + {"Collapsed": "false", "persistent_id": "506a84e1-2169-4ca5-a67f-c409d393dce4"}
-patient_df.gender.value_counts()
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# #### Separate and prepare features for embedding
-#
-# Identify categorical features that have more than 5 unique categories, which will go through an embedding layer afterwards, and enumerate them.
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# Update list of categorical features and add those that will need embedding (features with more than 5 unique values):
-
-# + {"Collapsed": "false", "persistent_id": "90ebd7db-dbbc-4cc6-8c2a-0580962e035b"}
-new_cat_feat = ['ethnicity', 'apacheadmissiondx']
-[cat_feat.append(col) for col in new_cat_feat]
-
-# + {"Collapsed": "false", "persistent_id": "d35b752d-0622-49e8-8daf-af1cf2a0a634"}
-cat_feat_nunique = [patient_df[feature].nunique() for feature in new_cat_feat]
-cat_feat_nunique
-
-# + {"Collapsed": "false", "persistent_id": "7e3e5de2-2f2c-4355-8550-8c21cab261ab"}
-new_cat_embed_feat = []
-for i in range(len(new_cat_feat)):
-    if cat_feat_nunique[i] > 5:
-        # Add feature to the list of those that will be embedded
-        cat_embed_feat.append(new_cat_feat[i])
-        # Add feature to the list of the new ones (from the current table) that will be embedded
-        new_cat_embed_feat.append(new_cat_feat[i])
-
-# + {"Collapsed": "false", "persistent_id": "6f596545-14e4-4e66-80e0-c6ff14de4712"}
-patient_df[new_cat_feat].head()
-
-# + {"Collapsed": "false", "persistent_id": "9ea61bdf-e985-4b7a-865f-b144e1b87a2c"}
-for i in range(len(new_cat_embed_feat)):
-    feature = new_cat_embed_feat[i]
-    # Prepare for embedding, i.e. enumerate categories
-    patient_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(patient_df, feature, nan_value=0,
-                                                                                              forbidden_digit=0)
-
-# + {"Collapsed": "false", "persistent_id": "b3b2937b-c97c-4f5f-a38e-0b7cdeb1d252"}
-patient_df[new_cat_feat].head()
-
-# + {"Collapsed": "false", "persistent_id": "49e8379d-d2b3-4fbb-b522-12f74a7de158"}
-cat_embed_feat_enum
-
-# + {"Collapsed": "false", "persistent_id": "03bc7f87-f58b-4861-8a43-941c5b07537e"}
-patient_df[cat_feat].dtypes
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# #### Save enumeration encoding mapping
-#
-# Save the dictionary that maps from the original categories/strings to the new numerical encondings.
-
-# + {"Collapsed": "false", "persistent_id": "6c3ecabe-097a-47be-9f76-1a1e8ab7af79"}
-stream = open(f'{data_path}/cleaned/cat_embed_feat_enum_vital_periodic.yaml', 'w')
-yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# ### Create the timestamp feature and sort
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# Create the timestamp (`ts`) feature:
-
-# + {"Collapsed": "false", "persistent_id": "f8e1f0ee-539b-4a32-b09b-e25cf5bb2803"}
-patient_df['ts'] = 0
-patient_df = patient_df.drop('observationoffset', axis=1)
-patient_df.head()
-
-# + {"Collapsed": "false", "persistent_id": "c7e3373d-3b7c-4589-89d4-c438209a3654"}
-patient_df.patientunitstayid.value_counts()
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# Remove duplicate rows:
-
-# + {"Collapsed": "false", "persistent_id": "7d24e681-7f07-4e72-841f-d99788c2c4ce"}
-len(patient_df)
-
-# + {"Collapsed": "false", "persistent_id": "35e31b56-8c85-40ba-b31f-de3fc946da32"}
-patient_df = patient_df.drop_duplicates()
-patient_df.head()
-
-# + {"Collapsed": "false", "persistent_id": "cc3838e1-9f79-4bb1-a6ad-9cb6419b687c"}
-len(patient_df)
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# Sort by `ts` so as to be easier to merge with other dataframes later:
-
-# + {"Collapsed": "false", "persistent_id": "b110a331-70ea-4522-b454-bb85edf64a65"}
-vital_prdc_df = vital_prdc_df.sort_values('ts')
-vital_prdc_df.head(6)
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# Check for possible multiple rows with the same unit stay ID and timestamp:
-
-# + {"Collapsed": "false", "persistent_id": "080e07ca-fe7c-40fd-b5ba-60d58df367ac"}
-micro_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='culturesite', n=5).head()
-
-# + {"Collapsed": "false", "persistent_id": "da199102-daa7-4168-b64e-021c662a5567"}
-micro_df[micro_df.patientunitstayid == 3069495].head(20)
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# ### Join rows that have the same IDs
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# Convert dataframe to Pandas, as the groupby operation in `join_categorical_enum` isn't working properly with Modin:
-
-# + {"Collapsed": "false"}
-vital_prdc_df, pd = du.utils.convert_dataframe(vital_prdc_df, to='pandas')
-
-# + {"Collapsed": "false"}
-type(vital_prdc_df)
-
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023"}
-vital_prdc_df = du.embedding.join_categorical_enum(vital_prdc_df, new_cat_embed_feat, inplace=True)
-vital_prdc_df.head()
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# Reconvert dataframe to Modin:
-
-# + {"Collapsed": "false"}
-vital_prdc_df, pd = du.utils.convert_dataframe(vital_prdc_df, to='modin')
-
-# + {"Collapsed": "false"}
-type(vital_prdc_df)
-
-# + {"Collapsed": "false", "persistent_id": "f0ec040f-7283-4015-8be6-11b30e8323a6"}
-micro_df.dtypes
-
-# + {"Collapsed": "false", "persistent_id": "f9163f0d-bd73-4dc8-a23e-6f72e67cf4fb"}
-micro_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='culturesite', n=5).head()
-
-# + {"Collapsed": "false", "persistent_id": "fb8184d5-8f93-463f-b8a6-95a456f6ae11"}
-micro_df[micro_df.patientunitstayid == 3069495].head(20)
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# ### Normalize data
-
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "18d36906-c1a2-4221-8f6c-fbf429a076b2"}
-patient_df_norm = du.data_processing.normalize_data(patient_df, embed_columns=new_cat_feat,
-                                                    id_columns=['patientunitstayid', 'ts', 'deathoffset'],
-                                                    inplace=True)
-patient_df_norm.head(6)
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# Confirm that everything is ok through the `describe` method:
-
-# + {"Collapsed": "false", "persistent_id": "0c7829e8-0a50-4d19-82ca-a24a8f33f62a"}
-patient_df_norm.describe().transpose()
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# ### Clean column names
-#
-# Standardize all column names to be on lower case, have spaces replaced by underscores and remove comas.
-
-# + {"Collapsed": "false", "persistent_id": "e3d64b8c-edf2-4890-a5a8-402fda1a3bf6"}
-patient_df.columns = du.data_processing.clean_naming(patient_df.columns)
-patient_df_norm.columns = du.data_processing.clean_naming(patient_df_norm.columns)
-patient_df_norm.head()
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# ### Save the dataframe
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# Save the dataframe before normalizing:
-
-# + {"Collapsed": "false", "persistent_id": "e8407ff8-64d1-4726-a483-a4b94e8f2099"}
-patient_df.to_csv(f'{data_path}cleaned/unnormalized/patient.csv')
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# Save the dataframe after normalizing:
-
-# + {"Collapsed": "false", "persistent_id": "684dd75e-670e-4cf0-8cb4-33237cd47788"}
-patient_df_norm.to_csv(f'{data_path}cleaned/normalized/patient.csv')
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# Confirm that everything is ok through the `describe` method:
-
-# + {"Collapsed": "false", "persistent_id": "97e7dd86-887d-434a-86cb-34ca8be8ea74"}
-patient_df_norm.describe().transpose()
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# ### Join dataframes
-#
-# Merge dataframes by the unit stay, `patientunitstayid`, and the timestamp, `ts`, with a tolerence for a difference of up to 30 minutes.
-
-# + {"Collapsed": "false", "persistent_id": "39228b3c-69bb-433f-8c02-fe882c35d273"}
-patient_df = pd.read_csv(f'{data_path}cleaned/normalized/patient.csv')
-patient_df.head()
-
-# + {"Collapsed": "false", "persistent_id": "5ade0956-2518-4358-b5d4-59d24c908ab9"}
-vital_prdc_df = pd.read_csv(f'{data_path}cleaned/normalized/vitalPeriodic.csv')
-vital_prdc_df.head()
-
-# + {"Collapsed": "false", "persistent_id": "17292c14-3a8c-420c-95e2-172f3261869a"}
-eICU_df = pd.merge_asof(patient_df, vital_aprdc_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
-eICU_df.head()
-
 # + {"toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
 # ## Vital signs aperiodic data
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# ### Initialize variables
-
-# + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82"}
-cat_feat = []                              # List of categorical features
-cat_embed_feat = []                        # List of categorical features that will be embedded
-cat_embed_feat_enum = dict()               # Dictionary of the enumerations of the categorical features that will be embedded
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Read the data
 
-# + {"Collapsed": "false", "persistent_id": "c6d14aa0-f97e-4df0-9270-30be24a0857d"}
+# + {"Collapsed": "false", "persistent_id": "51197f67-95e2-4184-a73f-7885cb975084", "last_executed_text": "vital_aprdc_df = pd.read_csv(f'{data_path}original/vitalAperiodic.csv')\nvital_aprdc_df.head()", "execution_event_id": "bf6e34cd-7ae9-4636-a9b9-27d404b49610"}
 vital_aprdc_df = pd.read_csv(f'{data_path}original/vitalAperiodic.csv')
 vital_aprdc_df.head()
 
-# + {"Collapsed": "false", "persistent_id": "fc66c7c7-6f53-4a53-9685-2beba25630b6"}
+# + {"Collapsed": "false", "persistent_id": "c3d45ba7-91dd-41d7-8699-c70390556018", "last_executed_text": "len(vital_aprdc_df)", "execution_event_id": "d2a30b69-ae10-4a5e-be98-56280de75b37"}
 len(vital_aprdc_df)
 
-# + {"Collapsed": "false", "persistent_id": "40b7732d-3305-455a-96f8-8df25739c460"}
+# + {"Collapsed": "false", "persistent_id": "17c46962-79a6-48a6-b67a-4863028ed897", "last_executed_text": "vital_aprdc_df.patientunitstayid.nunique()", "execution_event_id": "e7d22357-65a7-4573-bd2e-42fc3794e931"}
 vital_aprdc_df.patientunitstayid.nunique()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Get an overview of the dataframe through the `describe` method:
 
-# + {"Collapsed": "false", "persistent_id": "6fb67a70-a28f-408d-a8a3-7734c02f9916"}
+# + {"Collapsed": "false", "persistent_id": "6e745ae7-a0ea-4169-96de-d49e9f510ed9", "last_executed_text": "vital_aprdc_df.describe().transpose()", "execution_event_id": "546023f0-9a90-47da-a108-5f59f57fa5af"}
 vital_aprdc_df.describe().transpose()
 
-# + {"Collapsed": "false", "persistent_id": "8882ad56-cb8c-429f-8479-0616aecaa180"}
-vital_aprdc_df.columns
-
-# + {"Collapsed": "false", "persistent_id": "83d0ad98-3a84-42f2-a3a4-9a3aa589dd9a"}
-vital_aprdc_df.dtypes
+# + {"Collapsed": "false", "persistent_id": "ac1da815-dcd6-44df-8164-a987f9623255", "last_executed_text": "vital_aprdc_df.columns", "execution_event_id": "dac11dab-f33a-4ab5-bf3e-c78447f9cdc4"}
+vital_aprdc_df.info()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Check for missing values
 
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "393c57d3-b2ae-44e3-bd04-7c3f8f522ff5"}
+# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "c4e967db-7ace-41df-8678-7cd11d1e002b", "last_executed_text": "du.search_explore.dataframe_missing_values(vital_aprdc_df)", "execution_event_id": "a04c5f38-289a-4569-8c57-89eddcda2b0d"}
 du.search_explore.dataframe_missing_values(vital_aprdc_df)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Remove unneeded features
 
-# + {"Collapsed": "false", "persistent_id": "2ac7cd0d-c94a-4d80-a262-71c1c3369696"}
-vital_aprdc_df = vital_aprdc_df.drop('vitalaperiodicid', axis=1)
+# + {"Collapsed": "false", "persistent_id": "9f3b85d0-8480-4f30-8455-fde084ba7c69", "last_executed_text": "vital_aprdc_df.notetype.value_counts().head(20)", "execution_event_id": "39bf557e-d53a-4ecd-8118-a9719aa49188"}
+vital_aprdc_df.noninvasivesystolic.value_counts()
+
+# + {"Collapsed": "false", "persistent_id": "e41f6a9d-c5ea-45e3-b38b-89ba70de1b87", "last_executed_text": "vital_aprdc_df.notepath.value_counts().head(40)", "execution_event_id": "0df9919f-4d46-4c34-a326-df8e8cf7f18c"}
+vital_aprdc_df.noninvasivediastolic.value_counts()
+
+# + {"Collapsed": "false", "persistent_id": "b12dcddf-9703-4aff-8a20-df1d147ef554", "last_executed_text": "vital_aprdc_df.notevalue.value_counts().head(20)", "execution_event_id": "04986ee5-3cc1-453c-8127-05f513370b5d"}
+vital_aprdc_df.noninvasivemean.value_counts()
+
+# + {"Collapsed": "false", "persistent_id": "9f3b85d0-8480-4f30-8455-fde084ba7c69", "last_executed_text": "vital_aprdc_df.notetype.value_counts().head(20)", "execution_event_id": "39bf557e-d53a-4ecd-8118-a9719aa49188"}
+vital_aprdc_df.paop.value_counts()
+
+# + {"Collapsed": "false", "persistent_id": "e41f6a9d-c5ea-45e3-b38b-89ba70de1b87", "last_executed_text": "vital_aprdc_df.notepath.value_counts().head(40)", "execution_event_id": "0df9919f-4d46-4c34-a326-df8e8cf7f18c"}
+vital_aprdc_df.cardiacoutput.value_counts()
+
+# + {"Collapsed": "false", "persistent_id": "b12dcddf-9703-4aff-8a20-df1d147ef554", "last_executed_text": "vital_aprdc_df.notevalue.value_counts().head(20)", "execution_event_id": "04986ee5-3cc1-453c-8127-05f513370b5d"}
+vital_aprdc_df.cardiacinput.value_counts()
+
+# + {"Collapsed": "false", "persistent_id": "9f3b85d0-8480-4f30-8455-fde084ba7c69", "last_executed_text": "vital_aprdc_df.notetype.value_counts().head(20)", "execution_event_id": "39bf557e-d53a-4ecd-8118-a9719aa49188"}
+vital_aprdc_df.svr.value_counts()
+
+# + {"Collapsed": "false", "persistent_id": "e41f6a9d-c5ea-45e3-b38b-89ba70de1b87", "last_executed_text": "vital_aprdc_df.notepath.value_counts().head(40)", "execution_event_id": "0df9919f-4d46-4c34-a326-df8e8cf7f18c"}
+vital_aprdc_df.svri.value_counts()
+
+# + {"Collapsed": "false", "persistent_id": "b12dcddf-9703-4aff-8a20-df1d147ef554", "last_executed_text": "vital_aprdc_df.notevalue.value_counts().head(20)", "execution_event_id": "04986ee5-3cc1-453c-8127-05f513370b5d"}
+vital_aprdc_df.pvr.value_counts()
+
+# + {"Collapsed": "false", "persistent_id": "b12dcddf-9703-4aff-8a20-df1d147ef554", "last_executed_text": "vital_aprdc_df.notevalue.value_counts().head(20)", "execution_event_id": "04986ee5-3cc1-453c-8127-05f513370b5d"}
+vital_aprdc_df.pvri.value_counts()
+
+# + {"Collapsed": "false", "persistent_id": "5beb1b97-7a5b-446c-934d-74b99556151f", "last_executed_text": "vital_aprdc_df = vital_aprdc_df.drop(['noteid', 'noteenteredoffset', 'notetype', 'notetext'], axis=1)\nvital_aprdc_df.head()", "execution_event_id": "2e499a1a-e9a0-42cf-b351-98273b224c15"}
+vital_aprdc_df = vital_aprdc_df.drop(columns=['vitalaperiodicid'])
 vital_aprdc_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -373,137 +128,275 @@ vital_aprdc_df.head()
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Create the timestamp (`ts`) feature:
 
-# + {"Collapsed": "false", "persistent_id": "b18b4887-b49f-4341-b28e-6c7866e53bb8"}
+# + {"Collapsed": "false", "persistent_id": "dfab2799-af6c-4475-8341-ec3f40546ed1"}
 vital_aprdc_df = vital_aprdc_df.rename(columns={'observationoffset': 'ts'})
 vital_aprdc_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Remove duplicate rows:
 
-# + {"Collapsed": "false", "persistent_id": "e96d6869-1e4e-48f0-bdf6-9610b2341cc5"}
+# + {"Collapsed": "false", "persistent_id": "8af4dd26-9eb8-4edf-8bcf-361b10c94979"}
 len(vital_aprdc_df)
 
-# + {"Collapsed": "false", "persistent_id": "6973c75e-d369-4dbb-a137-8da2d62bcd2e"}
+# + {"Collapsed": "false", "persistent_id": "de85aa8f-0d02-4c35-868c-16116a83cf7f"}
 vital_aprdc_df = vital_aprdc_df.drop_duplicates()
 vital_aprdc_df.head()
 
-# + {"Collapsed": "false", "persistent_id": "484bafd6-45c4-47b1-bca6-2feb56a3f67a"}
+# + {"Collapsed": "false", "persistent_id": "bb6efd0a-aa95-40d6-84b2-8916705a4cf4", "last_executed_text": "len(vital_aprdc_df)", "execution_event_id": "0f6fb1fb-5d50-4f2c-acd1-804100222250"}
 len(vital_aprdc_df)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Sort by `ts` so as to be easier to merge with other dataframes later:
 
-# + {"Collapsed": "false", "persistent_id": "f353a49b-c4cf-427b-8f51-987d998a8ae4"}
+# + {"Collapsed": "false", "persistent_id": "a03573d9-f345-4ff4-84b9-2b2a3f73ce27"}
 vital_aprdc_df = vital_aprdc_df.sort_values('ts')
-vital_aprdc_df.head(6)
+vital_aprdc_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Check for possible multiple rows with the same unit stay ID and timestamp:
 
-# + {"Collapsed": "false", "persistent_id": "32516efa-0ea4-4308-a50c-a7117fcb9d7b"}
+# + {"Collapsed": "false", "persistent_id": "c94e7b7b-dc34-478b-842b-c34c926c934d"}
 vital_aprdc_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='noninvasivemean', n=5).head()
 
-# + {"Collapsed": "false", "persistent_id": "112555fe-0484-4ab2-a325-71007d3db114"}
-vital_aprdc_df[micro_df.patientunitstayid == 3069495].head(20)
+# + {"Collapsed": "false", "persistent_id": "b8bcf17b-3d52-4cc9-bfbb-7f7d8fe83b3b"}
+vital_aprdc_df[(vital_aprdc_df.patientunitstayid == 625065) & (vital_aprdc_df.ts == 1515)].head(10)
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# We can see that there are up to 4 rows per set of `patientunitstayid` and `ts`. As such, we must join them. However, this is a different scenario than in the other cases. Since all features are numeric, we just need to average the features.
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Join rows that have the same IDs
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# Convert dataframe to Pandas, as the groupby operation in `join_categorical_enum` isn't working properly with Modin:
-
-# + {"Collapsed": "false"}
-vital_aprdc_df, pd = du.utils.convert_dataframe(vital_aprdc_df, to='pandas')
-
-# + {"Collapsed": "false"}
-type(vital_aprdc_df)
-
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023"}
-vital_aprdc_df = du.embedding.join_categorical_enum(vital_aprdc_df, new_cat_embed_feat, inplace=True)
+# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "591b2ccd-fa5c-4eb2-bec1-8ac21de1c890", "last_executed_text": "vital_aprdc_df = du.embedding.join_categorical_enum(vital_aprdc_df, cont_join_method='max')\nvital_aprdc_df.head()", "execution_event_id": "c6c89c91-ec15-4636-99d0-6ed07bcc921c"}
+vital_aprdc_df = du.embedding.join_categorical_enum(vital_aprdc_df, cont_join_method='mean', inplace=True)
 vital_aprdc_df.head()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# Reconvert dataframe to Modin:
+# + {"Collapsed": "false", "persistent_id": "c94e7b7b-dc34-478b-842b-c34c926c934d"}
+vital_aprdc_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='noninvasivemean', n=5).head()
 
-# + {"Collapsed": "false"}
-vital_aprdc_df, pd = du.utils.convert_dataframe(vital_aprdc_df, to='modin')
-
-# + {"Collapsed": "false"}
-type(vital_aprdc_df)
-
-# + {"Collapsed": "false", "persistent_id": "85242cf3-1e23-4b70-902f-7c480ecc98d4"}
-micro_df.dtypes
-
-# + {"Collapsed": "false", "persistent_id": "30583cb6-8b9c-4e86-899d-98e5e6b04b5b"}
-micro_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='culturesite', n=5).head()
-
-# + {"Collapsed": "false", "persistent_id": "1b1717b8-3b9c-48da-8c4b-56ee7c4b8585"}
-micro_df[micro_df.patientunitstayid == 3069495].head(20)
+# + {"Collapsed": "false", "persistent_id": "b8bcf17b-3d52-4cc9-bfbb-7f7d8fe83b3b"}
+vital_aprdc_df[(vital_aprdc_df.patientunitstayid == 625065) & (vital_aprdc_df.ts == 1515)].head(10)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# ### Normalize data
-
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "c1194923-4e5f-4017-a803-f0ff82777864"}
-vital_aprdc_df_norm = du.data_processing.normalize_data(vital_aprdc_df,
-                                                        id_columns=['patientunitstayid', 'ts'],
-                                                        inplace=True)
-vital_aprdc_df_norm.head(6)
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# Confirm that everything is ok through the `describe` method:
-
-# + {"Collapsed": "false", "persistent_id": "b6e79305-fb40-4242-84b6-35e0b0eb249d"}
-vital_aprdc_df_norm.describe().transpose()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Clean column names
 #
 # Standardize all column names to be on lower case, have spaces replaced by underscores and remove comas.
 
-# + {"Collapsed": "false", "persistent_id": "a55478a9-64e2-48a9-b790-2b5069e58eb7"}
+# + {"Collapsed": "false", "persistent_id": "32450572-639e-4539-b35a-181078ed3335"}
 vital_aprdc_df.columns = du.data_processing.clean_naming(vital_aprdc_df.columns)
-vital_aprdc_df_norm.columns = du.data_processing.clean_naming(vital_aprdc_df_norm.columns)
-vital_aprdc_df_norm.head()
+vital_aprdc_df.head()
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# ### Normalize data
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Save the dataframe before normalizing:
+
+# + {"Collapsed": "false", "persistent_id": "e42f577a-db00-4ecf-9e3c-433007a3bdaf"}
+vital_aprdc_df.to_csv(f'{data_path}cleaned/unnormalized/vitalAperiodic.csv')
+
+# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "d5ad6017-ad4a-419c-badb-9454add7752d", "last_executed_text": "vital_aprdc_df = du.data_processing.normalize_data(vital_aprdc_df, categ_columns=new_cat_feat,\n                                                    id_columns=['patientunitstayid', 'ts', 'death_ts'])\nvital_aprdc_df.head(6)", "execution_event_id": "3d6d0a5c-9160-4ffc-87d4-85632a968a1d"}
+vital_aprdc_df = du.data_processing.normalize_data(vital_aprdc_df, inplace=True)
+vital_aprdc_df.head(6)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Save the dataframe
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# Save the dataframe before normalizing:
-
-# + {"Collapsed": "false", "persistent_id": "3a3abe4a-43b8-4525-9639-9362baf94878"}
-vital_aprdc_df.to_csv(f'{data_path}cleaned/unnormalized/vitalAperiodic.csv')
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
 # Save the dataframe after normalizing:
 
-# + {"Collapsed": "false", "persistent_id": "ddded5d4-9dc6-49b7-8405-f44cc827de5e"}
-vital_aprdc_df_norm.to_csv(f'{data_path}cleaned/normalized/vitalAperiodic.csv')
+# + {"Collapsed": "false", "persistent_id": "812e7eb1-ff92-4a26-a970-2f40fc5bbdb1"}
+vital_aprdc_df.to_csv(f'{data_path}cleaned/normalized/vitalAperiodic.csv')
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Confirm that everything is ok through the `describe` method:
 
-# + {"Collapsed": "false", "persistent_id": "21223dc0-9fe2-4c30-9b23-bd7a10bc502c"}
-vital_aprdc_df_norm.describe().transpose()
+# + {"Collapsed": "false", "persistent_id": "eebc356f-507e-4872-be9d-a1d774f2fd7a"}
+vital_aprdc_df.describe().transpose()
+
+# + {"Collapsed": "false", "persistent_id": "ac1da815-dcd6-44df-8164-a987f9623255", "last_executed_text": "vital_aprdc_df.columns", "execution_event_id": "dac11dab-f33a-4ab5-bf3e-c78447f9cdc4"}
+vital_aprdc_df.info()
+
+# + {"toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
+# ## Vital signs periodic data
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# ### Join dataframes
+# ### Read the data
+
+# + {"Collapsed": "false", "persistent_id": "51197f67-95e2-4184-a73f-7885cb975084", "last_executed_text": "vital_aprdc_df = pd.read_csv(f'{data_path}original/vitalAperiodic.csv')\nvital_aprdc_df.head()", "execution_event_id": "bf6e34cd-7ae9-4636-a9b9-27d404b49610"}
+vital_prdc_df = pd.read_csv(f'{data_path}original/vitalPeriodic.csv')
+vital_prdc_df.head()
+
+# + {"Collapsed": "false", "persistent_id": "c3d45ba7-91dd-41d7-8699-c70390556018", "last_executed_text": "len(vital_prdc_df)", "execution_event_id": "d2a30b69-ae10-4a5e-be98-56280de75b37"}
+len(vital_prdc_df)
+
+# + {"Collapsed": "false", "persistent_id": "17c46962-79a6-48a6-b67a-4863028ed897", "last_executed_text": "vital_prdc_df.patientunitstayid.nunique()", "execution_event_id": "e7d22357-65a7-4573-bd2e-42fc3794e931"}
+vital_prdc_df.patientunitstayid.nunique()
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Get an overview of the dataframe through the `describe` method:
+
+# + {"Collapsed": "false", "persistent_id": "6e745ae7-a0ea-4169-96de-d49e9f510ed9", "last_executed_text": "vital_prdc_df.describe().transpose()", "execution_event_id": "546023f0-9a90-47da-a108-5f59f57fa5af"}
+vital_prdc_df.describe().transpose()
+
+# + {"Collapsed": "false", "persistent_id": "ac1da815-dcd6-44df-8164-a987f9623255", "last_executed_text": "vital_prdc_df.columns", "execution_event_id": "dac11dab-f33a-4ab5-bf3e-c78447f9cdc4"}
+vital_prdc_df.info()
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# ### Check for missing values
+
+# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "c4e967db-7ace-41df-8678-7cd11d1e002b", "last_executed_text": "du.search_explore.dataframe_missing_values(vital_prdc_df)", "execution_event_id": "a04c5f38-289a-4569-8c57-89eddcda2b0d"}
+du.search_explore.dataframe_missing_values(vital_prdc_df)
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# ### Remove unneeded features
+
+# + {"Collapsed": "false", "persistent_id": "9f3b85d0-8480-4f30-8455-fde084ba7c69", "last_executed_text": "vital_prdc_df.notetype.value_counts().head(20)", "execution_event_id": "39bf557e-d53a-4ecd-8118-a9719aa49188"}
+vital_prdc_df.temperature.value_counts()
+
+# + {"Collapsed": "false", "persistent_id": "e41f6a9d-c5ea-45e3-b38b-89ba70de1b87", "last_executed_text": "vital_prdc_df.notepath.value_counts().head(40)", "execution_event_id": "0df9919f-4d46-4c34-a326-df8e8cf7f18c"}
+vital_prdc_df.sao2.value_counts()
+
+# + {"Collapsed": "false", "persistent_id": "b12dcddf-9703-4aff-8a20-df1d147ef554", "last_executed_text": "vital_prdc_df.notevalue.value_counts().head(20)", "execution_event_id": "04986ee5-3cc1-453c-8127-05f513370b5d"}
+vital_prdc_df.heartrate.value_counts()
+
+# + {"Collapsed": "false", "persistent_id": "9f3b85d0-8480-4f30-8455-fde084ba7c69", "last_executed_text": "vital_prdc_df.notetype.value_counts().head(20)", "execution_event_id": "39bf557e-d53a-4ecd-8118-a9719aa49188"}
+vital_prdc_df.respiration.value_counts()
+
+# + {"Collapsed": "false", "persistent_id": "e41f6a9d-c5ea-45e3-b38b-89ba70de1b87", "last_executed_text": "vital_prdc_df.notepath.value_counts().head(40)", "execution_event_id": "0df9919f-4d46-4c34-a326-df8e8cf7f18c"}
+vital_prdc_df.cvp.value_counts()
+
+# + {"Collapsed": "false", "persistent_id": "b12dcddf-9703-4aff-8a20-df1d147ef554", "last_executed_text": "vital_prdc_df.notevalue.value_counts().head(20)", "execution_event_id": "04986ee5-3cc1-453c-8127-05f513370b5d"}
+vital_prdc_df.systemicsystolic.value_counts()
+
+# + {"Collapsed": "false", "persistent_id": "9f3b85d0-8480-4f30-8455-fde084ba7c69", "last_executed_text": "vital_prdc_df.notetype.value_counts().head(20)", "execution_event_id": "39bf557e-d53a-4ecd-8118-a9719aa49188"}
+vital_prdc_df.systemicdiastolic.value_counts()
+
+# + {"Collapsed": "false", "persistent_id": "e41f6a9d-c5ea-45e3-b38b-89ba70de1b87", "last_executed_text": "vital_prdc_df.notepath.value_counts().head(40)", "execution_event_id": "0df9919f-4d46-4c34-a326-df8e8cf7f18c"}
+vital_prdc_df.systemicmean.value_counts()
+
+# + {"Collapsed": "false", "persistent_id": "b12dcddf-9703-4aff-8a20-df1d147ef554", "last_executed_text": "vital_prdc_df.notevalue.value_counts().head(20)", "execution_event_id": "04986ee5-3cc1-453c-8127-05f513370b5d"}
+vital_prdc_df.pasystolic.value_counts()
+
+# + {"Collapsed": "false", "persistent_id": "b12dcddf-9703-4aff-8a20-df1d147ef554", "last_executed_text": "vital_prdc_df.notevalue.value_counts().head(20)", "execution_event_id": "04986ee5-3cc1-453c-8127-05f513370b5d"}
+vital_prdc_df.padiastolic.value_counts()
+
+# + {"Collapsed": "false", "persistent_id": "9f3b85d0-8480-4f30-8455-fde084ba7c69", "last_executed_text": "vital_prdc_df.notetype.value_counts().head(20)", "execution_event_id": "39bf557e-d53a-4ecd-8118-a9719aa49188"}
+vital_prdc_df.pamean.value_counts()
+
+# + {"Collapsed": "false", "persistent_id": "e41f6a9d-c5ea-45e3-b38b-89ba70de1b87", "last_executed_text": "vital_prdc_df.notepath.value_counts().head(40)", "execution_event_id": "0df9919f-4d46-4c34-a326-df8e8cf7f18c"}
+vital_prdc_df.st1.value_counts()
+
+# + {"Collapsed": "false", "persistent_id": "b12dcddf-9703-4aff-8a20-df1d147ef554", "last_executed_text": "vital_prdc_df.notevalue.value_counts().head(20)", "execution_event_id": "04986ee5-3cc1-453c-8127-05f513370b5d"}
+vital_prdc_df.st2.value_counts()
+
+# + {"Collapsed": "false", "persistent_id": "9f3b85d0-8480-4f30-8455-fde084ba7c69", "last_executed_text": "vital_prdc_df.notetype.value_counts().head(20)", "execution_event_id": "39bf557e-d53a-4ecd-8118-a9719aa49188"}
+vital_prdc_df.st3.value_counts()
+
+# + {"Collapsed": "false", "persistent_id": "9f3b85d0-8480-4f30-8455-fde084ba7c69", "last_executed_text": "vital_prdc_df.notetype.value_counts().head(20)", "execution_event_id": "39bf557e-d53a-4ecd-8118-a9719aa49188"}
+vital_prdc_df.icp.value_counts()
+
+# + {"Collapsed": "false", "persistent_id": "5beb1b97-7a5b-446c-934d-74b99556151f", "last_executed_text": "vital_prdc_df = vital_prdc_df.drop(['noteid', 'noteenteredoffset', 'notetype', 'notetext'], axis=1)\nvital_prdc_df.head()", "execution_event_id": "2e499a1a-e9a0-42cf-b351-98273b224c15"}
+vital_prdc_df = vital_prdc_df.drop(columns=['vitalperiodicid'])
+vital_prdc_df.head()
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# ### Create the timestamp feature and sort
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Create the timestamp (`ts`) feature:
+
+# + {"Collapsed": "false", "persistent_id": "dfab2799-af6c-4475-8341-ec3f40546ed1"}
+vital_prdc_df = vital_prdc_df.rename(columns={'observationoffset': 'ts'})
+vital_prdc_df.head()
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Remove duplicate rows:
+
+# + {"Collapsed": "false", "persistent_id": "8af4dd26-9eb8-4edf-8bcf-361b10c94979"}
+len(vital_prdc_df)
+
+# + {"Collapsed": "false", "persistent_id": "de85aa8f-0d02-4c35-868c-16116a83cf7f"}
+vital_prdc_df = vital_prdc_df.drop_duplicates()
+vital_prdc_df.head()
+
+# + {"Collapsed": "false", "persistent_id": "bb6efd0a-aa95-40d6-84b2-8916705a4cf4", "last_executed_text": "len(vital_prdc_df)", "execution_event_id": "0f6fb1fb-5d50-4f2c-acd1-804100222250"}
+len(vital_prdc_df)
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Sort by `ts` so as to be easier to merge with other dataframes later:
+
+# + {"Collapsed": "false", "persistent_id": "a03573d9-f345-4ff4-84b9-2b2a3f73ce27"}
+vital_prdc_df = vital_prdc_df.sort_values('ts')
+vital_prdc_df.head()
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Check for possible multiple rows with the same unit stay ID and timestamp:
+
+# + {"Collapsed": "false", "persistent_id": "c94e7b7b-dc34-478b-842b-c34c926c934d"}
+vital_prdc_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='heartrate', n=5).head()
+
+# + {"Collapsed": "false", "persistent_id": "b8bcf17b-3d52-4cc9-bfbb-7f7d8fe83b3b"}
+vital_prdc_df[(vital_prdc_df.patientunitstayid == 625065) & (vital_prdc_df.ts == 1515)].head(10)
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# We can see that there are up to 4 rows per set of `patientunitstayid` and `ts`. As such, we must join them. However, this is a different scenario than in the other cases. Since all features are numeric, we just need to average the features.
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# ### Join rows that have the same IDs
+
+# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "591b2ccd-fa5c-4eb2-bec1-8ac21de1c890", "last_executed_text": "vital_prdc_df = du.embedding.join_categorical_enum(vital_prdc_df, cont_join_method='max')\nvital_prdc_df.head()", "execution_event_id": "c6c89c91-ec15-4636-99d0-6ed07bcc921c"}
+vital_prdc_df = du.embedding.join_categorical_enum(vital_prdc_df, cont_join_method='mean', inplace=True)
+vital_prdc_df.head()
+
+# + {"Collapsed": "false", "persistent_id": "c94e7b7b-dc34-478b-842b-c34c926c934d"}
+vital_prdc_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='heartrate', n=5).head()
+
+# + {"Collapsed": "false", "persistent_id": "b8bcf17b-3d52-4cc9-bfbb-7f7d8fe83b3b"}
+vital_prdc_df[(vital_prdc_df.patientunitstayid == 625065) & (vital_prdc_df.ts == 1515)].head(10)
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# ### Clean column names
 #
-# Merge dataframes by the unit stay, `patientunitstayid`, and the timestamp, `ts`, with a tolerence for a difference of up to 30 minutes.
+# Standardize all column names to be on lower case, have spaces replaced by underscores and remove comas.
 
-# + {"Collapsed": "false", "persistent_id": "34bfcfa0-6ea0-4eb1-9318-ea04c875fc37"}
-vital_aprdc_df = pd.read_csv(f'{data_path}cleaned/normalized/vitalAperiodic.csv')
-vital_aprdc_df.head()
+# + {"Collapsed": "false", "persistent_id": "32450572-639e-4539-b35a-181078ed3335"}
+vital_prdc_df.columns = du.data_processing.clean_naming(vital_prdc_df.columns)
+vital_prdc_df.head()
 
-# + {"Collapsed": "false", "persistent_id": "843051ee-39c5-47ac-a021-68b8cbed7540"}
-len(vital_aprdc_df)
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# ### Normalize data
 
-# + {"Collapsed": "false", "persistent_id": "0c219a72-122a-451a-821e-5dc4e9fee688"}
-vital_aprdc_df.patientunitstayid.nunique()
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Save the dataframe before normalizing:
 
-# + {"Collapsed": "false", "persistent_id": "65d58a35-f921-4c45-aa61-320f096e292f"}
-eICU_df = pd.merge_asof(eICU_df, vital_aprdc_df, on='ts', by='patientunitstayid', direction='nearest', tolerance=30)
-eICU_df.head()
+# + {"Collapsed": "false", "persistent_id": "e42f577a-db00-4ecf-9e3c-433007a3bdaf"}
+vital_prdc_df.to_csv(f'{data_path}cleaned/unnormalized/vitalPeriodic.csv')
+
+# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "d5ad6017-ad4a-419c-badb-9454add7752d", "last_executed_text": "vital_prdc_df = du.data_processing.normalize_data(vital_prdc_df, categ_columns=new_cat_feat,\n                                                    id_columns=['patientunitstayid', 'ts', 'death_ts'])\nvital_prdc_df.head(6)", "execution_event_id": "3d6d0a5c-9160-4ffc-87d4-85632a968a1d"}
+vital_prdc_df = du.data_processing.normalize_data(vital_prdc_df, inplace=True)
+vital_prdc_df.head(6)
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# ### Save the dataframe
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Save the dataframe after normalizing:
+
+# + {"Collapsed": "false", "persistent_id": "812e7eb1-ff92-4a26-a970-2f40fc5bbdb1"}
+vital_prdc_df.to_csv(f'{data_path}cleaned/normalized/vitalPeriodic.csv')
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Confirm that everything is ok through the `describe` method:
+
+# + {"Collapsed": "false", "persistent_id": "eebc356f-507e-4872-be9d-a1d774f2fd7a"}
+vital_prdc_df.describe().transpose()
+
+# + {"Collapsed": "false", "persistent_id": "ac1da815-dcd6-44df-8164-a987f9623255", "last_executed_text": "vital_prdc_df.columns", "execution_event_id": "dac11dab-f33a-4ab5-bf3e-c78447f9cdc4"}
+vital_prdc_df.info()

@@ -704,29 +704,36 @@ eICU_df.head()
 # + {"Collapsed": "false"}
 n_features = len(eICU_df.columns)
 n_features
-# -
 
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Create a temporary column that counts each row's number of missing values:
 
+# + {"Collapsed": "false"}
 eICU_df['row_msng_val'] = eICU_df.isnull().sum(axis=1)
 eICU_df[['patientunitstay', 'ts', 'row_msng_val']].head()
 
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Check each unit stay's percentage of missing data points:
 
+# + {"Collapsed": "false"}
 # Number of possible data points in each unit stay
 n_data_points = eICU_df.groupby('patientunitstayid').ts.count() * n_features
 n_data_points
 
+# + {"Collapsed": "false"}
 # Number of missing values in each unit stay
 n_msng_val = eICU_df.groupby('patientunitstayid').row_msng_val.sum()
 n_msng_val
 
+# + {"Collapsed": "false"}
 # Percentage of missing values in each unit stay
 msng_val_prct = (n_msng_val / n_data_points) * 100
 msng_val_prct
 
+# + {"Collapsed": "false"}
 msng_val_prct.describe()
 
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # Remove unit stays that have too many missing values (>70% of their respective data points):
 
 # + {"Collapsed": "false"}
@@ -735,8 +742,8 @@ unit_stay_high_msgn
 
 # + {"Collapsed": "false"}
 eICU_df.patientunitstayid.nunique()
-# -
 
+# + {"Collapsed": "false"}
 eICU_df = eICU_df[~eICU_df.patientunitstayid.isin(unit_stay_high_msgn)]
 
 # + {"Collapsed": "false"}
