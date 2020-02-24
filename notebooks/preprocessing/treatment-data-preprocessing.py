@@ -30,16 +30,16 @@
 # + {"Collapsed": "false", "colab_type": "text", "id": "KOdmFzXqF7nq", "toc-hr-collapsed": true, "cell_type": "markdown"}
 # ## Importing the necessary packages
 
-# + {"Collapsed": "false", "colab": {}, "colab_type": "code", "execution_event_id": "deb57b39-6a79-4b3a-95ed-02f8089ff593", "id": "G5RrWE9R_Nkl", "last_executed_text": "import os                                  # os handles directory/workspace changes\nimport numpy as np                         # NumPy to handle numeric and NaN operations\nimport yaml                                # Save and load YAML files", "persistent_id": "522745b5-b5bf-479f-b697-5c7e9e12fc33", "execution": {"iopub.status.busy": "2020-02-17T02:24:08.120511Z", "iopub.execute_input": "2020-02-17T02:24:08.120940Z", "iopub.status.idle": "2020-02-17T02:24:08.300670Z", "shell.execute_reply.started": "2020-02-17T02:24:08.120882Z", "shell.execute_reply": "2020-02-17T02:24:08.299862Z"}}
+# + {"Collapsed": "false", "colab": {}, "colab_type": "code", "execution_event_id": "deb57b39-6a79-4b3a-95ed-02f8089ff593", "id": "G5RrWE9R_Nkl", "last_executed_text": "import os                                  # os handles directory/workspace changes\nimport numpy as np                         # NumPy to handle numeric and NaN operations\nimport yaml                                # Save and load YAML files", "persistent_id": "522745b5-b5bf-479f-b697-5c7e9e12fc33", "execution": {"iopub.status.busy": "2020-02-17T05:01:29.962824Z", "iopub.execute_input": "2020-02-17T05:01:29.963081Z", "iopub.status.idle": "2020-02-17T05:01:30.274800Z", "shell.execute_reply.started": "2020-02-17T05:01:29.963039Z", "shell.execute_reply": "2020-02-17T05:01:30.274212Z"}}
 import os                                  # os handles directory/workspace changes
 import numpy as np                         # NumPy to handle numeric and NaN operations
 import yaml                                # Save and load YAML files
 
-# + {"Collapsed": "false", "execution_event_id": "fa33a2f7-7127-49c6-bbe9-f89555b1f2be", "last_executed_text": "# Debugging packages\nimport pixiedust                           # Debugging in Jupyter Notebook cells", "persistent_id": "02accdbf-be7e-415c-ba11-165906e66c50", "execution": {"iopub.status.busy": "2020-02-17T02:24:08.427262Z", "iopub.execute_input": "2020-02-17T02:24:08.427627Z", "iopub.status.idle": "2020-02-17T02:24:10.358927Z", "shell.execute_reply.started": "2020-02-17T02:24:08.427580Z", "shell.execute_reply": "2020-02-17T02:24:10.357418Z"}}
+# + {"Collapsed": "false", "execution_event_id": "fa33a2f7-7127-49c6-bbe9-f89555b1f2be", "last_executed_text": "# Debugging packages\nimport pixiedust                           # Debugging in Jupyter Notebook cells", "persistent_id": "02accdbf-be7e-415c-ba11-165906e66c50", "execution": {"iopub.status.busy": "2020-02-17T05:01:30.276229Z", "iopub.execute_input": "2020-02-17T05:01:30.276520Z", "iopub.status.idle": "2020-02-17T05:01:32.285148Z", "shell.execute_reply.started": "2020-02-17T05:01:30.276479Z", "shell.execute_reply": "2020-02-17T05:01:32.284436Z"}}
 # Debugging packages
 import pixiedust                           # Debugging in Jupyter Notebook cells
 
-# + {"Collapsed": "false", "execution_event_id": "baeb346a-1c34-42d1-a501-7ae37369255e", "last_executed_text": "# Change to parent directory (presumably \"Documents\")\nos.chdir(\"../../..\")\n\n# Path to the CSV dataset files\ndata_path = 'Documents/Datasets/Thesis/eICU/uncompressed/'\n\n# Path to the code files\nproject_path = 'Documents/GitHub/eICU-mortality-prediction/'", "persistent_id": "a1f6ee7f-36d4-489d-b2dd-ec2a38f15d11", "execution": {"iopub.status.busy": "2020-02-17T02:24:10.360975Z", "iopub.execute_input": "2020-02-17T02:24:10.361303Z", "iopub.status.idle": "2020-02-17T02:24:10.367377Z", "shell.execute_reply.started": "2020-02-17T02:24:10.361242Z", "shell.execute_reply": "2020-02-17T02:24:10.366495Z"}}
+# + {"Collapsed": "false", "execution_event_id": "baeb346a-1c34-42d1-a501-7ae37369255e", "last_executed_text": "# Change to parent directory (presumably \"Documents\")\nos.chdir(\"../../..\")\n\n# Path to the CSV dataset files\ndata_path = 'Documents/Datasets/Thesis/eICU/uncompressed/'\n\n# Path to the code files\nproject_path = 'Documents/GitHub/eICU-mortality-prediction/'", "persistent_id": "a1f6ee7f-36d4-489d-b2dd-ec2a38f15d11", "execution": {"iopub.status.busy": "2020-02-17T05:01:32.286666Z", "iopub.execute_input": "2020-02-17T05:01:32.286906Z", "iopub.status.idle": "2020-02-17T05:01:32.290673Z", "shell.execute_reply.started": "2020-02-17T05:01:32.286866Z", "shell.execute_reply": "2020-02-17T05:01:32.289933Z"}}
 # Change to parent directory (presumably "Documents")
 os.chdir("../../../..")
 # Path to the CSV dataset files
@@ -47,26 +47,27 @@ data_path = 'Datasets/Thesis/eICU/uncompressed/'
 # Path to the code files
 project_path = 'GitHub/eICU-mortality-prediction/'
 
-# + {"Collapsed": "false", "execution_event_id": "82ef68be-443a-4bb8-8abd-7457a7005b4d", "last_executed_text": "import modin.pandas as pd                  # Optimized distributed version of Pandas\nimport data_utils as du                    # Data science and machine learning relevant methods", "persistent_id": "c0c2e356-d4f4-4a9d-bec2-88bdf9eb6a38", "execution": {"iopub.status.busy": "2020-02-17T02:24:10.369425Z", "iopub.execute_input": "2020-02-17T02:24:10.369695Z", "iopub.status.idle": "2020-02-17T02:24:13.235096Z", "shell.execute_reply.started": "2020-02-17T02:24:10.369656Z", "shell.execute_reply": "2020-02-17T02:24:13.234464Z"}}
-import modin.pandas as pd                  # Optimized distributed version of Pandas
+# + {"Collapsed": "false", "execution_event_id": "82ef68be-443a-4bb8-8abd-7457a7005b4d", "last_executed_text": "import modin.pandas as pd                  # Optimized distributed version of Pandas\nimport data_utils as du                    # Data science and machine learning relevant methods", "persistent_id": "c0c2e356-d4f4-4a9d-bec2-88bdf9eb6a38", "execution": {"iopub.status.busy": "2020-02-17T05:01:32.292190Z", "iopub.execute_input": "2020-02-17T05:01:32.292427Z", "iopub.status.idle": "2020-02-17T05:01:34.941226Z", "shell.execute_reply.started": "2020-02-17T05:01:32.292389Z", "shell.execute_reply": "2020-02-17T05:01:34.940328Z"}}
+# import modin.pandas as pd                  # Optimized distributed version of Pandas
+import pandas as pd
 import data_utils as du                    # Data science and machine learning relevant methods
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Set the random seed for reproducibility
 
-# + {"Collapsed": "false", "execution_event_id": "29ab85ce-b7fd-4c5a-a110-5841e741c369", "last_executed_text": "du.set_random_seed(42)", "persistent_id": "39b552cd-6948-4ec8-ac04-42f850c1e05a", "execution": {"iopub.status.busy": "2020-02-17T02:24:13.236235Z", "iopub.execute_input": "2020-02-17T02:24:13.236658Z", "iopub.status.idle": "2020-02-17T02:24:13.241925Z", "shell.execute_reply.started": "2020-02-17T02:24:13.236410Z", "shell.execute_reply": "2020-02-17T02:24:13.241042Z"}}
+# + {"Collapsed": "false", "execution_event_id": "29ab85ce-b7fd-4c5a-a110-5841e741c369", "last_executed_text": "du.set_random_seed(42)", "persistent_id": "39b552cd-6948-4ec8-ac04-42f850c1e05a", "execution": {"iopub.status.busy": "2020-02-17T05:01:34.942500Z", "iopub.execute_input": "2020-02-17T05:01:34.942877Z", "iopub.status.idle": "2020-02-17T05:01:34.948523Z", "shell.execute_reply.started": "2020-02-17T05:01:34.942721Z", "shell.execute_reply": "2020-02-17T05:01:34.947732Z"}}
 du.set_random_seed(42)
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# ## Initialize variables
+# + {"Collapsed": "false", "toc-hr-collapsed": true, "cell_type": "markdown"}
+# ## Infusion drug data
+
+# + {"Collapsed": "false", "toc-hr-collapsed": true, "cell_type": "markdown"}
+# ### Initialize variables
 
 # + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82", "execution": {"iopub.status.busy": "2020-02-17T02:24:13.243501Z", "iopub.execute_input": "2020-02-17T02:24:13.243729Z", "iopub.status.idle": "2020-02-17T02:24:13.247974Z", "shell.execute_reply.started": "2020-02-17T02:24:13.243694Z", "shell.execute_reply": "2020-02-17T02:24:13.246579Z"}}
 cat_feat = []                              # List of categorical features
 cat_embed_feat = []                        # List of categorical features that will be embedded
 cat_embed_feat_enum = dict()               # Dictionary of the enumerations of the categorical features that will be embedded
-
-# + {"Collapsed": "false", "toc-hr-collapsed": true, "cell_type": "markdown"}
-# ## Infusion drug data
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Read the data
@@ -338,6 +339,14 @@ inf_drug_df_norm.describe().transpose()
 
 # + {"Collapsed": "false", "toc-hr-collapsed": true, "cell_type": "markdown"}
 # ## Admission drug data
+
+# + {"Collapsed": "false", "toc-hr-collapsed": true, "cell_type": "markdown"}
+# ### Initialize variables
+
+# + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82", "execution": {"iopub.status.busy": "2020-02-17T02:24:13.243501Z", "iopub.execute_input": "2020-02-17T02:24:13.243729Z", "iopub.status.idle": "2020-02-17T02:24:13.247974Z", "shell.execute_reply.started": "2020-02-17T02:24:13.243694Z", "shell.execute_reply": "2020-02-17T02:24:13.246579Z"}}
+cat_feat = []                              # List of categorical features
+cat_embed_feat = []                        # List of categorical features that will be embedded
+cat_embed_feat_enum = dict()               # Dictionary of the enumerations of the categorical features that will be embedded
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Read the data
@@ -636,6 +645,14 @@ adms_drug_df_norm.describe().transpose()
 
 # + {"Collapsed": "false", "toc-hr-collapsed": true, "cell_type": "markdown"}
 # ## Medication data
+
+# + {"Collapsed": "false", "toc-hr-collapsed": true, "cell_type": "markdown"}
+# ### Initialize variables
+
+# + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82", "execution": {"iopub.status.busy": "2020-02-17T02:24:13.243501Z", "iopub.execute_input": "2020-02-17T02:24:13.243729Z", "iopub.status.idle": "2020-02-17T02:24:13.247974Z", "shell.execute_reply.started": "2020-02-17T02:24:13.243694Z", "shell.execute_reply": "2020-02-17T02:24:13.246579Z"}}
+cat_feat = []                              # List of categorical features
+cat_embed_feat = []                        # List of categorical features that will be embedded
+cat_embed_feat_enum = dict()               # Dictionary of the enumerations of the categorical features that will be embedded
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Read the data
@@ -1009,6 +1026,14 @@ med_df.nlargest(columns='drugdosage', n=5)
 # + {"Collapsed": "false", "toc-hr-collapsed": true, "cell_type": "markdown"}
 # ## Treatment data
 
+# + {"Collapsed": "false", "toc-hr-collapsed": true, "cell_type": "markdown"}
+# ### Initialize variables
+
+# + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82", "execution": {"iopub.status.busy": "2020-02-17T02:24:13.243501Z", "iopub.execute_input": "2020-02-17T02:24:13.243729Z", "iopub.status.idle": "2020-02-17T02:24:13.247974Z", "shell.execute_reply.started": "2020-02-17T02:24:13.243694Z", "shell.execute_reply": "2020-02-17T02:24:13.246579Z"}}
+cat_feat = []                              # List of categorical features
+cat_embed_feat = []                        # List of categorical features that will be embedded
+cat_embed_feat_enum = dict()               # Dictionary of the enumerations of the categorical features that will be embedded
+
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Read the data
 
@@ -1276,13 +1301,13 @@ treat_df.to_csv(f'{data_path}cleaned/normalized/treatment.csv')
 
 # + {"Collapsed": "false", "persistent_id": "23eefabe-23d7-4db4-b8e0-7c1e61ef2789"}
 treat_df.describe().transpose()
-# + {"Collapsed": "false", "toc-hr-collapsed": false, "cell_type": "markdown"}
+# + {"Collapsed": "false", "toc-hr-collapsed": true, "cell_type": "markdown"}
 # ## Intake output data
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Initialize variables
 
-# + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82", "execution": {"iopub.status.busy": "2020-02-17T02:24:14.484293Z", "iopub.execute_input": "2020-02-17T02:24:14.484564Z", "iopub.status.idle": "2020-02-17T02:24:14.488252Z", "shell.execute_reply.started": "2020-02-17T02:24:14.484523Z", "shell.execute_reply": "2020-02-17T02:24:14.487425Z"}}
+# + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82", "execution": {"iopub.status.busy": "2020-02-17T05:01:35.789873Z", "iopub.execute_input": "2020-02-17T05:01:35.790092Z", "iopub.status.idle": "2020-02-17T05:01:35.794511Z", "shell.execute_reply.started": "2020-02-17T05:01:35.790060Z", "shell.execute_reply": "2020-02-17T05:01:35.793047Z"}}
 cat_feat = []                              # List of categorical features
 cat_embed_feat = []                        # List of categorical features that will be embedded
 cat_embed_feat_enum = dict()               # Dictionary of the enumerations of the categorical features that will be embedded
@@ -1290,53 +1315,53 @@ cat_embed_feat_enum = dict()               # Dictionary of the enumerations of t
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Read the data
 
-# + {"Collapsed": "false", "persistent_id": "4a37073a-b357-4079-b6af-72125689781d", "execution": {"iopub.status.busy": "2020-02-17T02:24:15.257332Z", "iopub.execute_input": "2020-02-17T02:24:15.257690Z", "iopub.status.idle": "2020-02-17T02:24:35.921615Z", "shell.execute_reply.started": "2020-02-17T02:24:15.257640Z", "shell.execute_reply": "2020-02-17T02:24:35.920205Z"}}
+# + {"Collapsed": "false", "persistent_id": "4a37073a-b357-4079-b6af-72125689781d", "execution": {"iopub.status.busy": "2020-02-17T05:01:37.002580Z", "iopub.execute_input": "2020-02-17T05:01:37.002849Z", "iopub.status.idle": "2020-02-17T05:01:53.516810Z", "shell.execute_reply.started": "2020-02-17T05:01:37.002809Z", "shell.execute_reply": "2020-02-17T05:01:53.515573Z"}}
 in_out_df = pd.read_csv(f'{data_path}original/intakeOutput.csv')
 in_out_df.head()
 
-# + {"Collapsed": "false", "persistent_id": "6566d20f-9fcb-4d92-879b-55a0cefe54ae", "execution": {"iopub.status.busy": "2020-02-17T02:24:35.927070Z", "iopub.execute_input": "2020-02-17T02:24:35.927427Z", "iopub.status.idle": "2020-02-17T02:24:35.933700Z", "shell.execute_reply.started": "2020-02-17T02:24:35.927289Z", "shell.execute_reply": "2020-02-17T02:24:35.933067Z"}}
+# + {"Collapsed": "false", "persistent_id": "6566d20f-9fcb-4d92-879b-55a0cefe54ae", "execution": {"iopub.status.busy": "2020-02-17T04:06:18.870396Z", "iopub.execute_input": "2020-02-17T04:06:18.870650Z", "iopub.status.idle": "2020-02-17T04:06:18.877115Z", "shell.execute_reply.started": "2020-02-17T04:06:18.870605Z", "shell.execute_reply": "2020-02-17T04:06:18.876169Z"}}
 len(in_out_df)
 
-# + {"Collapsed": "false", "persistent_id": "e267e007-4b72-4551-a9d2-7c916956235c", "execution": {"iopub.status.busy": "2020-02-17T02:24:35.935698Z", "iopub.execute_input": "2020-02-17T02:24:35.936064Z", "iopub.status.idle": "2020-02-17T02:24:38.069268Z", "shell.execute_reply.started": "2020-02-17T02:24:35.935891Z", "shell.execute_reply": "2020-02-17T02:24:38.068528Z"}}
+# + {"Collapsed": "false", "persistent_id": "e267e007-4b72-4551-a9d2-7c916956235c", "execution": {"iopub.status.busy": "2020-02-17T04:06:18.879129Z", "iopub.execute_input": "2020-02-17T04:06:18.879384Z", "iopub.status.idle": "2020-02-17T04:06:20.662963Z", "shell.execute_reply.started": "2020-02-17T04:06:18.879345Z", "shell.execute_reply": "2020-02-17T04:06:20.661958Z"}}
 in_out_df.patientunitstayid.nunique()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Get an overview of the dataframe through the `describe` method:
 
-# + {"Collapsed": "false", "persistent_id": "b4f282b2-e5f4-4cfb-83c5-c79944367d70"}
+# + {"Collapsed": "false", "persistent_id": "b4f282b2-e5f4-4cfb-83c5-c79944367d70", "execution": {"iopub.status.busy": "2020-02-17T04:06:20.664981Z", "iopub.execute_input": "2020-02-17T04:06:20.665202Z", "iopub.status.idle": "2020-02-17T04:06:41.988804Z", "shell.execute_reply.started": "2020-02-17T04:06:20.665167Z", "shell.execute_reply": "2020-02-17T04:06:41.987709Z"}}
 in_out_df.describe().transpose()
 
-# + {"Collapsed": "false", "persistent_id": "6a382a6d-709e-4cdf-a586-c0cc751ff853", "execution": {"iopub.status.busy": "2020-02-17T02:24:38.071164Z", "iopub.execute_input": "2020-02-17T02:24:38.071385Z", "iopub.status.idle": "2020-02-17T02:25:26.455932Z", "shell.execute_reply.started": "2020-02-17T02:24:38.071349Z", "shell.execute_reply": "2020-02-17T02:25:26.453630Z"}}
+# + {"Collapsed": "false", "persistent_id": "6a382a6d-709e-4cdf-a586-c0cc751ff853", "execution": {"iopub.status.busy": "2020-02-17T04:06:41.993271Z", "iopub.execute_input": "2020-02-17T04:06:41.993671Z", "iopub.status.idle": "2020-02-17T04:07:13.810728Z", "shell.execute_reply.started": "2020-02-17T04:06:41.993623Z", "shell.execute_reply": "2020-02-17T04:07:13.809111Z"}}
 in_out_df.info()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Check for missing values
 
-# + {"Collapsed": "false", "persistent_id": "3cc624bc-6dac-4cd0-9d64-f329e29940fa", "pixiedust": {"displayParams": {}}, "execution": {"iopub.status.busy": "2020-02-17T02:25:26.461652Z", "iopub.execute_input": "2020-02-17T02:25:26.461990Z", "iopub.status.idle": "2020-02-17T02:25:43.178539Z", "shell.execute_reply.started": "2020-02-17T02:25:26.461941Z", "shell.execute_reply": "2020-02-17T02:25:43.177880Z"}}
+# + {"Collapsed": "false", "persistent_id": "3cc624bc-6dac-4cd0-9d64-f329e29940fa", "pixiedust": {"displayParams": {}}, "execution": {"iopub.status.busy": "2020-02-17T05:01:53.519614Z", "iopub.execute_input": "2020-02-17T05:01:53.520038Z", "iopub.status.idle": "2020-02-17T05:01:56.027286Z", "shell.execute_reply.started": "2020-02-17T05:01:53.519981Z", "shell.execute_reply": "2020-02-17T05:01:56.026607Z"}}
 du.search_explore.dataframe_missing_values(in_out_df)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Remove unneeded features
 
-# + {"Collapsed": "false", "persistent_id": "ba513734-4c7e-455d-bfa8-9b805c59b530", "execution": {"iopub.status.busy": "2020-02-17T02:25:43.181160Z", "iopub.execute_input": "2020-02-17T02:25:43.181504Z", "iopub.status.idle": "2020-02-17T02:25:47.469240Z", "shell.execute_reply.started": "2020-02-17T02:25:43.181456Z", "shell.execute_reply": "2020-02-17T02:25:47.468242Z"}}
+# + {"Collapsed": "false", "persistent_id": "ba513734-4c7e-455d-bfa8-9b805c59b530", "execution": {"iopub.status.busy": "2020-02-17T05:01:56.029042Z", "iopub.execute_input": "2020-02-17T05:01:56.029267Z", "iopub.status.idle": "2020-02-17T05:01:57.191687Z", "shell.execute_reply.started": "2020-02-17T05:01:56.029233Z", "shell.execute_reply": "2020-02-17T05:01:57.190729Z"}}
 in_out_df.celllabel.value_counts()
 
-# + {"Collapsed": "false", "persistent_id": "ba513734-4c7e-455d-bfa8-9b805c59b530", "execution": {"iopub.status.busy": "2020-02-17T02:32:30.255072Z", "iopub.execute_input": "2020-02-17T02:32:30.257182Z", "iopub.status.idle": "2020-02-17T02:32:34.895890Z", "shell.execute_reply.started": "2020-02-17T02:32:30.257038Z", "shell.execute_reply": "2020-02-17T02:32:34.894880Z"}}
+# + {"Collapsed": "false", "persistent_id": "ba513734-4c7e-455d-bfa8-9b805c59b530", "execution": {"iopub.status.busy": "2020-02-17T05:01:57.193422Z", "iopub.execute_input": "2020-02-17T05:01:57.193657Z", "iopub.status.idle": "2020-02-17T05:01:58.314678Z", "shell.execute_reply.started": "2020-02-17T05:01:57.193619Z", "shell.execute_reply": "2020-02-17T05:01:58.313323Z"}}
 in_out_df.celllabel.value_counts().head(50)
 
-# + {"Collapsed": "false", "persistent_id": "4d028a9e-38e8-496e-805a-ed3f2304a07f", "execution": {"iopub.status.busy": "2020-02-17T02:25:47.470894Z", "iopub.execute_input": "2020-02-17T02:25:47.471124Z", "iopub.status.idle": "2020-02-17T02:25:50.498251Z", "shell.execute_reply.started": "2020-02-17T02:25:47.471089Z", "shell.execute_reply": "2020-02-17T02:25:50.497418Z"}}
+# + {"Collapsed": "false", "persistent_id": "4d028a9e-38e8-496e-805a-ed3f2304a07f", "execution": {"iopub.status.busy": "2020-02-17T05:01:58.315863Z", "iopub.execute_input": "2020-02-17T05:01:58.316062Z", "iopub.status.idle": "2020-02-17T05:01:58.675371Z", "shell.execute_reply.started": "2020-02-17T05:01:58.316029Z", "shell.execute_reply": "2020-02-17T05:01:58.674562Z"}}
 in_out_df.cellvaluenumeric.value_counts()
 
-# + {"Collapsed": "false", "persistent_id": "d61a9031-35b3-4c51-a141-a820f6ed70a8", "execution": {"iopub.status.busy": "2020-02-17T02:25:50.501702Z", "iopub.execute_input": "2020-02-17T02:25:50.501942Z", "iopub.status.idle": "2020-02-17T02:25:53.798071Z", "shell.execute_reply.started": "2020-02-17T02:25:50.501902Z", "shell.execute_reply": "2020-02-17T02:25:53.797219Z"}}
+# + {"Collapsed": "false", "persistent_id": "d61a9031-35b3-4c51-a141-a820f6ed70a8", "execution": {"iopub.status.busy": "2020-02-17T05:01:58.676388Z", "iopub.execute_input": "2020-02-17T05:01:58.676769Z", "iopub.status.idle": "2020-02-17T05:01:58.972846Z", "shell.execute_reply.started": "2020-02-17T05:01:58.676560Z", "shell.execute_reply": "2020-02-17T05:01:58.972035Z"}}
 in_out_df.cellvaluetext.value_counts()
 
-# + {"Collapsed": "false", "persistent_id": "502ee5b2-8eba-407e-a0c3-158c27cb9fab", "execution": {"iopub.status.busy": "2020-02-17T02:25:53.799165Z", "iopub.execute_input": "2020-02-17T02:25:53.799411Z", "iopub.status.idle": "2020-02-17T02:25:58.245440Z", "shell.execute_reply.started": "2020-02-17T02:25:53.799350Z", "shell.execute_reply": "2020-02-17T02:25:58.244801Z"}}
+# + {"Collapsed": "false", "persistent_id": "502ee5b2-8eba-407e-a0c3-158c27cb9fab", "execution": {"iopub.status.busy": "2020-02-17T05:01:58.974348Z", "iopub.execute_input": "2020-02-17T05:01:58.974722Z", "iopub.status.idle": "2020-02-17T05:02:00.386080Z", "shell.execute_reply.started": "2020-02-17T05:01:58.974648Z", "shell.execute_reply": "2020-02-17T05:02:00.385337Z"}}
 in_out_df.cellpath.value_counts()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Besides the usual removal of row identifier, `intakeoutputid`, and the timestamp when data was added, `intakeoutputentryoffset`, I'm also removing the cumulative features `intaketotal`, `outputtotal`, `diaslysistotal`, and `nettotal` (cumulative data could damage the neural networks' logic with too high values and we're looking for data of the current moment), as well as `cellvaluetext`, which has redundant info with `cellvaluenumeric`.
 
-# + {"Collapsed": "false", "persistent_id": "48f10eea-6c36-4188-91d9-4def749f2486", "execution": {"iopub.status.busy": "2020-02-17T03:27:00.812487Z", "iopub.execute_input": "2020-02-17T03:27:00.812976Z", "iopub.status.idle": "2020-02-17T03:27:01.456541Z", "shell.execute_reply.started": "2020-02-17T03:27:00.812817Z", "shell.execute_reply": "2020-02-17T03:27:01.455892Z"}}
+# + {"Collapsed": "false", "persistent_id": "48f10eea-6c36-4188-91d9-4def749f2486", "execution": {"iopub.status.busy": "2020-02-17T05:02:00.388786Z", "iopub.execute_input": "2020-02-17T05:02:00.388993Z", "iopub.status.idle": "2020-02-17T05:02:01.210447Z", "shell.execute_reply.started": "2020-02-17T05:02:00.388961Z", "shell.execute_reply": "2020-02-17T05:02:01.209721Z"}}
 in_out_df = in_out_df.drop(columns=['intakeoutputid', 'intakeoutputentryoffset',
                                     'intaketotal', 'outputtotal', 'dialysistotal',
                                     'nettotal', 'cellvaluetext'])
@@ -1345,7 +1370,7 @@ in_out_df.head()
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Additionally, we're going to focus on the most common data categories, ignoring rarer ones and those that could be redundant with data from other tables (e.g. infusion drugs).
 
-# + {"Collapsed": "false", "persistent_id": "6c7fa8f7-3195-46a9-889a-6034ffdcaef3", "execution": {"iopub.status.busy": "2020-02-17T03:27:09.878475Z", "iopub.execute_input": "2020-02-17T03:27:09.879118Z", "iopub.status.idle": "2020-02-17T03:27:09.888127Z", "shell.execute_reply.started": "2020-02-17T03:27:09.879045Z", "shell.execute_reply": "2020-02-17T03:27:09.887090Z"}}
+# + {"Collapsed": "false", "persistent_id": "6c7fa8f7-3195-46a9-889a-6034ffdcaef3", "execution": {"iopub.status.busy": "2020-02-17T05:02:01.214667Z", "iopub.execute_input": "2020-02-17T05:02:01.215018Z", "iopub.status.idle": "2020-02-17T05:02:01.220180Z", "shell.execute_reply.started": "2020-02-17T05:02:01.214864Z", "shell.execute_reply": "2020-02-17T05:02:01.218743Z"}}
 categories_to_keep = ['Urine', 'URINE CATHETER', 'Urinary Catheter Output: Indwelling/Continuous Ure',
                       'Bodyweight (kg)', 'P.O.', 'P.O. Intake', 'Oral Intake', 'Oral',
                       'Stool', 'Crystalloids', 'Indwelling Catheter Output', 'Nutrition Total', 
@@ -1355,10 +1380,10 @@ categories_to_keep = ['Urine', 'URINE CATHETER', 'Urinary Catheter Output: Indwe
                       'Saline Flush (mL)', 'Volume Given (mL)', 
                       'Actual Patient Fluid Removal', 'fentaNYL']
 
-# + {"Collapsed": "false", "persistent_id": "d8b7cf79-bda7-411f-a800-e4769eb0ec00", "execution": {"iopub.status.busy": "2020-02-17T03:27:19.330939Z", "iopub.execute_input": "2020-02-17T03:27:19.331230Z", "iopub.status.idle": "2020-02-17T03:27:20.139114Z", "shell.execute_reply.started": "2020-02-17T03:27:19.331186Z", "shell.execute_reply": "2020-02-17T03:27:20.137638Z"}}
+# + {"Collapsed": "false", "persistent_id": "d8b7cf79-bda7-411f-a800-e4769eb0ec00", "execution": {"iopub.status.busy": "2020-02-17T05:02:01.224973Z", "iopub.execute_input": "2020-02-17T05:02:01.225909Z", "iopub.status.idle": "2020-02-17T05:02:01.644686Z", "shell.execute_reply.started": "2020-02-17T05:02:01.225650Z", "shell.execute_reply": "2020-02-17T05:02:01.643244Z"}}
 (in_out_df.celllabel.isin(categories_to_keep)).head()
 
-# + {"Collapsed": "false", "persistent_id": "8f0a890f-ad85-457c-888e-37f9cddfe4e8", "execution": {"iopub.status.busy": "2020-02-17T03:27:22.873386Z", "iopub.execute_input": "2020-02-17T03:27:22.873961Z", "iopub.status.idle": "2020-02-17T03:27:26.071057Z", "shell.execute_reply.started": "2020-02-17T03:27:22.873896Z", "shell.execute_reply": "2020-02-17T03:27:26.069518Z"}}
+# + {"Collapsed": "false", "persistent_id": "8f0a890f-ad85-457c-888e-37f9cddfe4e8", "execution": {"iopub.status.busy": "2020-02-17T05:02:01.646363Z", "iopub.execute_input": "2020-02-17T05:02:01.647007Z", "iopub.status.idle": "2020-02-17T05:02:03.005678Z", "shell.execute_reply.started": "2020-02-17T05:02:01.646903Z", "shell.execute_reply": "2020-02-17T05:02:03.004914Z"}}
 in_out_df = in_out_df[in_out_df.celllabel.isin(categories_to_keep)]
 in_out_df.head()
 
@@ -1370,31 +1395,31 @@ in_out_df.head()
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Unify urine data:
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-17T03:27:33.766136Z", "iopub.execute_input": "2020-02-17T03:27:33.766362Z", "iopub.status.idle": "2020-02-17T03:27:33.772049Z", "shell.execute_reply.started": "2020-02-17T03:27:33.766325Z", "shell.execute_reply": "2020-02-17T03:27:33.770599Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-17T05:02:03.006637Z", "iopub.execute_input": "2020-02-17T05:02:03.006832Z", "iopub.status.idle": "2020-02-17T05:02:03.011502Z", "shell.execute_reply.started": "2020-02-17T05:02:03.006800Z", "shell.execute_reply": "2020-02-17T05:02:03.010611Z"}}
 urine_labels = ['Urine', 'URINE CATHETER', 'Urinary Catheter Output: Indwelling/Continuous Ure']
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-17T03:35:34.978722Z", "iopub.execute_input": "2020-02-17T03:35:34.980217Z", "iopub.status.idle": "2020-02-17T03:35:40.677247Z", "shell.execute_reply.started": "2020-02-17T03:35:34.980107Z", "shell.execute_reply": "2020-02-17T03:35:40.674869Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-17T05:02:03.012385Z", "iopub.execute_input": "2020-02-17T05:02:03.012589Z", "iopub.status.idle": "2020-02-17T05:02:03.563687Z", "shell.execute_reply.started": "2020-02-17T05:02:03.012542Z", "shell.execute_reply": "2020-02-17T05:02:03.562116Z"}}
 in_out_df.loc[in_out_df.celllabel.isin(urine_labels), 'celllabel'] = 'urine'
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Unify oral data:
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-17T03:27:43.346607Z", "iopub.execute_input": "2020-02-17T03:27:43.346829Z", "iopub.status.idle": "2020-02-17T03:27:43.351745Z", "shell.execute_reply.started": "2020-02-17T03:27:43.346793Z", "shell.execute_reply": "2020-02-17T03:27:43.350865Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-17T05:02:03.566262Z", "iopub.execute_input": "2020-02-17T05:02:03.566564Z", "iopub.status.idle": "2020-02-17T05:02:03.571518Z", "shell.execute_reply.started": "2020-02-17T05:02:03.566524Z", "shell.execute_reply": "2020-02-17T05:02:03.570822Z"}}
 oral_labels = ['P.O.', 'P.O. Intake', 'Oral Intake', 'Oral']
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-17T03:36:10.509800Z", "iopub.execute_input": "2020-02-17T03:36:10.510867Z", "iopub.status.idle": "2020-02-17T03:36:15.678591Z", "shell.execute_reply.started": "2020-02-17T03:36:10.510668Z", "shell.execute_reply": "2020-02-17T03:36:15.676967Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-17T05:02:03.572465Z", "iopub.execute_input": "2020-02-17T05:02:03.572936Z", "iopub.status.idle": "2020-02-17T05:02:04.018909Z", "shell.execute_reply.started": "2020-02-17T05:02:03.572878Z", "shell.execute_reply": "2020-02-17T05:02:04.018357Z"}}
 in_out_df.loc[in_out_df.celllabel.isin(oral_labels), 'celllabel'] = 'oral'
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Unify lactated ringer data:
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-17T03:27:48.741119Z", "iopub.execute_input": "2020-02-17T03:27:48.741319Z", "iopub.status.idle": "2020-02-17T03:27:48.747880Z", "shell.execute_reply.started": "2020-02-17T03:27:48.741285Z", "shell.execute_reply": "2020-02-17T03:27:48.747017Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-17T05:02:04.019855Z", "iopub.execute_input": "2020-02-17T05:02:04.020145Z", "iopub.status.idle": "2020-02-17T05:02:04.023388Z", "shell.execute_reply.started": "2020-02-17T05:02:04.020108Z", "shell.execute_reply": "2020-02-17T05:02:04.022493Z"}}
 lr_labels = ['LR', 'LR IVF']
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-17T03:36:22.918259Z", "iopub.execute_input": "2020-02-17T03:36:22.918577Z", "iopub.status.idle": "2020-02-17T03:36:31.141511Z", "shell.execute_reply.started": "2020-02-17T03:36:22.918526Z", "shell.execute_reply": "2020-02-17T03:36:31.140888Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-17T05:02:04.024277Z", "iopub.execute_input": "2020-02-17T05:02:04.024457Z", "iopub.status.idle": "2020-02-17T05:02:04.342011Z", "shell.execute_reply.started": "2020-02-17T05:02:04.024428Z", "shell.execute_reply": "2020-02-17T05:02:04.338741Z"}}
 in_out_df.loc[in_out_df.celllabel.isin(lr_labels), 'celllabel'] = 'lr'
 
-# + {"Collapsed": "false", "persistent_id": "ba513734-4c7e-455d-bfa8-9b805c59b530", "execution": {"iopub.status.busy": "2020-02-17T03:36:31.142766Z", "iopub.execute_input": "2020-02-17T03:36:31.143141Z", "iopub.status.idle": "2020-02-17T03:36:43.665995Z", "shell.execute_reply.started": "2020-02-17T03:36:31.143073Z", "shell.execute_reply": "2020-02-17T03:36:43.664904Z"}}
+# + {"Collapsed": "false", "persistent_id": "ba513734-4c7e-455d-bfa8-9b805c59b530", "execution": {"iopub.status.busy": "2020-02-17T05:02:04.343396Z", "iopub.execute_input": "2020-02-17T05:02:04.343644Z", "iopub.status.idle": "2020-02-17T05:02:04.842099Z", "shell.execute_reply.started": "2020-02-17T05:02:04.343597Z", "shell.execute_reply": "2020-02-17T05:02:04.841477Z"}}
 in_out_df.celllabel.value_counts()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -1405,30 +1430,30 @@ in_out_df.celllabel.value_counts()
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Get intake / output indicator:
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-17T03:30:47.580207Z", "iopub.execute_input": "2020-02-17T03:30:47.580731Z", "iopub.status.idle": "2020-02-17T03:31:00.703781Z", "shell.execute_reply.started": "2020-02-17T03:30:47.580500Z", "shell.execute_reply": "2020-02-17T03:31:00.702305Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-17T05:02:04.843179Z", "iopub.execute_input": "2020-02-17T05:02:04.843385Z", "iopub.status.idle": "2020-02-17T05:02:10.682008Z", "shell.execute_reply.started": "2020-02-17T05:02:04.843351Z", "shell.execute_reply": "2020-02-17T05:02:10.681229Z"}}
 in_out_df['in_out_indctr'] = in_out_df.cellpath.apply(lambda x: du.search_explore.get_element_from_split(x, 3, 
                                                                                                          separator='|'))
 in_out_df.head()
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-17T03:31:00.708506Z", "iopub.execute_input": "2020-02-17T03:31:00.708964Z", "iopub.status.idle": "2020-02-17T03:31:07.292399Z", "shell.execute_reply.started": "2020-02-17T03:31:00.708889Z", "shell.execute_reply": "2020-02-17T03:31:07.291650Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-17T05:02:10.683601Z", "iopub.execute_input": "2020-02-17T05:02:10.683853Z", "iopub.status.idle": "2020-02-17T05:02:11.342945Z", "shell.execute_reply.started": "2020-02-17T05:02:10.683804Z", "shell.execute_reply": "2020-02-17T05:02:11.342209Z"}}
 in_out_df['in_out_indctr'].value_counts()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Add the appropriate intake or output indication to each label:
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-17T03:37:53.015164Z", "iopub.execute_input": "2020-02-17T03:37:53.016922Z", "iopub.status.idle": "2020-02-17T03:38:08.170651Z", "shell.execute_reply.started": "2020-02-17T03:37:53.016817Z", "shell.execute_reply": "2020-02-17T03:38:08.168934Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-17T05:02:11.343865Z", "iopub.execute_input": "2020-02-17T05:02:11.344213Z", "iopub.status.idle": "2020-02-17T05:02:12.514437Z", "shell.execute_reply.started": "2020-02-17T05:02:11.344175Z", "shell.execute_reply": "2020-02-17T05:02:12.513561Z"}}
 in_out_df.loc[in_out_df.in_out_indctr == 'Intake (ml)', 'celllabel'] += '_intake'
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-17T03:38:43.040767Z", "iopub.execute_input": "2020-02-17T03:38:43.041267Z", "iopub.status.idle": "2020-02-17T03:39:10.413431Z", "shell.execute_reply.started": "2020-02-17T03:38:43.041182Z", "shell.execute_reply": "2020-02-17T03:39:10.410773Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-17T05:02:12.516309Z", "iopub.execute_input": "2020-02-17T05:02:12.516559Z", "iopub.status.idle": "2020-02-17T05:02:13.917166Z", "shell.execute_reply.started": "2020-02-17T05:02:12.516522Z", "shell.execute_reply": "2020-02-17T05:02:13.916356Z"}}
 in_out_df.loc[in_out_df.in_out_indctr == 'Output (ml)', 'celllabel'] += '_output'
 
-# + {"Collapsed": "false", "persistent_id": "ba513734-4c7e-455d-bfa8-9b805c59b530", "execution": {"iopub.status.busy": "2020-02-17T03:39:10.416793Z", "iopub.execute_input": "2020-02-17T03:39:10.417192Z", "iopub.status.idle": "2020-02-17T03:39:37.527093Z", "shell.execute_reply.started": "2020-02-17T03:39:10.417044Z", "shell.execute_reply": "2020-02-17T03:39:37.525919Z"}}
+# + {"Collapsed": "false", "persistent_id": "ba513734-4c7e-455d-bfa8-9b805c59b530", "execution": {"iopub.status.busy": "2020-02-17T05:02:13.929187Z", "iopub.execute_input": "2020-02-17T05:02:13.929540Z", "iopub.status.idle": "2020-02-17T05:02:14.607928Z", "shell.execute_reply.started": "2020-02-17T05:02:13.929484Z", "shell.execute_reply": "2020-02-17T05:02:14.607287Z"}}
 in_out_df.celllabel.value_counts()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Remove the now unneeded intake / output indicator and path columns:
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-17T03:40:42.613060Z", "iopub.execute_input": "2020-02-17T03:40:42.614939Z", "iopub.status.idle": "2020-02-17T03:40:45.054751Z", "shell.execute_reply.started": "2020-02-17T03:40:42.614467Z", "shell.execute_reply": "2020-02-17T03:40:45.053787Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-17T05:02:14.610469Z", "iopub.execute_input": "2020-02-17T05:02:14.610695Z", "iopub.status.idle": "2020-02-17T05:02:15.240547Z", "shell.execute_reply.started": "2020-02-17T05:02:14.610655Z", "shell.execute_reply": "2020-02-17T05:02:15.239754Z"}}
 in_out_df = in_out_df.drop(columns=['in_out_indctr', 'cellpath'])
 in_out_df.head()
 
@@ -1438,7 +1463,7 @@ in_out_df.head()
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Transform the `celllabel` categories and `cellvaluenumeric` values into separate features:
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-17T03:40:50.153886Z", "iopub.execute_input": "2020-02-17T03:40:50.154264Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-17T05:02:15.242249Z", "iopub.execute_input": "2020-02-17T05:02:15.242668Z", "iopub.status.idle": "2020-02-17T05:40:20.613986Z", "shell.execute_reply.started": "2020-02-17T05:02:15.242622Z", "shell.execute_reply": "2020-02-17T05:40:20.608604Z"}}
 in_out_df = du.data_processing.category_to_feature(in_out_df, categories_feature='celllabel',
                                                    values_feature='cellvaluenumeric', min_len=1000, inplace=True)
 in_out_df.head()
@@ -1449,20 +1474,20 @@ in_out_df.head()
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Remove the old `celllabel` and `cellvaluenumeric` columns:
 
-# + {"Collapsed": "false", "persistent_id": "d42cb91d-3a85-4ad6-a3c0-4e87c951781f"}
+# + {"Collapsed": "false", "persistent_id": "d42cb91d-3a85-4ad6-a3c0-4e87c951781f", "execution": {"iopub.status.busy": "2020-02-17T05:40:20.626343Z", "iopub.execute_input": "2020-02-17T05:40:20.626852Z", "iopub.status.idle": "2020-02-17T05:40:24.732761Z", "shell.execute_reply.started": "2020-02-17T05:40:20.626680Z", "shell.execute_reply": "2020-02-17T05:40:24.731877Z"}}
 in_out_df = in_out_df.drop(['celllabel', 'cellvaluenumeric'], axis=1)
 in_out_df.head()
 
-# + {"Collapsed": "false", "persistent_id": "2be490c2-82d9-44dc-897f-6417e41cfe96"}
+# + {"Collapsed": "false", "persistent_id": "2be490c2-82d9-44dc-897f-6417e41cfe96", "execution": {"iopub.status.busy": "2020-02-17T05:40:24.734469Z", "iopub.execute_input": "2020-02-17T05:40:24.734735Z", "iopub.status.idle": "2020-02-17T05:40:24.832369Z", "shell.execute_reply.started": "2020-02-17T05:40:24.734695Z", "shell.execute_reply": "2020-02-17T05:40:24.831510Z"}}
 in_out_df['urine_output'].value_counts()
 
-# + {"Collapsed": "false", "persistent_id": "cc5a84b3-994f-490a-97d5-4f4edf5b0497"}
+# + {"Collapsed": "false", "persistent_id": "cc5a84b3-994f-490a-97d5-4f4edf5b0497", "execution": {"iopub.status.busy": "2020-02-17T05:40:24.833773Z", "iopub.execute_input": "2020-02-17T05:40:24.834017Z", "iopub.status.idle": "2020-02-17T05:40:24.878771Z", "shell.execute_reply.started": "2020-02-17T05:40:24.833960Z", "shell.execute_reply": "2020-02-17T05:40:24.877891Z"}}
 in_out_df['oral_intake'].value_counts()
 
-# + {"Collapsed": "false", "persistent_id": "6488d69a-45e1-4b67-9d1c-1ce6e6c7f31a"}
+# + {"Collapsed": "false", "persistent_id": "6488d69a-45e1-4b67-9d1c-1ce6e6c7f31a", "execution": {"iopub.status.busy": "2020-02-17T05:40:24.880664Z", "iopub.execute_input": "2020-02-17T05:40:24.881133Z", "iopub.status.idle": "2020-02-17T05:40:24.951042Z", "shell.execute_reply.started": "2020-02-17T05:40:24.880930Z", "shell.execute_reply": "2020-02-17T05:40:24.949959Z"}}
 in_out_df['Bodyweight (kg)'].value_counts()
 
-# + {"Collapsed": "false", "persistent_id": "6ae6e48f-2b69-445a-9dd7-f5875e8d1cd5"}
+# + {"Collapsed": "false", "persistent_id": "6ae6e48f-2b69-445a-9dd7-f5875e8d1cd5", "execution": {"iopub.status.busy": "2020-02-17T05:40:24.952347Z", "iopub.execute_input": "2020-02-17T05:40:24.952874Z", "iopub.status.idle": "2020-02-17T05:40:24.995031Z", "shell.execute_reply.started": "2020-02-17T05:40:24.952735Z", "shell.execute_reply": "2020-02-17T05:40:24.994422Z"}}
 in_out_df['Stool_output'].value_counts()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -1471,41 +1496,41 @@ in_out_df['Stool_output'].value_counts()
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Create the timestamp (`ts`) feature:
 
-# + {"Collapsed": "false", "persistent_id": "d0647504-f554-4d1f-8eba-d87851eb5695"}
+# + {"Collapsed": "false", "persistent_id": "d0647504-f554-4d1f-8eba-d87851eb5695", "execution": {"iopub.status.busy": "2020-02-17T05:40:24.996161Z", "iopub.execute_input": "2020-02-17T05:40:24.996468Z", "iopub.status.idle": "2020-02-17T05:40:26.773137Z", "shell.execute_reply.started": "2020-02-17T05:40:24.996420Z", "shell.execute_reply": "2020-02-17T05:40:26.772572Z"}}
 in_out_df = in_out_df.rename(columns={'intakeoutputoffset': 'ts'})
 in_out_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Remove duplicate rows:
 
-# + {"Collapsed": "false", "persistent_id": "a4cc356c-5c63-41e3-b906-20a4d51ef912"}
+# + {"Collapsed": "false", "persistent_id": "a4cc356c-5c63-41e3-b906-20a4d51ef912", "execution": {"iopub.status.busy": "2020-02-17T05:40:26.774682Z", "iopub.execute_input": "2020-02-17T05:40:26.774878Z", "iopub.status.idle": "2020-02-17T05:40:26.779641Z", "shell.execute_reply.started": "2020-02-17T05:40:26.774844Z", "shell.execute_reply": "2020-02-17T05:40:26.779041Z"}}
 len(in_out_df)
 
-# + {"Collapsed": "false", "persistent_id": "0ed1deff-4607-4456-af14-95ae472a6e05"}
+# + {"Collapsed": "false", "persistent_id": "0ed1deff-4607-4456-af14-95ae472a6e05", "execution": {"iopub.status.busy": "2020-02-17T05:40:26.780926Z", "iopub.execute_input": "2020-02-17T05:40:26.781558Z", "iopub.status.idle": "2020-02-17T05:40:37.994475Z", "shell.execute_reply.started": "2020-02-17T05:40:26.781354Z", "shell.execute_reply": "2020-02-17T05:40:37.993349Z"}}
 in_out_df = in_out_df.drop_duplicates()
 in_out_df.head()
 
-# + {"Collapsed": "false", "persistent_id": "e864c533-0f0d-4bde-9021-2302ea459260"}
+# + {"Collapsed": "false", "persistent_id": "e864c533-0f0d-4bde-9021-2302ea459260", "execution": {"iopub.status.busy": "2020-02-17T05:40:37.998533Z", "iopub.status.idle": "2020-02-17T05:40:38.005650Z", "iopub.execute_input": "2020-02-17T05:40:37.998986Z", "shell.execute_reply.started": "2020-02-17T05:40:37.998939Z", "shell.execute_reply": "2020-02-17T05:40:38.004926Z"}}
 len(in_out_df)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Sort by `ts` so as to be easier to merge with other dataframes later:
 
-# + {"Collapsed": "false", "persistent_id": "9fbb6262-2cdc-4809-a2b2-ce8847793cca"}
+# + {"Collapsed": "false", "persistent_id": "9fbb6262-2cdc-4809-a2b2-ce8847793cca", "execution": {"iopub.status.busy": "2020-02-17T05:40:38.006608Z", "iopub.status.idle": "2020-02-17T05:40:41.071558Z", "iopub.execute_input": "2020-02-17T05:40:38.006883Z", "shell.execute_reply.started": "2020-02-17T05:40:38.006836Z", "shell.execute_reply": "2020-02-17T05:40:41.070973Z"}}
 in_out_df = in_out_df.sort_values('ts')
 in_out_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Check for possible multiple rows with the same unit stay ID and timestamp:
 
-# + {"Collapsed": "false", "persistent_id": "ec32dcd9-8bec-4077-9392-0f7430ddaae2"}
-in_out_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='urine', n=5).head()
+# + {"Collapsed": "false", "persistent_id": "ec32dcd9-8bec-4077-9392-0f7430ddaae2", "execution": {"iopub.status.busy": "2020-02-17T13:05:28.716757Z", "iopub.status.idle": "2020-02-17T13:05:38.827012Z", "iopub.execute_input": "2020-02-17T13:05:28.718108Z", "shell.execute_reply.started": "2020-02-17T13:05:28.718013Z", "shell.execute_reply": "2020-02-17T13:05:38.824489Z"}}
+in_out_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='urine_output', n=5).head()
 
-# + {"Collapsed": "false", "persistent_id": "9baab531-96da-40e3-8bde-c4657bdc950e"}
-in_out_df[in_out_df.patientunitstayid == 2798325].head(10)
+# + {"Collapsed": "false", "persistent_id": "9baab531-96da-40e3-8bde-c4657bdc950e", "execution": {"iopub.status.busy": "2020-02-17T13:06:04.691353Z", "iopub.status.idle": "2020-02-17T13:06:04.864768Z", "iopub.execute_input": "2020-02-17T13:06:04.691719Z", "shell.execute_reply.started": "2020-02-17T13:06:04.691648Z", "shell.execute_reply": "2020-02-17T13:06:04.863484Z"}}
+in_out_df[(in_out_df.patientunitstayid == 433661) & (in_out_df.ts == 661)].head(10)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# We can see that there are up to ___ rows per set of `patientunitstayid` and `ts`. As such, we must join them. However, this is a different scenario than in the other cases. Since all features are numeric, we just need to average the features.
+# We can see that there are up to 2 rows per set of `patientunitstayid` and `ts`. As such, we must join them. However, this is a different scenario than in the other cases. Since all features are numeric, we just need to average the features.
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Join rows that have the same IDs
@@ -1513,33 +1538,33 @@ in_out_df[in_out_df.patientunitstayid == 2798325].head(10)
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Convert dataframe to Pandas, as the groupby operation in `join_categorical_enum` isn't working properly with Modin:
 
-# + {"Collapsed": "false"}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-17T13:06:53.787183Z", "iopub.status.idle": "2020-02-17T13:06:55.306457Z", "iopub.execute_input": "2020-02-17T13:06:53.787521Z", "shell.execute_reply.started": "2020-02-17T13:06:53.787460Z", "shell.execute_reply": "2020-02-17T13:06:55.305810Z"}}
 in_out_df, pd = du.utils.convert_dataframe(in_out_df, to='pandas')
 
-# + {"Collapsed": "false"}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-17T13:06:55.307563Z", "iopub.status.idle": "2020-02-17T13:06:55.311534Z", "iopub.execute_input": "2020-02-17T13:06:55.307774Z", "shell.execute_reply.started": "2020-02-17T13:06:55.307734Z", "shell.execute_reply": "2020-02-17T13:06:55.310874Z"}}
 type(in_out_df)
 
-# + {"Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023", "pixiedust": {"displayParams": {}}}
+# + {"Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023", "pixiedust": {"displayParams": {}}, "execution": {"iopub.status.busy": "2020-02-17T13:06:55.313155Z", "iopub.status.idle": "2020-02-17T13:07:14.296492Z", "iopub.execute_input": "2020-02-17T13:06:55.313629Z", "shell.execute_reply.started": "2020-02-17T13:06:55.313461Z", "shell.execute_reply": "2020-02-17T13:07:14.295401Z"}}
 in_out_df = du.embedding.join_categorical_enum(in_out_df, cont_join_method='mean', inplace=True)
 in_out_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Reconvert dataframe to Modin:
 
-# + {"Collapsed": "false"}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-17T13:07:14.300378Z", "iopub.status.idle": "2020-02-17T13:10:34.431077Z", "iopub.execute_input": "2020-02-17T13:07:14.301090Z", "shell.execute_reply.started": "2020-02-17T13:07:14.300934Z", "shell.execute_reply": "2020-02-17T13:10:34.429369Z"}}
 in_out_df, pd = du.utils.convert_dataframe(in_out_df, to='modin')
 
-# + {"Collapsed": "false"}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-17T13:10:34.435529Z", "iopub.status.idle": "2020-02-17T13:10:34.445437Z", "iopub.execute_input": "2020-02-17T13:10:34.435944Z", "shell.execute_reply.started": "2020-02-17T13:10:34.435872Z", "shell.execute_reply": "2020-02-17T13:10:34.444418Z"}}
 type(in_out_df)
 
-# + {"Collapsed": "false", "persistent_id": "0b782718-8a92-4780-abbe-f8cab9efdfce"}
+# + {"Collapsed": "false", "persistent_id": "0b782718-8a92-4780-abbe-f8cab9efdfce", "execution": {"iopub.status.busy": "2020-02-17T13:10:34.446912Z", "iopub.status.idle": "2020-02-17T13:10:34.494875Z", "iopub.execute_input": "2020-02-17T13:10:34.447284Z", "shell.execute_reply.started": "2020-02-17T13:10:34.447106Z", "shell.execute_reply": "2020-02-17T13:10:34.494006Z"}}
 in_out_df.dtypes
 
-# + {"Collapsed": "false", "persistent_id": "1d5d3435-7ebf-4d13-8fdb-ac1a09f847b3"}
-in_out_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='urine', n=5).head()
+# + {"Collapsed": "false", "persistent_id": "1d5d3435-7ebf-4d13-8fdb-ac1a09f847b3", "execution": {"iopub.status.busy": "2020-02-17T13:10:34.496111Z", "iopub.status.idle": "2020-02-17T13:11:23.825486Z", "iopub.execute_input": "2020-02-17T13:10:34.496415Z", "shell.execute_reply.started": "2020-02-17T13:10:34.496374Z", "shell.execute_reply": "2020-02-17T13:11:23.823721Z"}}
+in_out_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='urine_output', n=5).head()
 
-# + {"Collapsed": "false", "persistent_id": "c4269670-2a2a-4e69-8800-ac737eaa3ebc"}
-in_out_df[in_out_df.patientunitstayid == 2798325].head(10)
+# + {"Collapsed": "false", "persistent_id": "9baab531-96da-40e3-8bde-c4657bdc950e", "execution": {"iopub.status.busy": "2020-02-17T13:11:23.835934Z", "iopub.status.idle": "2020-02-17T13:11:26.094489Z", "iopub.execute_input": "2020-02-17T13:11:23.836294Z", "shell.execute_reply.started": "2020-02-17T13:11:23.836152Z", "shell.execute_reply": "2020-02-17T13:11:26.093554Z"}}
+in_out_df[(in_out_df.patientunitstayid == 433661) & (in_out_df.ts == 661)].head(10)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
@@ -1547,10 +1572,10 @@ in_out_df[in_out_df.patientunitstayid == 2798325].head(10)
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Rename columns
 
-# + {"Collapsed": "false", "persistent_id": "9b090273-1c22-4122-9979-8ee2b91f0dfe"}
+# + {"Collapsed": "false", "persistent_id": "9b090273-1c22-4122-9979-8ee2b91f0dfe", "execution": {"iopub.status.busy": "2020-02-17T13:11:26.095862Z", "iopub.status.idle": "2020-02-17T13:11:26.557065Z", "iopub.execute_input": "2020-02-17T13:11:26.096156Z", "shell.execute_reply.started": "2020-02-17T13:11:26.096037Z", "shell.execute_reply": "2020-02-17T13:11:26.556161Z"}}
 in_out_df = in_out_df.rename(columns={'Out': 'dialysis_output', 
                                       'Indwelling Catheter Output_output': 'indwellingcatheter_output',
-                                      'Stool_output': 'stool', 'Voided Amount_output' : 'voided_amount',
+                                      'Voided Amount_output' : 'voided_amount',
                                       'Feeding Tube Flush/Water Bolus Amt (mL)_intake': 'feeding_tube_flush_ml',
                                       'Volume Given (mL)_intake': 'volume_given_ml',
                                       'Actual Patient Fluid Removal_output': 'patient_fluid_removal'})
@@ -1561,7 +1586,7 @@ in_out_df.head()
 #
 # Standardize all column names to be on lower case, have spaces replaced by underscores and remove comas.
 
-# + {"Collapsed": "false", "persistent_id": "a12ee2e9-13d9-44ce-999c-846f320e8bfd"}
+# + {"Collapsed": "false", "persistent_id": "a12ee2e9-13d9-44ce-999c-846f320e8bfd", "execution": {"iopub.status.busy": "2020-02-17T13:11:26.558252Z", "iopub.status.idle": "2020-02-17T13:11:27.195860Z", "iopub.execute_input": "2020-02-17T13:11:26.558550Z", "shell.execute_reply.started": "2020-02-17T13:11:26.558428Z", "shell.execute_reply": "2020-02-17T13:11:27.195042Z"}}
 in_out_df.columns = du.data_processing.clean_naming(in_out_df.columns)
 in_out_df.head()
 
@@ -1571,11 +1596,11 @@ in_out_df.head()
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Save the dataframe before normalizing:
 
-# + {"Collapsed": "false", "persistent_id": "584b72a4-0de9-433b-b27f-6304a0db2b52"}
+# + {"Collapsed": "false", "persistent_id": "584b72a4-0de9-433b-b27f-6304a0db2b52", "execution": {"iopub.status.busy": "2020-02-17T13:11:27.198571Z", "iopub.status.idle": "2020-02-17T13:13:13.019108Z", "iopub.execute_input": "2020-02-17T13:11:27.198866Z", "shell.execute_reply.started": "2020-02-17T13:11:27.198814Z", "shell.execute_reply": "2020-02-17T13:13:13.016364Z"}}
 in_out_df.to_csv(f'{data_path}cleaned/unnormalized/intakeOutput.csv')
 
-# + {"Collapsed": "false", "persistent_id": "5d512225-ad7e-40b4-a091-b18df3f38c4c", "pixiedust": {"displayParams": {}}}
-in_out_df_norm = du.data_processing.normalize_data(in_out_df_df, inplace=True)
+# + {"Collapsed": "false", "persistent_id": "5d512225-ad7e-40b4-a091-b18df3f38c4c", "pixiedust": {"displayParams": {}}, "execution": {"iopub.status.busy": "2020-02-17T13:53:03.465686Z", "iopub.status.idle": "2020-02-17T13:59:29.109568Z", "iopub.execute_input": "2020-02-17T13:53:03.466969Z", "shell.execute_reply.started": "2020-02-17T13:53:03.466862Z", "shell.execute_reply": "2020-02-17T13:59:29.108001Z"}}
+in_out_df_norm = du.data_processing.normalize_data(in_out_df, inplace=True)
 in_out_df_norm.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -1584,11 +1609,17 @@ in_out_df_norm.head()
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Save the dataframe after normalizing:
 
-# + {"Collapsed": "false", "persistent_id": "b9f11ee9-cd10-44df-961f-c7bc3642710f"}
+# + {"Collapsed": "false", "persistent_id": "b9f11ee9-cd10-44df-961f-c7bc3642710f", "execution": {"iopub.status.busy": "2020-02-17T13:59:29.114503Z", "iopub.status.idle": "2020-02-17T14:01:01.338813Z", "iopub.execute_input": "2020-02-17T13:59:29.114845Z", "shell.execute_reply.started": "2020-02-17T13:59:29.114780Z", "shell.execute_reply": "2020-02-17T14:01:01.336011Z"}}
 in_out_df.to_csv(f'{data_path}cleaned/normalized/intakeOutput.csv')
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Confirm that everything is ok through the `describe` method:
 
-# + {"Collapsed": "false", "persistent_id": "edafc000-e516-49fe-b8f6-ea4ce3969129"}
+# + {"Collapsed": "false", "persistent_id": "edafc000-e516-49fe-b8f6-ea4ce3969129", "execution": {"iopub.status.busy": "2020-02-17T14:01:01.343162Z", "iopub.status.idle": "2020-02-17T14:01:10.765769Z", "iopub.execute_input": "2020-02-17T14:01:01.343489Z", "shell.execute_reply.started": "2020-02-17T14:01:01.343420Z", "shell.execute_reply": "2020-02-17T14:01:10.763386Z"}}
 in_out_df.describe().transpose()
+
+# + {"Collapsed": "false", "persistent_id": "3cc624bc-6dac-4cd0-9d64-f329e29940fa", "pixiedust": {"displayParams": {}}, "execution": {"iopub.status.busy": "2020-02-17T14:01:22.734862Z", "iopub.execute_input": "2020-02-17T14:01:22.735206Z", "iopub.status.idle": "2020-02-17T14:01:23.631807Z", "shell.execute_reply.started": "2020-02-17T14:01:22.735046Z", "shell.execute_reply": "2020-02-17T14:01:23.630757Z"}}
+du.search_explore.dataframe_missing_values(in_out_df)
+
+# + {"Collapsed": "false"}
+
