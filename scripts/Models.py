@@ -1,15 +1,14 @@
 import torch                            # PyTorch to create and apply deep learning models
 from torch import nn, optim             # nn for neural network layers and optim for training optimizers
-from torch.nn import functional as F    # Module containing several activation functions
 import math                             # Useful package for logarithm operations
-from data_utils import embedding        # Embeddings and other categorical features handling methods
+import data_utils as du                 # Data science and machine learning relevant methods
 
 # [TODO] Create new classes for each model type and add options to include
 # variants such as embedding, time decay, regularization learning, etc
 class VanillaLSTM(nn.Module):
     def __init__(self, n_inputs, n_hidden, n_outputs, n_layers=1, p_dropout=0,
                  embed_features=None, n_embeddings=None, embedding_dim=None,
-                 bidirectional=False, padding_value=999999):
+                 bidir=False, padding_value=999999):
         '''A vanilla LSTM model, using PyTorch's predefined LSTM module, with
         the option to include embedding layers.
 
@@ -35,7 +34,7 @@ class VanillaLSTM(nn.Module):
         embedding_dim : list of ints, default None
             List of embedding dimensions. Needs to be in the same order as the
             embedding layers are described in `embed_features`.
-        bidirectional : bool, default False
+        bidir : bool, default False
             If set to True, the LSTM model will be bidirectional (have hidden
             memory flowing both forward and backwards).
         padding_value : int or float, default 999999
@@ -47,10 +46,10 @@ class VanillaLSTM(nn.Module):
         self.n_outputs = n_outputs
         self.n_layers = n_layers
         self.p_dropout = p_dropout
-        self.embed_features = embed_feature
+        self.embed_features = embed_features
         self.n_embeddings = n_embeddings
         self.embedding_dim = embedding_dim
-        self.bidir = bidirectional
+        self.bidir = bidir
         self.padding_value = padding_value
         # Embedding layers
         if self.embed_features is not None:
@@ -98,8 +97,16 @@ class VanillaLSTM(nn.Module):
         self.fc = nn.Linear(self.n_hidden, self.n_outputs)
         # Dropout used between the last LSTM layer and the fully connected layer
         self.dropout = nn.Dropout(p=self.p_dropout)
-        # Use the standard cross entropy function
-        self.criterion = nn.CrossEntropyLoss()
+        if self.n_outputs == 1:
+            # Use the sigmoid activation function
+            self.activation = nn.Sigmoid()
+            # Use the binary cross entropy function
+            self.criterion = nn.BCEWithLogitsLoss()
+        else:
+            # Use the sigmoid activation function
+            self.activation = nn.Softmax()
+            # Use the binary cross entropy function
+            self.criterion = nn.CrossEntropyLoss()
 
     def forward(self, x, x_lengths=None, get_hidden_state=False,
                 hidden_state=None, prob_output=True):
@@ -107,8 +114,8 @@ class VanillaLSTM(nn.Module):
             # Run each embedding layer on each respective feature, adding the
             # resulting embedding values to the tensor and removing the original,
             # categorical encoded columns
-            x = embedding.embedding_bag_pipeline(x, self.embed_layers, self.embed_features,
-                                                 model_forward=True, inplace=True)
+            x = du.embedding.embedding_bag_pipeline(x, self.embed_layers, self.embed_features,
+                                                    model_forward=True, inplace=True)
         # Make sure that the input data is of type float
         x = x.float()
         # Get the batch size (might not be always the same)
@@ -139,20 +146,29 @@ class VanillaLSTM(nn.Module):
         if prob_output is True:
             # Get the outputs in the form of probabilities
             if self.n_outputs == 1:
-                output = F.sigmoid(output)
+                output = self.activation(output)
             else:
                 # Normalize outputs on their last dimension
-                output = F.softmax(output, dim=len(output.shape)-1)
+                output = self.activation(output, dim=len(output.shape)-1)
         if get_hidden_state is True:
             return output, self.hidden
         else:
             return output
 
     def loss(self, y_pred, y_labels):
-        # Make sure that the labels are in long format
-        y_labels = y_labels.long()
+        # Flatten the data
+        y_pred = y_pred.reshape(-1)
+        y_labels = y_labels.reshape(-1)
+        # Find the indeces that correspond to padding samples
+        pad_idx = du.search_explore.find_val_idx(y_labels, self.padding_value)
+        if pad_idx is not None:
+            non_pad_idx = list(range(len(y_labels)))
+            [non_pad_idx.remove(idx) for idx in pad_idx]
+            # Remove the padding samples
+            y_labels = y_labels[non_pad_idx]
+            y_pred = y_pred[non_pad_idx]
         # Compute cross entropy loss which ignores all padding values
-        ce_loss = self.criterion(y_pred, y_labels, ignore_index=self.padding_value)
+        ce_loss = self.criterion(y_pred, y_labels)
         return ce_loss
 
     def init_hidden(self, batch_size):
@@ -170,8 +186,8 @@ class VanillaLSTM(nn.Module):
         return hidden
 
 
-class TLSTM(nn.Module):
+# class TLSTM(nn.Module):
 
 
 
-class DeepCare(nn.Module):
+# class DeepCare(nn.Module):
