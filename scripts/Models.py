@@ -1,23 +1,28 @@
 import torch                            # PyTorch to create and apply deep learning models
-from torch import nn, optim             # nn for neural network layers and optim for training optimizers
+from torch import nn                    # nn for neural network layers
+import torch.jit as jit                 # TorchScript for faster custom models
 import math                             # Useful package for logarithm operations
 import data_utils as du                 # Data science and machine learning relevant methods
 
 # [TODO] Create new classes for each model type and add options to include
 # variants such as embedding, time decay, regularization learning, etc
-class VanillaLSTM(nn.Module):
-    def __init__(self, n_inputs, n_hidden, n_outputs, n_layers=1, p_dropout=0,
+class BaseRNN(nn.Module):
+    def __init__(self, layer, n_inputs, n_hidden, n_outputs, n_layers=1, p_dropout=0,
                  embed_features=None, n_embeddings=None, embedding_dim=None,
                  bidir=False, padding_value=999999):
         '''A vanilla LSTM model, using PyTorch's predefined LSTM module, with
         the option to include embedding layers.
 
-        Parameters
+        nn.Parameters
         ----------
+        layer : nn.Module or jit.ScriptModule
+            Recurrent neural network layer to be used in this model.
         n_inputs : int
             Number of input features.
-        n_hidden : int
-            Number of hidden units.
+        n_hidden : int or list of ints
+            Number of hidden units. If there are multiple RNN layers (n_layers > 1),
+            this parameter must be a list of integers, with the number of hidden
+            units for each layer.
         n_outputs : int
             Number of outputs.
         n_layers : int, default 1
@@ -83,6 +88,9 @@ class VanillaLSTM(nn.Module):
             else:
                 raise Exception(f'ERROR: The embedding features must be indicated in `embed_features` as either a single, integer index or a list of indices. The provided argument has type {type(embed_features)}.')
         # LSTM layer(s)
+        # [TODO] Replace the LSTM layer with the user defined `layer` parameter
+        # [TODO] Add LSTM layers in a ModuleList, with each one having its own
+        # hidden units number
         if self.embed_features is None:
             self.lstm_n_inputs = self.n_inputs
         else:
@@ -186,8 +194,218 @@ class VanillaLSTM(nn.Module):
         return hidden
 
 
-# class TLSTM(nn.Module):
+class VanillaLSTM(BaseRNN):
+    def __init__(self, n_inputs, n_hidden, n_outputs, n_layers=1, p_dropout=0,
+                 embed_features=None, n_embeddings=None, embedding_dim=None,
+                 bidir=False, padding_value=999999):
+        # [TODO] Test this
+        super.__init__(layer=nn.LSTM, n_inputs=n_inputs, n_hidden=n_hidden,
+                       n_outputs=n_outputs, n_layers=1, p_dropout=0,
+                       embed_features=None, n_embeddings=None,
+                       embedding_dim=None, bidir=False, padding_value=999999)
 
+
+class TLSTM(BaseRNN):
+    def __init__(self, n_inputs, n_hidden, n_outputs, n_layers=1, p_dropout=0,
+                 embed_features=None, n_embeddings=None, embedding_dim=None,
+                 bidir=False, padding_value=999999):
+        # [TODO] Finish the TLSTM code
+        # [TODO] Test this
+        if bidir is True:
+            TLSTMLayer = BidirLSTMLayer(TLSTMCell, args)
+        else:
+            TLSTMLayer = LSTMLayer(TLSTMCell, args)
+        super.__init__(layer=TLSTMLayer, n_inputs=n_inputs, n_hidden=n_hidden,
+                       n_outputs=n_outputs, n_layers=1, p_dropout=0,
+                       embed_features=None, n_embeddings=None,
+                       embedding_dim=None, bidir=False, padding_value=999999)
+
+
+# [TODO]
+# class MF1LSTM(BaseRNN):
+
+
+# [TODO]
+# class MF2LSTM(BaseRNN):
+
+
+class LSTMCell(jit.ScriptModule):
+    def __init__(self, input_size, hidden_size):
+        super(LSTMCell, self).__init__()
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.weight_ih = nn.Parameter(torch.randn(4 * hidden_size, input_size))
+        self.weight_hh = nn.Parameter(torch.randn(4 * hidden_size, hidden_size))
+        self.bias_ih = nn.Parameter(torch.randn(4 * hidden_size))
+        self.bias_hh = nn.Parameter(torch.randn(4 * hidden_size))
+
+    @jit.script_method
+    def forward(self, input, state):
+        # type: (Tensor, Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tuple[Tensor, Tensor]]
+        hx, cx = state
+        gates = (torch.mm(input, self.weight_ih.t()) + self.bias_ih +
+                 torch.mm(hx, self.weight_hh.t()) + self.bias_hh)
+        ingate, forgetgate, cellgate, outgate = gates.chunk(4, 1)
+
+        ingate = torch.sigmoid(ingate)
+        forgetgate = torch.sigmoid(forgetgate)
+        cellgate = torch.tanh(cellgate)
+        outgate = torch.sigmoid(outgate)
+
+        cy = (forgetgate * cx) + (ingate * cellgate)
+        hy = outgate * torch.tanh(cy)
+
+        return hy, (hy, cy)
+
+
+class TLSTMCell(jit.ScriptModule):
+    def __init__(self, input_size, hidden_size, elapsed_time='small'):
+        super(LSTMCell, self).__init__()
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.weight_ih = nn.Parameter(torch.randn(4 * hidden_size, input_size))
+        self.weight_hh = nn.Parameter(torch.randn(4 * hidden_size, hidden_size))
+        self.weight_ch = nn.Parameter(torch.randn(hidden_size, hidden_size))
+        self.bias_ih = nn.Parameter(torch.randn(4 * hidden_size))
+        self.bias_hh = nn.Parameter(torch.randn(4 * hidden_size))
+        self.bias_ch = nn.Parameter(torch.randn(hidden_size))
+        self.elapsed_time = elapsed_time.lower()
+        if self.elapsed_time != 'small' and self.elapsed_time != 'long':
+            raise Exception(f'ERROR: The parameter `elapsed_time` must either be set to "small" or "long". Received "{elapsed_time}" instead.')
+
+    @jit.script_method
+    def forward(self, input, state, delta_ts_col):
+        # type: (Tensor, Tuple[Tensor, Tensor], int) -> Tuple[Tensor, Tuple[Tensor, Tensor]]
+        # Separate the elapsed time from the remaining features
+        delta_ts = input[delta_ts_col].clone()
+        input = du.deep_learning.remove_tensor_column(data, delta_ts_col, inplace=True)
+        # Get the hidden state and cell memory from the state variable
+        hx, cx = state
+        # Perform the LSTM gates operations
+        gates = (torch.mm(input, self.weight_ih.t()) + self.bias_ih +
+                 torch.mm(hx, self.weight_hh.t()) + self.bias_hh)
+        in_gate, forget_gate, cell_gate, out_gate = gates.chunk(4, 1)
+        # TLSTM's subspace decomposition into a short-term memory
+        cs = torch.mm(cx, self.weight_ch.t()) + self.bias_ch
+        # TLSTM's long-term memory
+        ct = cx - cs
+        # Calculate the time decay value
+        if self.elapsed_time == 'small':
+            g = 1 / delta_ts
+        else:
+            g = 1 / torch.log(math.e * delta_ts)
+        # TLSTM's discounted short-term memory
+        cs = g * cs
+        # TLSTM's adjusted previous memory
+        cx = ct + cs
+        # Apply each gate's activation function
+        in_gate = torch.sigmoid(in_gate)
+        forget_gate = torch.sigmoid(forget_gate)
+        cell_gate = torch.tanh(cell_gate)
+        out_gate = torch.sigmoid(out_gate)
+        # Calculate the new cell memory
+        cy = (forget_gate * cx) + (in_gate * cell_gate)
+        # Calculate the new hidden state
+        hy = out_gate * torch.tanh(cy)
+        # Return the new output and state
+        return hy, (hy, cy)
+
+
+class LSTMLayer(jit.ScriptModule):
+    def __init__(self, cell, *cell_args):
+        super(LSTMLayer, self).__init__()
+        self.cell = cell(*cell_args)
+
+    @jit.script_method
+    def forward(self, input, state):
+        # type: (Tensor, Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tuple[Tensor, Tensor]]
+        inputs = input.unbind(0)
+        outputs = []
+        for i in range(len(inputs)):
+            out, state = self.cell(inputs[i], state)
+            outputs += [out]
+        return torch.stack(outputs), state
+
+
+class ReverseLSTMLayer(jit.ScriptModule):
+    def __init__(self, cell, *cell_args):
+        super(ReverseLSTMLayer, self).__init__()
+        self.cell = cell(*cell_args)
+
+    @jit.script_method
+    def forward(self, input, state):
+        # type: (Tensor, Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tuple[Tensor, Tensor]]
+        inputs = du.utils.reverse(input.unbind(0))
+        outputs = jit.annotate(List[Tensor], [])
+        for i in range(len(inputs)):
+            out, state = self.cell(inputs[i], state)
+            outputs += [out]
+        return torch.stack(du.utils.reverse(outputs)), state
+
+
+class BidirLSTMLayer(jit.ScriptModule):
+    __constants__ = ['directions']
+
+    def __init__(self, cell, *cell_args):
+        super(BidirLSTMLayer, self).__init__()
+        self.directions = nn.ModuleList([
+            LSTMLayer(cell, *cell_args),
+            ReverseLSTMLayer(cell, *cell_args),
+        ])
+
+    @jit.script_method
+    def forward(self, input, states):
+        # type: (Tensor, List[Tuple[Tensor, Tensor]]) -> Tuple[Tensor, List[Tuple[Tensor, Tensor]]]
+        # List[LSTMState]: [forward LSTMState, backward LSTMState]
+        outputs = jit.annotate(List[Tensor], [])
+        output_states = jit.annotate(List[Tuple[Tensor, Tensor]], [])
+        # XXX: enumerate https://github.com/pytorch/pytorch/issues/14471
+        i = 0
+        for direction in self.directions:
+            state = states[i]
+            out, out_state = direction(input, state)
+            outputs += [out]
+            output_states += [out_state]
+            i += 1
+        return torch.cat(outputs, -1), output_states
+
+
+class StackedLSTMWithDropout(jit.ScriptModule):
+    # Necessary for iterating through self.layers and dropout support
+    __constants__ = ['layers', 'num_layers']
+
+    def __init__(self, num_layers, layer, first_layer_args, other_layer_args):
+        super(StackedLSTMWithDropout, self).__init__()
+        self.layers = init_stacked_lstm(num_layers, layer, first_layer_args,
+                                        other_layer_args)
+        # Introduces a Dropout layer on the outputs of each LSTM layer except
+        # the last layer, with dropout probability = 0.4.
+        self.num_layers = num_layers
+
+        if (num_layers == 1):
+            warnings.warn("dropout lstm adds dropout layers after all but last "
+                          "recurrent layer, it expects num_layers greater than "
+                          "1, but got num_layers = 1")
+
+        self.dropout_layer = nn.Dropout(0.4)
+
+    @jit.script_method
+    def forward(self, input, states):
+        # type: (Tensor, List[Tuple[Tensor, Tensor]]) -> Tuple[Tensor, List[Tuple[Tensor, Tensor]]]
+        # List[LSTMState]: One state per layer
+        output_states = jit.annotate(List[Tuple[Tensor, Tensor]], [])
+        output = input
+        # XXX: enumerate https://github.com/pytorch/pytorch/issues/14471
+        i = 0
+        for rnn_layer in self.layers:
+            state = states[i]
+            output, out_state = rnn_layer(output, state)
+            # Apply the dropout layer except the last layer
+            if i < self.num_layers - 1:
+                output = self.dropout_layer(output)
+            output_states += [out_state]
+            i += 1
+        return output, output_states
 
 
 # class DeepCare(nn.Module):
