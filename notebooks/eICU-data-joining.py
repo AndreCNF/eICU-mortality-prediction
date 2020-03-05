@@ -25,16 +25,16 @@
 # + [markdown] {"colab_type": "text", "id": "KOdmFzXqF7nq", "toc-hr-collapsed": true, "Collapsed": "false"}
 # ## Importing the necessary packages
 
-# + {"colab": {}, "colab_type": "code", "id": "G5RrWE9R_Nkl", "Collapsed": "false", "persistent_id": "522745b5-b5bf-479f-b697-5c7e9e12fc33", "last_executed_text": "import os                                  # os handles directory/workspace changes\nimport numpy as np                         # NumPy to handle numeric and NaN operations\nimport yaml                                # Save and load YAML files", "execution_event_id": "deb57b39-6a79-4b3a-95ed-02f8089ff593", "execution": {"iopub.status.busy": "2020-02-28T18:53:32.095433Z", "iopub.execute_input": "2020-02-28T18:53:32.095748Z", "iopub.status.idle": "2020-02-28T18:53:32.121877Z", "shell.execute_reply.started": "2020-02-28T18:53:32.095698Z", "shell.execute_reply": "2020-02-28T18:53:32.121052Z"}}
+# + {"colab": {}, "colab_type": "code", "id": "G5RrWE9R_Nkl", "Collapsed": "false", "persistent_id": "522745b5-b5bf-479f-b697-5c7e9e12fc33", "last_executed_text": "import os                                  # os handles directory/workspace changes\nimport numpy as np                         # NumPy to handle numeric and NaN operations\nimport yaml                                # Save and load YAML files", "execution_event_id": "deb57b39-6a79-4b3a-95ed-02f8089ff593", "execution": {"iopub.status.busy": "2020-03-02T04:29:44.023834Z", "iopub.execute_input": "2020-03-02T04:29:44.024344Z", "iopub.status.idle": "2020-03-02T04:29:44.050031Z", "shell.execute_reply.started": "2020-03-02T04:29:44.024269Z", "shell.execute_reply": "2020-03-02T04:29:44.048996Z"}}
 import os                                  # os handles directory/workspace changes
 import numpy as np                         # NumPy to handle numeric and NaN operations
 import yaml                                # Save and load YAML files
 
-# + {"Collapsed": "false", "persistent_id": "02accdbf-be7e-415c-ba11-165906e66c50", "last_executed_text": "# Debugging packages\nimport pixiedust                           # Debugging in Jupyter Notebook cells", "execution_event_id": "fa33a2f7-7127-49c6-bbe9-f89555b1f2be", "execution": {"iopub.status.busy": "2020-02-28T18:53:32.337974Z", "iopub.execute_input": "2020-02-28T18:53:32.338269Z", "iopub.status.idle": "2020-02-28T18:53:35.015658Z", "shell.execute_reply.started": "2020-02-28T18:53:32.338225Z", "shell.execute_reply": "2020-02-28T18:53:35.014298Z"}}
+# + {"Collapsed": "false", "persistent_id": "02accdbf-be7e-415c-ba11-165906e66c50", "last_executed_text": "# Debugging packages\nimport pixiedust                           # Debugging in Jupyter Notebook cells", "execution_event_id": "fa33a2f7-7127-49c6-bbe9-f89555b1f2be", "execution": {"iopub.status.busy": "2020-03-02T04:29:44.273767Z", "iopub.execute_input": "2020-03-02T04:29:44.274084Z", "iopub.status.idle": "2020-03-02T04:29:45.240567Z", "shell.execute_reply.started": "2020-03-02T04:29:44.274035Z", "shell.execute_reply": "2020-03-02T04:29:45.239794Z"}}
 # Debugging packages
 import pixiedust                           # Debugging in Jupyter Notebook cells
 
-# + {"Collapsed": "false", "persistent_id": "a1f6ee7f-36d4-489d-b2dd-ec2a38f15d11", "last_executed_text": "# Change to parent directory (presumably \"Documents\")\nos.chdir(\"../../..\")\n\n# Path to the CSV dataset files\ndata_path = 'Documents/Datasets/Thesis/eICU/uncompressed/'\n\n# Path to the code files\nproject_path = 'Documents/GitHub/eICU-mortality-prediction/'", "execution_event_id": "baeb346a-1c34-42d1-a501-7ae37369255e", "execution": {"iopub.status.busy": "2020-02-28T18:53:35.017309Z", "iopub.execute_input": "2020-02-28T18:53:35.017575Z", "iopub.status.idle": "2020-02-28T18:53:35.022012Z", "shell.execute_reply.started": "2020-02-28T18:53:35.017532Z", "shell.execute_reply": "2020-02-28T18:53:35.020863Z"}}
+# + {"Collapsed": "false", "persistent_id": "a1f6ee7f-36d4-489d-b2dd-ec2a38f15d11", "last_executed_text": "# Change to parent directory (presumably \"Documents\")\nos.chdir(\"../../..\")\n\n# Path to the CSV dataset files\ndata_path = 'Documents/Datasets/Thesis/eICU/uncompressed/'\n\n# Path to the code files\nproject_path = 'Documents/GitHub/eICU-mortality-prediction/'", "execution_event_id": "baeb346a-1c34-42d1-a501-7ae37369255e", "execution": {"iopub.status.busy": "2020-03-02T04:29:45.241774Z", "iopub.execute_input": "2020-03-02T04:29:45.242026Z", "iopub.status.idle": "2020-03-02T04:29:45.246002Z", "shell.execute_reply.started": "2020-03-02T04:29:45.241982Z", "shell.execute_reply": "2020-03-02T04:29:45.245012Z"}}
 # Change to parent directory (presumably "Documents")
 os.chdir("../../..")
 # Path to the CSV dataset files
@@ -42,13 +42,13 @@ data_path = 'data/eICU/uncompressed/cleaned/'
 # Path to the code files
 project_path = 'code/eICU-mortality-prediction/'
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-28T18:53:35.023307Z", "iopub.execute_input": "2020-02-28T18:53:35.023601Z", "iopub.status.idle": "2020-02-28T18:53:35.306929Z", "shell.execute_reply.started": "2020-02-28T18:53:35.023557Z", "shell.execute_reply": "2020-02-28T18:53:35.305611Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-02T04:29:45.247507Z", "iopub.execute_input": "2020-03-02T04:29:45.247746Z", "iopub.status.idle": "2020-03-02T04:29:45.491920Z", "shell.execute_reply.started": "2020-03-02T04:29:45.247691Z", "shell.execute_reply": "2020-03-02T04:29:45.490838Z"}}
 # Make sure that every large operation can be handled, by using the disk as an overflow for the memory
 # !export MODIN_OUT_OF_CORE=true
 # Another trick to do with Pandas so as to be able to allocate bigger objects to memory
 # !sudo bash -c 'echo 1 > /proc/sys/vm/overcommit_memory'
 
-# + {"Collapsed": "false", "persistent_id": "c0c2e356-d4f4-4a9d-bec2-88bdf9eb6a38", "last_executed_text": "import modin.pandas as pd                  # Optimized distributed version of Pandas\nimport data_utils as du                    # Data science and machine learning relevant methods", "execution_event_id": "82ef68be-443a-4bb8-8abd-7457a7005b4d", "execution": {"iopub.status.busy": "2020-02-28T18:53:35.308749Z", "iopub.execute_input": "2020-02-28T18:53:35.309054Z", "iopub.status.idle": "2020-02-28T18:53:45.266976Z", "shell.execute_reply.started": "2020-02-28T18:53:35.308980Z", "shell.execute_reply": "2020-02-28T18:53:45.265806Z"}}
+# + {"Collapsed": "false", "persistent_id": "c0c2e356-d4f4-4a9d-bec2-88bdf9eb6a38", "last_executed_text": "import modin.pandas as pd                  # Optimized distributed version of Pandas\nimport data_utils as du                    # Data science and machine learning relevant methods", "execution_event_id": "82ef68be-443a-4bb8-8abd-7457a7005b4d", "execution": {"iopub.status.busy": "2020-03-02T04:29:45.493665Z", "iopub.execute_input": "2020-03-02T04:29:45.494011Z", "iopub.status.idle": "2020-03-02T04:29:47.469944Z", "shell.execute_reply.started": "2020-03-02T04:29:45.493949Z", "shell.execute_reply": "2020-03-02T04:29:47.469028Z"}}
 import modin.pandas as pd                  # Optimized distributed version of Pandas
 # import pandas as pd
 import data_utils as du                    # Data science and machine learning relevant methods
@@ -56,15 +56,110 @@ import data_utils as du                    # Data science and machine learning r
 
 # Allow pandas to show more columns:
 
-# + {"execution": {"iopub.status.busy": "2020-02-28T18:53:45.268418Z", "iopub.execute_input": "2020-02-28T18:53:45.268692Z", "iopub.status.idle": "2020-02-28T18:53:45.276792Z", "shell.execute_reply.started": "2020-02-28T18:53:45.268640Z", "shell.execute_reply": "2020-02-28T18:53:45.275805Z"}}
+# + {"execution": {"iopub.status.busy": "2020-03-02T04:29:47.471527Z", "iopub.execute_input": "2020-03-02T04:29:47.471873Z", "iopub.status.idle": "2020-03-02T04:29:47.481727Z", "shell.execute_reply.started": "2020-03-02T04:29:47.471804Z", "shell.execute_reply": "2020-03-02T04:29:47.480515Z"}}
 pd.set_option('display.max_columns', 1000)
 pd.set_option('display.max_rows', 1000)
 
 # + [markdown] {"Collapsed": "false"}
 # Set the random seed for reproducibility
 
-# + {"Collapsed": "false", "persistent_id": "39b552cd-6948-4ec8-ac04-42f850c1e05a", "last_executed_text": "du.set_random_seed(42)", "execution_event_id": "29ab85ce-b7fd-4c5a-a110-5841e741c369", "execution": {"iopub.status.busy": "2020-02-28T18:53:45.278096Z", "iopub.execute_input": "2020-02-28T18:53:45.278324Z", "iopub.status.idle": "2020-02-28T18:53:45.305888Z", "shell.execute_reply.started": "2020-02-28T18:53:45.278282Z", "shell.execute_reply": "2020-02-28T18:53:45.304931Z"}}
+# + {"Collapsed": "false", "persistent_id": "39b552cd-6948-4ec8-ac04-42f850c1e05a", "last_executed_text": "du.set_random_seed(42)", "execution_event_id": "29ab85ce-b7fd-4c5a-a110-5841e741c369", "execution": {"iopub.status.busy": "2020-03-02T04:29:47.483414Z", "iopub.execute_input": "2020-03-02T04:29:47.483687Z", "iopub.status.idle": "2020-03-02T04:29:47.491996Z", "shell.execute_reply.started": "2020-03-02T04:29:47.483642Z", "shell.execute_reply": "2020-03-02T04:29:47.490725Z"}}
 du.set_random_seed(42)
+# -
+
+# ## Initializing variables
+
+dtype_dict = {'patientunitstayid': 'uint32',
+              'gender': 'UInt8',
+              'age': 'UInt8',
+              'ethnicity': 'Int8',
+              'admissionheight': 'float32',
+              'admissionweight': 'float32',
+              'death_ts': 'Int32',
+              'ts': 'int32',
+              'smoking_status': 'Int8',
+              'ethanol_use': 'Int8',
+              'cad': 'UInt8',
+              'cancer': 'UInt8',
+              # 'diagnosis_type_1': 'UInt64',
+              # 'diagnosis_disorder_2': 'UInt64',
+              # 'diagnosis_detailed_3': 'UInt64',
+              # 'allergyname': 'UInt64',
+              # 'drugallergyhiclseqno': 'UInt64',
+              # 'pasthistoryvalue': 'UInt64',
+              # 'pasthistorytype': 'UInt64',
+              # 'pasthistorydetails': 'UInt64',
+              # 'treatmenttype': 'UInt64',
+              # 'treatmenttherapy': 'UInt64',
+              # 'treatmentdetails': 'UInt64',
+              # 'drugunit_x': 'UInt64',
+              # 'drugadmitfrequency_x': 'UInt64',
+              # 'drughiclseqno_x': 'UInt64',
+              'drugdosage_x': 'float32',
+              # 'drugadmitfrequency_y': 'UInt64',
+              # 'drughiclseqno_y': 'UInt64',
+              'drugdosage_y': 'float32',
+              # 'drugunit_y': 'UInt64',
+              'bodyweight_(kg)': 'float32',
+              'oral_intake': 'float32',
+              'urine_output': 'float32',
+              'i.v._intake	': 'float32',
+              'saline_flush_(ml)_intake': 'float32',
+              'volume_given_ml': 'float32',
+              'stool_output': 'float32',
+              'prbcs_intake': 'float32',
+              'gastric_(ng)_output': 'float32',
+              'dialysis_output': 'float32',
+              'propofol_intake': 'float32',
+              'lr_intake': 'float32',
+              'indwellingcatheter_output': 'float32',
+              'feeding_tube_flush_ml': 'float32',
+              'patient_fluid_removal': 'float32',
+              'fentanyl_intake': 'float32',
+              'norepinephrine_intake': 'float32',
+              'crystalloids_intake': 'float32',
+              'voided_amount': 'float32',
+              'nutrition_total_intake': 'float32',
+              # 'nutrition': 'UInt64',
+              # 'nurse_treatments': 'UInt64',
+              # 'hygiene/adls': 'UInt64',
+              # 'activity': 'UInt64',
+              # 'pupils': 'UInt64',
+              # 'neurologic': 'UInt64',
+              # 'secretions': 'UInt64',
+              # 'cough': 'UInt64',
+              'priorvent': 'UInt8',
+              'onvent': 'UInt8',
+              'noninvasivesystolic': 'float32',
+              'noninvasivediastolic': 'float32',
+              'noninvasivemean': 'float32',
+              'paop': 'float32',
+              'cardiacoutput': 'float32',
+              'cardiacinput': 'float32',
+              'svr': 'float32',
+              'svri': 'float32',
+              'pvr': 'float32',
+              'pvri': 'float32',
+              'temperature': 'float32',
+              'sao2': 'float32',
+              'heartrate': 'float32',
+              'respiration': 'float32',
+              'cvp': 'float32',
+              'etco2': 'float32',
+              'systemicsystolic': 'float32',
+              'systemicdiastolic': 'float32',
+              'systemicmean': 'float32',
+              'pasystolic': 'float32',
+              'padiastolic': 'float32',
+              'pamean': 'float32',
+              'st1': 'float32',
+              'st2': 'float32',
+              'st3': 'float32',
+              'icp': 'float32',
+              # 'labtypeid': 'UInt64',
+              # 'labname': 'UInt64',
+              # 'lab_units': 'UInt64',
+              'lab_result': 'float32'}
 
 # + [markdown] {"Collapsed": "false"}
 # ## Loading the data
@@ -704,79 +799,6 @@ eICU_df.to_csv(f'{data_path}normalized/eICU_before_joining_vital_prdc.csv')
 
 # Merge the dataframes:
 
-# + {"execution": {"iopub.status.busy": "2020-02-27T00:58:11.943486Z", "iopub.execute_input": "2020-02-27T00:58:11.943798Z", "iopub.status.idle": "2020-02-27T00:58:11.954565Z", "shell.execute_reply.started": "2020-02-27T00:58:11.943744Z", "shell.execute_reply": "2020-02-27T00:58:11.953754Z"}}
-dtype_dict = {'patientunitstayid': int,
-              'gender': float,
-              'age': float,
-              'ethnicity': float,
-              'admissionheight': float,
-              'admissionweight': float,
-              'death_ts': float,
-              'ts': int,
-              'smoking_status': float,
-              'ethanol_use': float,
-              'cad': float,
-              'cancer': float,
-              'diagnosis_type_1': str,
-              'diagnosis_disorder_2': str,
-              'diagnosis_detailed_3': str,
-              'allergyname': str,
-              'drugallergyhiclseqno': str,
-              'pasthistoryvalue': str,
-              'pasthistorytype': str,
-              'pasthistorydetails': str,
-              'treatmenttype': str,
-              'treatmenttherapy': str,
-              'treatmentdetails': str,
-              'drugunit_x': str,
-              'drugadmitfrequency_x': str,
-              'drughiclseqno_x': str,
-              'drugdosage_x': float,
-              'drugadmitfrequency_y': str,
-              'drughiclseqno_y': str,
-              'drugdosage_y': float,
-              'drugunit_y': str,
-              'bodyweight_(kg)': float,
-              'oral_intake': float,
-              'urine_output': float,
-              'i.v._intake	': float,
-              'saline_flush_(ml)_intake': float,
-              'volume_given_ml': float,
-              'stool_output': float,
-              'prbcs_intake': float,
-              'gastric_(ng)_output': float,
-              'dialysis_output': float,
-              'propofol_intake': float,
-              'lr_intake': float,
-              'indwellingcatheter_output': float,
-              'feeding_tube_flush_ml': float,
-              'patient_fluid_removal': float,
-              'fentanyl_intake': float,
-              'norepinephrine_intake': float,
-              'crystalloids_intake': float,
-              'voided_amount': float,
-              'nutrition_total_intake': float,
-              'nutrition': str,
-              'nurse_treatments': str,
-              'hygiene/adls': str,
-              'activity': str,
-              'pupils': str,
-              'neurologic': str,
-              'secretions': str,
-              'cough': str,
-              'priorvent': float,
-              'onvent': float,
-              'noninvasivesystolic': float,
-              'noninvasivediastolic': float,
-              'noninvasivemean': float,
-              'paop': float,
-              'cardiacoutput': float,
-              'cardiacinput': float,
-              'svr': float,
-              'svri': float,
-              'pvr': float,
-              'pvri': float}
-
 # + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-26T20:27:00.928018Z", "iopub.status.idle": "2020-02-26T20:27:30.650260Z", "iopub.execute_input": "2020-02-26T20:27:00.928261Z", "shell.execute_reply.started": "2020-02-26T20:27:00.928221Z", "shell.execute_reply": "2020-02-26T20:27:30.649669Z"}}
 eICU_df = pd.read_csv(f'{data_path}normalized/eICU_before_joining_vital_prdc.csv',
                       dtype=dtype_dict)
@@ -830,101 +852,8 @@ eICU_df.head()
 # + {"execution": {"iopub.status.busy": "2020-02-27T02:11:51.961181Z", "iopub.status.idle": "2020-02-27T05:20:54.129974Z", "iopub.execute_input": "2020-02-27T02:11:51.961398Z", "shell.execute_reply.started": "2020-02-27T02:11:51.961359Z", "shell.execute_reply": "2020-02-27T05:20:54.129277Z"}}
 eICU_df.to_csv(f'{data_path}normalized/eICU_post_joining.csv')
 
-# + {"execution": {"iopub.status.busy": "2020-02-28T18:53:45.307400Z", "iopub.execute_input": "2020-02-28T18:53:45.307681Z", "iopub.status.idle": "2020-02-28T18:53:45.322745Z", "shell.execute_reply.started": "2020-02-28T18:53:45.307632Z", "shell.execute_reply": "2020-02-28T18:53:45.321700Z"}}
-dtype_dict = {'patientunitstayid': int,
-              'gender': float,
-              'age': float,
-              'ethnicity': float,
-              'admissionheight': float,
-              'admissionweight': float,
-              'death_ts': float,
-              'ts': int,
-              'smoking_status': float,
-              'ethanol_use': float,
-              'cad': float,
-              'cancer': float,
-              'diagnosis_type_1': str,
-              'diagnosis_disorder_2': str,
-              'diagnosis_detailed_3': str,
-              'allergyname': str,
-              'drugallergyhiclseqno': str,
-              'pasthistoryvalue': str,
-              'pasthistorytype': str,
-              'pasthistorydetails': str,
-              'treatmenttype': str,
-              'treatmenttherapy': str,
-              'treatmentdetails': str,
-              'drugunit_x': str,
-              'drugadmitfrequency_x': str,
-              'drughiclseqno_x': str,
-              'drugdosage_x': float,
-              'drugadmitfrequency_y': str,
-              'drughiclseqno_y': str,
-              'drugdosage_y': float,
-              'drugunit_y': str,
-              'bodyweight_(kg)': float,
-              'oral_intake': float,
-              'urine_output': float,
-              'i.v._intake	': float,
-              'saline_flush_(ml)_intake': float,
-              'volume_given_ml': float,
-              'stool_output': float,
-              'prbcs_intake': float,
-              'gastric_(ng)_output': float,
-              'dialysis_output': float,
-              'propofol_intake': float,
-              'lr_intake': float,
-              'indwellingcatheter_output': float,
-              'feeding_tube_flush_ml': float,
-              'patient_fluid_removal': float,
-              'fentanyl_intake': float,
-              'norepinephrine_intake': float,
-              'crystalloids_intake': float,
-              'voided_amount': float,
-              'nutrition_total_intake': float,
-              'nutrition': str,
-              'nurse_treatments': str,
-              'hygiene/adls': str,
-              'activity': str,
-              'pupils': str,
-              'neurologic': str,
-              'secretions': str,
-              'cough': str,
-              'priorvent': float,
-              'onvent': float,
-              'noninvasivesystolic': float,
-              'noninvasivediastolic': float,
-              'noninvasivemean': float,
-              'paop': float,
-              'cardiacoutput': float,
-              'cardiacinput': float,
-              'svr': float,
-              'svri': float,
-              'pvr': float,
-              'pvri': float,
-              'temperature': ,
-              'sao2': float,
-              'heartrate': float,
-              'respiration': float,
-              'cvp': float,
-              'etco2': float,
-              'systemicsystolic': float,
-              'systemicdiastolic': float,
-              'systemicmean': float,
-              'pasystolic': float,
-              'padiastolic': float,
-              'pamean': float,
-              'st1': float,
-              'st2': float,
-              'st3': float,
-              'icp': float,
-              'labtypeid': str,
-              'labname': str,
-              'lab_units': str,
-              'lab_result': float}
-
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-28T18:53:45.323720Z", "iopub.status.idle": "2020-02-28T18:53:45.324030Z", "iopub.execute_input": "2020-02-28T16:42:12.061630Z", "shell.execute_reply.started": "2020-02-28T16:42:12.061587Z", "shell.execute_reply": "2020-02-28T17:06:23.341003Z"}}
-eICU_df = pd.read_csv(f'{data_path}normalized/eICU_post_joining.csv', dtype=dtype_dict)
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-02T02:16:36.275096Z", "iopub.status.idle": "2020-03-02T02:16:52.692400Z", "iopub.execute_input": "2020-03-02T02:16:36.275391Z", "shell.execute_reply.started": "2020-03-02T02:16:36.275334Z", "shell.execute_reply": "2020-03-02T02:16:52.691647Z"}}
+eICU_df = pd.read_csv(f'{data_path}normalized/eICU_post_joining_0.csv', dtype=dtype_dict)
 eICU_df = eICU_df.drop(columns=['Unnamed: 0'])
 eICU_df.head()
 # -
@@ -942,60 +871,60 @@ eICU_df.patientunitstayid.nunique()
 # + [markdown] {"Collapsed": "false"}
 # ### Removing unit stays that are too short
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-28T17:06:23.343021Z", "iopub.status.idle": "2020-02-28T17:12:44.357768Z", "iopub.execute_input": "2020-02-28T17:06:23.343252Z", "shell.execute_reply.started": "2020-02-28T17:06:23.343207Z", "shell.execute_reply": "2020-02-28T17:12:44.355713Z"}}
-eICU_df.info()
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-02T01:53:31.536616Z", "iopub.status.idle": "2020-03-02T01:54:52.891338Z", "iopub.execute_input": "2020-03-02T01:53:31.536857Z", "shell.execute_reply.started": "2020-03-02T01:53:31.536812Z", "shell.execute_reply": "2020-03-02T01:54:52.890540Z"}}
+eICU_df.info(memory_usage='deep')
 
 # + [markdown] {"Collapsed": "false"}
 # Make sure that the dataframe is ordered by time `ts`:
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-28T17:12:44.358704Z", "iopub.status.idle": "2020-02-28T17:12:44.359012Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-02T02:17:12.532218Z", "iopub.status.idle": "2020-03-02T02:17:39.288044Z", "iopub.execute_input": "2020-03-02T02:17:12.532569Z", "shell.execute_reply.started": "2020-03-02T02:17:12.532509Z", "shell.execute_reply": "2020-03-02T02:17:39.286198Z"}}
 eICU_df = eICU_df.sort_values('ts')
 eICU_df.head()
 
 # + [markdown] {"Collapsed": "false"}
 # Remove unit stays that have less than 10 records:
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-28T17:12:44.359917Z", "iopub.status.idle": "2020-02-28T17:12:44.360224Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-02T02:17:39.289585Z", "iopub.status.idle": "2020-03-02T02:18:15.176358Z", "iopub.execute_input": "2020-03-02T02:17:39.289871Z", "shell.execute_reply.started": "2020-03-02T02:17:39.289827Z", "shell.execute_reply": "2020-03-02T02:18:15.175455Z"}}
 unit_stay_len = eICU_df.groupby('patientunitstayid').patientunitstayid.count()
 unit_stay_len
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-28T17:12:44.361112Z", "iopub.status.idle": "2020-02-28T17:12:44.361398Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-02T02:18:15.178381Z", "iopub.status.idle": "2020-03-02T02:18:15.198989Z", "iopub.execute_input": "2020-03-02T02:18:15.178640Z", "shell.execute_reply.started": "2020-03-02T02:18:15.178591Z", "shell.execute_reply": "2020-03-02T02:18:15.198038Z"}}
 unit_stay_short = set(unit_stay_len[unit_stay_len < 10].index)
 unit_stay_short
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-28T17:12:44.362353Z", "iopub.status.idle": "2020-02-28T17:12:44.362655Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-02T02:18:15.200767Z", "iopub.status.idle": "2020-03-02T02:18:17.001752Z", "iopub.execute_input": "2020-03-02T02:18:15.201115Z", "shell.execute_reply.started": "2020-03-02T02:18:15.201047Z", "shell.execute_reply": "2020-03-02T02:18:17.000646Z"}}
 len(unit_stay_short)
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-28T17:12:44.363470Z", "iopub.status.idle": "2020-02-28T17:12:44.363766Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-02T02:18:17.003368Z", "iopub.status.idle": "2020-03-02T02:18:18.720633Z", "iopub.execute_input": "2020-03-02T02:18:17.004081Z", "shell.execute_reply.started": "2020-03-02T02:18:17.003999Z", "shell.execute_reply": "2020-03-02T02:18:18.719243Z"}}
 eICU_df.patientunitstayid.nunique()
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-28T17:12:44.364747Z", "iopub.status.idle": "2020-02-28T17:12:44.365032Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-02T02:18:18.721989Z", "iopub.status.idle": "2020-03-02T02:18:20.427440Z", "iopub.execute_input": "2020-03-02T02:18:18.722309Z", "shell.execute_reply.started": "2020-03-02T02:18:18.722259Z", "shell.execute_reply": "2020-03-02T02:18:20.426700Z"}}
 eICU_df = eICU_df[~eICU_df.patientunitstayid.isin(unit_stay_short)]
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-28T17:12:44.365992Z", "iopub.status.idle": "2020-02-28T17:12:44.366292Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-02T02:18:20.428470Z", "iopub.status.idle": "2020-03-02T02:18:22.585566Z", "iopub.execute_input": "2020-03-02T02:18:20.428687Z", "shell.execute_reply.started": "2020-03-02T02:18:20.428649Z", "shell.execute_reply": "2020-03-02T02:18:22.584657Z"}}
 eICU_df.patientunitstayid.nunique()
 
 # + [markdown] {"Collapsed": "false"}
 # Remove unit stays that have data that represent less than 48h:
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-28T17:12:44.367179Z", "iopub.status.idle": "2020-02-28T17:12:44.367462Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-02T02:18:22.588007Z", "iopub.status.idle": "2020-03-02T02:19:35.059137Z", "iopub.execute_input": "2020-03-02T02:18:22.588243Z", "shell.execute_reply.started": "2020-03-02T02:18:22.588196Z", "shell.execute_reply": "2020-03-02T02:19:35.058244Z"}}
 unit_stay_duration = eICU_df.groupby('patientunitstayid').ts.apply(lambda x: x.max() - x.min())
 unit_stay_duration
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-28T17:12:44.368395Z", "iopub.status.idle": "2020-02-28T17:12:44.368831Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-02T02:19:35.060437Z", "iopub.status.idle": "2020-03-02T02:19:35.081986Z", "iopub.execute_input": "2020-03-02T02:19:35.060663Z", "shell.execute_reply.started": "2020-03-02T02:19:35.060624Z", "shell.execute_reply": "2020-03-02T02:19:35.081304Z"}}
 unit_stay_short = set(unit_stay_duration[unit_stay_duration < 48*60].index)
 unit_stay_short
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-28T17:12:44.369646Z", "iopub.status.idle": "2020-02-28T17:12:44.369952Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-02T02:19:35.083029Z", "iopub.status.idle": "2020-03-02T02:19:35.087514Z", "iopub.execute_input": "2020-03-02T02:19:35.083255Z", "shell.execute_reply.started": "2020-03-02T02:19:35.083217Z", "shell.execute_reply": "2020-03-02T02:19:35.086634Z"}}
 len(unit_stay_short)
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-28T17:12:44.370725Z", "iopub.status.idle": "2020-02-28T17:12:44.371149Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-02T02:19:35.088373Z", "iopub.status.idle": "2020-03-02T02:19:36.682445Z", "iopub.execute_input": "2020-03-02T02:19:35.088588Z", "shell.execute_reply.started": "2020-03-02T02:19:35.088551Z", "shell.execute_reply": "2020-03-02T02:19:36.681534Z"}}
 eICU_df.patientunitstayid.nunique()
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-28T17:12:44.371915Z", "iopub.status.idle": "2020-02-28T17:12:44.372197Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-02T02:19:36.683454Z", "iopub.status.idle": "2020-03-02T02:19:38.245825Z", "iopub.execute_input": "2020-03-02T02:19:36.683688Z", "shell.execute_reply.started": "2020-03-02T02:19:36.683649Z", "shell.execute_reply": "2020-03-02T02:19:38.245000Z"}}
 eICU_df = eICU_df[~eICU_df.patientunitstayid.isin(unit_stay_short)]
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-28T17:12:44.372972Z", "iopub.execute_input": "2020-02-24T03:09:09.493994Z", "iopub.status.idle": "2020-02-28T17:12:44.373255Z", "shell.execute_reply.started": "2020-02-24T03:09:09.493953Z", "shell.execute_reply": "2020-02-24T03:09:09.508954Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-02T02:19:38.247052Z", "iopub.execute_input": "2020-03-02T02:19:38.247368Z", "iopub.status.idle": "2020-03-02T02:19:40.054358Z", "shell.execute_reply.started": "2020-03-02T02:19:38.247313Z", "shell.execute_reply": "2020-03-02T02:19:40.053667Z"}}
 eICU_df.patientunitstayid.nunique()
 
 # + [markdown] {"Collapsed": "false"}
@@ -1004,33 +933,39 @@ eICU_df.patientunitstayid.nunique()
 # + [markdown] {"Collapsed": "false"}
 # #### Continuous features
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-28T17:12:44.373995Z", "iopub.status.idle": "2020-02-28T17:12:44.374282Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-02T02:19:40.055657Z", "iopub.status.idle": "2020-03-02T02:19:40.061775Z", "iopub.execute_input": "2020-03-02T02:19:40.055928Z", "shell.execute_reply.started": "2020-03-02T02:19:40.055877Z", "shell.execute_reply": "2020-03-02T02:19:40.061167Z"}}
 set([col.split('_x')[0].split('_y')[0] for col in eICU_df.columns if col.endswith('_x') or col.endswith('_y')])
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-28T17:12:44.375054Z", "iopub.status.idle": "2020-02-28T17:12:44.375336Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-02T02:19:40.062791Z", "iopub.status.idle": "2020-03-02T02:19:40.801829Z", "iopub.execute_input": "2020-03-02T02:19:40.063021Z", "shell.execute_reply.started": "2020-03-02T02:19:40.062965Z", "shell.execute_reply": "2020-03-02T02:19:40.800838Z"}}
 eICU_df[['drugdosage_x', 'drugdosage_y']].head(20)
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-28T17:12:44.376088Z", "iopub.status.idle": "2020-02-28T17:12:44.376410Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-02T02:19:40.802911Z", "iopub.status.idle": "2020-03-02T02:19:41.605486Z", "iopub.execute_input": "2020-03-02T02:19:40.803378Z", "shell.execute_reply.started": "2020-03-02T02:19:40.803328Z", "shell.execute_reply": "2020-03-02T02:19:41.604550Z"}}
 eICU_df[eICU_df.index == 2564878][['drugdosage_x', 'drugdosage_y']]
+# -
 
-# + {"Collapsed": "false", "pixiedust": {"displayParams": {}}, "execution": {"iopub.status.busy": "2020-02-28T17:12:44.377477Z", "iopub.status.idle": "2020-02-28T17:12:44.377806Z"}}
+# Convert dataframe to Pandas, as the next cells aren't working properly with Modin:
+
+# + {"execution": {"iopub.status.busy": "2020-03-02T02:34:38.088841Z", "iopub.execute_input": "2020-03-02T02:34:38.089308Z", "iopub.status.idle": "2020-03-02T02:36:29.270540Z", "shell.execute_reply.started": "2020-03-02T02:34:38.089249Z", "shell.execute_reply": "2020-03-02T02:36:29.269639Z"}}
+eICU_df, pd = du.utils.convert_dataframe(eICU_df, to='pandas')
+
+# + {"Collapsed": "false", "pixiedust": {"displayParams": {}}, "execution": {"iopub.status.busy": "2020-03-02T02:36:29.271829Z", "iopub.status.idle": "2020-03-02T02:40:49.633520Z", "iopub.execute_input": "2020-03-02T02:36:29.272090Z", "shell.execute_reply.started": "2020-03-02T02:36:29.272048Z", "shell.execute_reply": "2020-03-02T02:40:49.632359Z"}}
 eICU_df = du.data_processing.merge_columns(eICU_df, cols_to_merge=['drugdosage'])
 eICU_df.sample(20)
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-28T17:12:44.378799Z", "iopub.status.idle": "2020-02-28T17:12:44.379097Z"}}
-eICU_df[['drugdosage', 'drughiclseqno']].head(20)
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-02T02:42:58.060632Z", "iopub.status.idle": "2020-03-02T02:42:58.071196Z", "iopub.execute_input": "2020-03-02T02:42:58.062830Z", "shell.execute_reply.started": "2020-03-02T02:42:58.062000Z", "shell.execute_reply": "2020-03-02T02:42:58.070236Z"}}
+eICU_df['drugdosage'].head(20)
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-28T17:12:44.379932Z", "iopub.status.idle": "2020-02-28T17:12:44.380220Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-02T02:42:58.072944Z", "iopub.status.idle": "2020-03-02T02:42:58.109699Z", "iopub.execute_input": "2020-03-02T02:42:58.073200Z", "shell.execute_reply.started": "2020-03-02T02:42:58.073152Z", "shell.execute_reply": "2020-03-02T02:42:58.108599Z"}}
 eICU_df[eICU_df.index == 2564878][['drugdosage']]
 
 # + [markdown] {"Collapsed": "false"}
 # Save the current dataframe:
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-28T17:12:44.381185Z", "iopub.status.idle": "2020-02-28T17:12:44.381572Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-02T02:42:58.111378Z", "iopub.status.idle": "2020-03-02T02:44:09.853833Z", "iopub.execute_input": "2020-03-02T02:42:58.111630Z", "shell.execute_reply.started": "2020-03-02T02:42:58.111587Z", "shell.execute_reply": "2020-03-02T02:44:09.852640Z"}}
 eICU_df.to_csv(f'{data_path}normalized/eICU_post_merge_continuous_cols.csv')
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-26T17:30:52.807662Z", "iopub.status.idle": "2020-02-26T17:30:52.807951Z"}}
-eICU_df = pd.read_csv(f'{data_path}normalized/eICU_post_merge_continuous_cols.csv')
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-02T04:30:00.844962Z", "iopub.status.idle": "2020-03-02T04:30:11.572222Z", "iopub.execute_input": "2020-03-02T04:30:00.845255Z", "shell.execute_reply.started": "2020-03-02T04:30:00.845203Z", "shell.execute_reply": "2020-03-02T04:30:11.571436Z"}}
+eICU_df = pd.read_csv(f'{data_path}normalized/eICU_post_merge_continuous_cols.csv', dtype=dtype_dict)
 eICU_df = eICU_df.drop(columns=['Unnamed: 0'])
 eICU_df.head()
 
@@ -1042,40 +977,46 @@ eICU_df.head()
 # + [markdown] {"Collapsed": "false"}
 # Load encoding dictionaries:
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-26T17:30:52.808934Z", "iopub.status.idle": "2020-02-26T17:30:52.809222Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-02T04:30:11.573718Z", "iopub.status.idle": "2020-03-02T04:30:12.296191Z", "iopub.execute_input": "2020-03-02T04:30:11.573946Z", "shell.execute_reply.started": "2020-03-02T04:30:11.573907Z", "shell.execute_reply": "2020-03-02T04:30:12.295282Z"}}
 stream_adms_drug = open(f'{data_path}cat_embed_feat_enum_adms_drug.yaml', 'r')
 stream_med = open(f'{data_path}cat_embed_feat_enum_med.yaml', 'r')
 cat_embed_feat_enum_adms_drug = yaml.load(stream_adms_drug, Loader=yaml.FullLoader)
 cat_embed_feat_enum_med = yaml.load(stream_med, Loader=yaml.FullLoader)
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-26T17:30:52.810075Z", "iopub.status.idle": "2020-02-26T17:30:52.810403Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-02T04:30:12.297962Z", "iopub.status.idle": "2020-03-02T04:30:13.220139Z", "iopub.execute_input": "2020-03-02T04:30:12.298233Z", "shell.execute_reply.started": "2020-03-02T04:30:12.298185Z", "shell.execute_reply": "2020-03-02T04:30:13.219325Z"}}
 eICU_df[['drugadmitfrequency_x', 'drugunit_x', 'drughiclseqno_x',
          'drugadmitfrequency_y', 'drugunit_y', 'drughiclseqno_y']].head(20)
 
 # + [markdown] {"Collapsed": "false"}
 # Standardize the encoding of similar columns:
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-26T17:30:52.811134Z", "iopub.status.idle": "2020-02-26T17:30:52.811417Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-02T04:30:13.221857Z", "iopub.status.idle": "2020-03-02T04:30:13.227721Z", "iopub.execute_input": "2020-03-02T04:30:13.222452Z", "shell.execute_reply.started": "2020-03-02T04:30:13.222381Z", "shell.execute_reply": "2020-03-02T04:30:13.226537Z"}}
 list(cat_embed_feat_enum_adms_drug.keys())
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-26T17:30:52.812055Z", "iopub.status.idle": "2020-02-26T17:30:52.812387Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-02T04:30:13.229548Z", "iopub.status.idle": "2020-03-02T04:30:13.236472Z", "iopub.execute_input": "2020-03-02T04:30:13.229882Z", "shell.execute_reply.started": "2020-03-02T04:30:13.229820Z", "shell.execute_reply": "2020-03-02T04:30:13.235778Z"}}
 list(cat_embed_feat_enum_med.keys())
+# -
 
-# + {"Collapsed": "false", "pixiedust": {"displayParams": {}}, "execution": {"iopub.status.busy": "2020-02-26T17:30:52.813323Z", "iopub.status.idle": "2020-02-26T17:30:52.813600Z"}}
+# Convert dataframe to Pandas, as the next cells aren't working properly with Modin:
+
+# + {"Collapsed": "false", "pixiedust": {"displayParams": {}}, "execution": {"iopub.status.busy": "2020-03-02T04:32:58.094012Z", "iopub.status.idle": "2020-03-02T04:33:08.134782Z", "iopub.execute_input": "2020-03-02T04:32:58.094283Z", "shell.execute_reply.started": "2020-03-02T04:32:58.094227Z", "shell.execute_reply": "2020-03-02T04:33:08.133006Z"}}
 eICU_df, cat_embed_feat_enum['drugadmitfrequency'] = du.embedding.converge_enum(eICU_df, cat_feat_name=['drugadmitfrequency_x',
                                                                                                         'drugadmitfrequency_y'],
                                                                                 dict1=cat_embed_feat_enum_adms_drug['drugadmitfrequency'],
                                                                                 dict2=cat_embed_feat_enum_med['frequency'],
                                                                                 nan_value=0, sort=True, inplace=True)
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-26T17:30:52.814321Z", "iopub.status.idle": "2020-02-26T17:30:52.814623Z"}}
+# + {"execution": {"iopub.status.busy": "2020-03-02T04:31:13.515846Z", "iopub.execute_input": "2020-03-02T04:31:13.516175Z", "iopub.status.idle": "2020-03-02T04:32:58.092718Z", "shell.execute_reply.started": "2020-03-02T04:31:13.516123Z", "shell.execute_reply": "2020-03-02T04:32:58.091848Z"}}
+eICU_df, pd = du.utils.convert_dataframe(eICU_df, to='pandas')
+
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-02T04:33:08.135755Z", "iopub.status.idle": "2020-03-02T04:33:08.136165Z"}}
 eICU_df, cat_embed_feat_enum['drugunit'] = du.embedding.converge_enum(eICU_df, cat_feat_name=['drugunit_x',
                                                                                               'drugunit_y'],
                                                                       dict1=cat_embed_feat_enum_adms_drug['drugunit'],
                                                                       dict2=cat_embed_feat_enum_med['drugunit'],
                                                                       nan_value=0, sort=True, inplace=True)
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-26T17:30:52.815558Z", "iopub.status.idle": "2020-02-26T17:30:52.815850Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-02T04:33:08.137080Z", "iopub.status.idle": "2020-03-02T04:33:08.137789Z"}}
 eICU_df, cat_embed_feat_enum['drughiclseqno'] = du.embedding.converge_enum(eICU_df, cat_feat_name=['drughiclseqno_x',
                                                                                                    'drughiclseqno_y'],
                                                                            dict1=cat_embed_feat_enum_adms_drug['drughiclseqno'],
@@ -1085,17 +1026,17 @@ eICU_df, cat_embed_feat_enum['drughiclseqno'] = du.embedding.converge_enum(eICU_
 # + [markdown] {"Collapsed": "false"}
 # Merge the features:
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-26T17:30:52.816599Z", "iopub.status.idle": "2020-02-26T17:30:52.816877Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-02T04:33:08.138826Z", "iopub.status.idle": "2020-03-02T04:33:08.139148Z"}}
 eICU_df = du.data_processing.merge_columns(eICU_df, cols_to_merge=['drugadmitfrequency', 'drugunit', 'drughiclseqno'])
 eICU_df.sample(20)
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-26T17:30:52.817588Z", "iopub.status.idle": "2020-02-26T17:30:52.817859Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-02T04:33:08.140132Z", "iopub.status.idle": "2020-03-02T04:33:08.140448Z"}}
 eICU_df[['drugadmitfrequency', 'drugunit', 'drughiclseqno']].head(20)
 
 # + [markdown] {"Collapsed": "false"}
 # Save the current dataframe:
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-26T17:30:52.818528Z", "iopub.status.idle": "2020-02-26T17:30:52.818804Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-02T04:33:08.141704Z", "iopub.status.idle": "2020-03-02T04:33:08.142063Z"}}
 eICU_df.to_csv(f'{data_path}normalized/eICU_post_merge_categorical_cols.csv')
 
 # + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-26T16:29:55.464340Z", "iopub.status.idle": "2020-02-26T16:29:55.464637Z"}}
@@ -1108,7 +1049,7 @@ eICU_df.head()
 #
 # Combine the encoding dictionaries of all tables, having in account the converged ones, into a single dictionary representative of all the categorical features in the resulting dataframe.
 
-# + {"execution": {"iopub.status.busy": "2020-02-26T17:30:52.819895Z", "iopub.status.idle": "2020-02-26T17:30:52.820175Z"}}
+# + {"execution": {"iopub.status.busy": "2020-03-02T04:33:08.143209Z", "iopub.status.idle": "2020-03-02T04:33:08.143643Z"}}
 stream_adms_drug = open(f'{data_path}cat_embed_feat_enum_adms_drug.yaml', 'r')
 stream_inf_drug = open(f'{data_path}cat_embed_feat_enum_inf_drug.yaml', 'r')
 stream_med = open(f'{data_path}cat_embed_feat_enum_med.yaml', 'r')
@@ -1124,7 +1065,7 @@ stream_lab = open(f'{data_path}cat_embed_feat_enum_lab.yaml', 'r')
 stream_patient = open(f'{data_path}cat_embed_feat_enum_patient.yaml', 'r')
 stream_notes = open(f'{data_path}cat_embed_feat_enum_notes.yaml', 'r')
 
-# + {"execution": {"iopub.status.busy": "2020-02-26T17:30:52.820991Z", "iopub.status.idle": "2020-02-26T17:30:52.821270Z"}}
+# + {"execution": {"iopub.status.busy": "2020-03-02T04:33:08.144659Z", "iopub.status.idle": "2020-03-02T04:33:08.145016Z"}}
 cat_embed_feat_enum_adms_drug = yaml.load(stream_adms_drug, Loader=yaml.FullLoader)
 cat_embed_feat_enum_inf_drug = yaml.load(stream_inf_drug, Loader=yaml.FullLoader)
 cat_embed_feat_enum_med = yaml.load(stream_med, Loader=yaml.FullLoader)
@@ -1140,7 +1081,7 @@ cat_embed_feat_enum_lab = yaml.load(stream_lab, Loader=yaml.FullLoader)
 cat_embed_feat_enum_patient = yaml.load(stream_patient, Loader=yaml.FullLoader)
 cat_embed_feat_enum_notes = yaml.load(stream_notes, Loader=yaml.FullLoader)
 
-# + {"execution": {"iopub.status.busy": "2020-02-26T17:30:52.822108Z", "iopub.status.idle": "2020-02-26T17:30:52.822389Z"}}
+# + {"execution": {"iopub.status.busy": "2020-03-02T04:33:08.145908Z", "iopub.status.idle": "2020-03-02T04:33:08.146300Z"}}
 cat_embed_feat_enum = du.utils.merge_dicts([cat_embed_feat_enum_adms_drug, cat_embed_feat_enum_inf_drug,
                                             cat_embed_feat_enum_med, cat_embed_feat_enum_treat,
                                             cat_embed_feat_enum_in_out, cat_embed_feat_enum_diag,
@@ -1149,13 +1090,13 @@ cat_embed_feat_enum = du.utils.merge_dicts([cat_embed_feat_enum_adms_drug, cat_e
                                             cat_embed_feat_enum_patient, cat_embed_feat_enum_notes,
                                             cat_embed_feat_enum])
 
-# + {"execution": {"iopub.status.busy": "2020-02-26T17:30:52.823078Z", "iopub.status.idle": "2020-02-26T17:30:52.823403Z"}}
+# + {"execution": {"iopub.status.busy": "2020-03-02T04:33:08.146990Z", "iopub.status.idle": "2020-03-02T04:33:08.147354Z"}}
 list(cat_embed_feat_enum.keys())
 
 # + [markdown] {"Collapsed": "false"}
 # Save the final encoding dictionary:
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-26T17:30:52.824221Z", "iopub.status.idle": "2020-02-26T17:30:52.824505Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-02T04:33:08.148525Z", "iopub.status.idle": "2020-03-02T04:33:08.148811Z"}}
 stream = open(f'{data_path}/cleaned/cat_embed_feat_enum_eICU.yaml', 'w')
 yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 
@@ -1163,37 +1104,43 @@ yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 # ### Removing unit stays with too many missing values
 #
 # Consider removing all unit stays that have, combining rows and columns, a very high percentage of missing values.
+# -
 
-# + {"execution": {"iopub.status.busy": "2020-02-26T17:30:52.825304Z", "iopub.status.idle": "2020-02-26T17:30:52.825570Z"}}
+# Reconvert dataframe to Modin:
+
+# + {"execution": {"iopub.status.busy": "2020-03-02T04:33:08.150355Z", "iopub.status.idle": "2020-03-02T04:33:08.150854Z"}}
+eICU_df, pd = du.utils.convert_dataframe(vital_prdc_df, to='modin')
+
+# + {"execution": {"iopub.status.busy": "2020-03-02T04:33:08.152336Z", "iopub.status.idle": "2020-03-02T04:33:08.153242Z", "iopub.execute_input": "2020-03-02T04:30:22.532646Z", "shell.execute_reply.started": "2020-03-02T04:30:22.532603Z", "shell.execute_reply": "2020-03-02T04:30:22.536895Z"}}
 n_features = len(eICU_df.columns)
 n_features
 
 # + [markdown] {"Collapsed": "false"}
 # Create a temporary column that counts each row's number of missing values:
 
-# + {"execution": {"iopub.status.busy": "2020-02-26T17:30:52.826344Z", "iopub.status.idle": "2020-02-26T17:30:52.826648Z"}}
+# + {"execution": {"iopub.status.busy": "2020-03-02T04:33:08.154574Z", "iopub.status.idle": "2020-03-02T04:33:08.155051Z", "iopub.execute_input": "2020-03-02T04:30:23.160440Z", "shell.execute_reply.started": "2020-03-02T04:30:23.160388Z", "shell.execute_reply": "2020-03-02T04:30:27.325740Z"}}
 eICU_df['row_msng_val'] = eICU_df.isnull().sum(axis=1)
-eICU_df[['patientunitstay', 'ts', 'row_msng_val']].head()
+eICU_df[['patientunitstayid', 'ts', 'row_msng_val']].head()
 
 # + [markdown] {"Collapsed": "false"}
 # Check each unit stay's percentage of missing data points:
 
-# + {"execution": {"iopub.status.busy": "2020-02-26T17:30:52.827348Z", "iopub.status.idle": "2020-02-26T17:30:52.827618Z"}}
+# + {"execution": {"iopub.status.busy": "2020-03-02T04:33:08.156401Z", "iopub.status.idle": "2020-03-02T04:33:08.156886Z"}}
 # Number of possible data points in each unit stay
 n_data_points = eICU_df.groupby('patientunitstayid').ts.count() * n_features
 n_data_points
 
-# + {"execution": {"iopub.status.busy": "2020-02-26T17:30:52.828368Z", "iopub.status.idle": "2020-02-26T17:30:52.828643Z"}}
+# + {"execution": {"iopub.status.busy": "2020-03-02T04:33:08.158235Z", "iopub.status.idle": "2020-03-02T04:33:08.159229Z"}}
 # Number of missing values in each unit stay
 n_msng_val = eICU_df.groupby('patientunitstayid').row_msng_val.sum()
 n_msng_val
 
-# + {"execution": {"iopub.status.busy": "2020-02-26T17:30:52.829547Z", "iopub.status.idle": "2020-02-26T17:30:52.829909Z"}}
+# + {"execution": {"iopub.status.busy": "2020-03-02T04:33:08.160468Z", "iopub.status.idle": "2020-03-02T04:33:08.161302Z"}}
 # Percentage of missing values in each unit stay
 msng_val_prct = (n_msng_val / n_data_points) * 100
 msng_val_prct
 
-# + {"execution": {"iopub.status.busy": "2020-02-26T17:30:52.830831Z", "iopub.status.idle": "2020-02-26T17:30:52.831172Z"}}
+# + {"execution": {"iopub.status.busy": "2020-03-02T04:33:08.162698Z", "iopub.status.idle": "2020-03-02T04:33:08.163590Z"}}
 msng_val_prct.describe()
 
 # + [markdown] {"Collapsed": "false"}
