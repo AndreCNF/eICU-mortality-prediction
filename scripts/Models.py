@@ -134,8 +134,8 @@ class BaseRNN(nn.Module):
             self.criterion = nn.CrossEntropyLoss()
 
     def forward(self, x, get_hidden_state=False,
-                hidden_state=None, prob_output=True):
-        if self.embed_features is not None:
+                hidden_state=None, prob_output=True, already_embedded=True):
+        if self.embed_features is not None and already_embedded is False:
             # Run each embedding layer on each respective feature, adding the
             # resulting embedding values to the tensor and removing the original,
             # categorical encoded columns
@@ -337,8 +337,8 @@ class VanillaLSTM(nn.Module):
             self.criterion = nn.CrossEntropyLoss()
 
     def forward(self, x, x_lengths=None, get_hidden_state=False,
-                hidden_state=None, prob_output=True):
-        if self.embed_features is not None:
+                hidden_state=None, prob_output=True, already_embedded=True):
+        if self.embed_features is not None and already_embedded is False:
             # Run each embedding layer on each respective feature, adding the
             # resulting embedding values to the tensor and removing the original,
             # categorical encoded columns
