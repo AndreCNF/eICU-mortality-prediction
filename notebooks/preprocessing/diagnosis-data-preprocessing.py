@@ -61,9 +61,10 @@ du.set_random_seed(42)
 # ### Initialize variables
 
 # + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82"}
-cat_feat = []                              # List of categorical features
-cat_embed_feat = []                        # List of categorical features that will be embedded
-cat_embed_feat_enum = dict()               # Dictionary of the enumerations of the categorical features that will be embedded
+# List of categorical features
+cat_feat = []
+# Dictionary of the one hot encoded columns originary from each categorical feature, that will be embedded
+cat_feat_ohe = dict()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Read the data
@@ -128,39 +129,22 @@ alrg_df = alrg_df[['patientunitstayid', 'allergyoffset',
                    'allergyname', 'drughiclseqno']]
 alrg_df.head()
 
-# + {"toc-hr-collapsed": false, "Collapsed": "false", "cell_type": "markdown"}
+# + {"Collapsed": "false", "toc-hr-collapsed": false, "cell_type": "markdown"}
 # ### Discretize categorical features
 #
-# Convert binary categorical features into simple numberings, one hot encode features with a low number of categories (in this case, 5) and enumerate sparse categorical features that will be embedded.
+# Convert binary categorical features into one hot encode columns, which can later be embedded or used as is.
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# #### Separate and prepare features for embedding
-#
-# Identify categorical features that have more than 5 unique categories, which will go through an embedding layer afterwards, and enumerate them.
-#
-# In the case of microbiology data, we're also going to embed the antibiotic `sensitivitylevel`, not because it has many categories, but because there can be several rows of data per timestamp (which would be impractical on one hot encoded data).
+# #### One hot encode features
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# Update list of categorical features and add those that will need embedding (features with more than 5 unique values):
+# Update list of categorical features:
 
 # + {"Collapsed": "false", "persistent_id": "621e1414-6268-4641-818b-5f8b5d54a446"}
-new_cat_feat = ['allergyname', 'drughiclseqno']
-[cat_feat.append(col) for col in new_cat_feat]
-
-# + {"Collapsed": "false", "persistent_id": "664dd21a-1669-4244-abb3-18ac6c330004"}
-cat_feat_nunique = [alrg_df[feature].nunique() for feature in new_cat_feat]
-cat_feat_nunique
-
-# + {"Collapsed": "false", "persistent_id": "70c0fd76-7880-4446-9574-d1779a9cce15"}
-new_cat_embed_feat = []
-for i in range(len(new_cat_feat)):
-    if cat_feat_nunique[i] > 5:
-        # Add feature to the list of those that will be embedded
-        cat_embed_feat.append(new_cat_feat[i])
-        new_cat_embed_feat.append(new_cat_feat[i])
+cat_feat = ['allergyname', 'drughiclseqno']
 
 # + {"Collapsed": "false", "persistent_id": "ce58accd-9f73-407c-b441-6da299604bb1"}
-alrg_df[new_cat_feat].head()
+alrg_df[cat_feat].head()
 
 # + {"Collapsed": "false"}
 alrg_df[alrg_df.allergyname.str.contains('other')].allergyname.value_counts()
@@ -169,11 +153,9 @@ alrg_df[alrg_df.allergyname.str.contains('other')].allergyname.value_counts()
 alrg_df[alrg_df.allergyname.str.contains('unknown')].allergyname.value_counts()
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "9c0217cf-66d8-467b-b0df-b75441b1c0dc"}
-for i in range(len(new_cat_embed_feat)):
-    feature = new_cat_embed_feat[i]
-    # Prepare for embedding, i.e. enumerate categories
-    alrg_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(alrg_df, feature, nan_value=0,
-                                                                                           forbidden_digit=0)
+alrg_df = du.data_processing.one_hot_encoding_dataframe(alrg_df, columns=cat_feat, join_rows=False,
+                                                        join_by=['patientunitstayid', 'drugoffset'])
+alrg_df
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Fill missing values of the drug and allergies data with 0, so as to prepare for embedding:
@@ -185,13 +167,24 @@ alrg_df.drughiclseqno = alrg_df.drughiclseqno.fillna(0).astype(int)
 alrg_df.allergyname = alrg_df.allergyname.fillna(0).astype(int)
 
 # + {"Collapsed": "false", "persistent_id": "e7ebceaf-e35b-4143-8fea-b5b14016e7f3"}
-alrg_df[new_cat_feat].head()
+alrg_df[cat_feat].head()
 
 # + {"Collapsed": "false", "persistent_id": "e72804a4-82fe-4ce9-930e-6fd615c307f0"}
-cat_embed_feat_enum
+cat_feat_ohe
 
 # + {"Collapsed": "false", "persistent_id": "1b6e81c6-87ba-44dc-9c8d-73e168e946a6"}
-alrg_df[new_cat_feat].dtypes
+alrg_df[cat_feat].dtypes
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Save the association between the original categorical features and the new one hot encoded columns:
+
+# + {"Collapsed": "false", "persistent_id": "26eac7f3-9081-4a96-ae4a-40054c223fd7", "execution": {"iopub.status.busy": "2020-03-09T16:37:35.157248Z", "iopub.execute_input": "2020-03-09T16:37:35.157526Z", "iopub.status.idle": "2020-03-09T16:37:35.164656Z", "shell.execute_reply.started": "2020-03-09T16:37:35.157493Z", "shell.execute_reply": "2020-03-09T16:37:35.163771Z"}}
+for orig_col in cat_feat:
+    cat_feat_ohe[orig_col] = [ohe_col for ohe_col in new_columns
+                              if ohe_col.startswith(orig_col)]
+
+# + {"execution": {"iopub.status.busy": "2020-03-09T16:37:35.165864Z", "iopub.execute_input": "2020-03-09T16:37:35.166280Z", "iopub.status.idle": "2020-03-09T16:37:35.190294Z", "shell.execute_reply.started": "2020-03-09T16:37:35.166256Z", "shell.execute_reply": "2020-03-09T16:37:35.189358Z"}, "Collapsed": "false"}
+cat_feat_ohe
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # #### Save enumeration encoding mapping
@@ -199,8 +192,8 @@ alrg_df[new_cat_feat].dtypes
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
 # + {"Collapsed": "false", "persistent_id": "45fdd1e4-00cd-49f8-b498-f50fb291e89a"}
-stream = open(f'{data_path}/cleaned/cat_embed_feat_enum_alrg.yaml', 'w')
-yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
+stream = open(f'{data_path}/cleaned/cat_feat_ohe_alrg.yaml', 'w')
+yaml.dump(cat_feat_ohe, stream, default_flow_style=False)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Create the timestamp feature and sort
@@ -303,7 +296,7 @@ alrg_df, pd = du.utils.convert_dataframe(alrg_df, to='pandas')
 type(alrg_df)
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "bf671749-9886-44f0-923f-24fd31d7d371"}
-alrg_df = du.embedding.join_repeated_rows(alrg_df, new_cat_embed_feat, inplace=True)
+alrg_df = du.embedding.join_repeated_rows(alrg_df, inplace=True)
 alrg_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -350,13 +343,13 @@ alrg_df.head()
 # Save the dataframe before normalizing:
 
 # + {"Collapsed": "false", "persistent_id": "58eeead0-9cdc-4095-9643-2009af44a9a3"}
-alrg_df.to_csv(f'{data_path}cleaned/unnormalized/allergy.csv')
+alrg_df.to_csv(f'{data_path}cleaned/unnormalized/ohe/allergy.csv')
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Save the dataframe after normalizing:
 
 # + {"Collapsed": "false", "persistent_id": "b89fd87e-1200-41ef-83dc-09e0e3309f09"}
-alrg_df.to_csv(f'{data_path}cleaned/normalized/allergy.csv')
+alrg_df.to_csv(f'{data_path}cleaned/normalized/ohe/allergy.csv')
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Confirm that everything is ok through the `describe` method:
@@ -371,9 +364,10 @@ alrg_df.describe().transpose()
 # ### Initialize variables
 
 # + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82"}
-cat_feat = []                              # List of categorical features
-cat_embed_feat = []                        # List of categorical features that will be embedded
-cat_embed_feat_enum = dict()               # Dictionary of the enumerations of the categorical features that will be embedded
+# List of categorical features
+cat_feat = []
+# Dictionary of the one hot encoded columns originary from each categorical feature, that will be embedded
+cat_feat_ohe = dict()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Read the data
@@ -580,53 +574,47 @@ past_hist_df.pasthistorydetails.nunique()
 past_hist_df = past_hist_df.drop('pasthistorypath', axis=1)
 past_hist_df.head()
 
-# + {"toc-hr-collapsed": false, "Collapsed": "false", "cell_type": "markdown"}
+# + {"Collapsed": "false", "toc-hr-collapsed": false, "cell_type": "markdown"}
 # ### Discretize categorical features
 #
-# Convert binary categorical features into simple numberings, one hot encode features with a low number of categories (in this case, 5) and enumerate sparse categorical features that will be embedded.
+# Convert binary categorical features into one hot encode columns, which can later be embedded or used as is.
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# #### Separate and prepare features for embedding
-#
-# Identify categorical features that have more than 5 unique categories, which will go through an embedding layer afterwards, and enumerate them.
+# #### One hot encode features
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# Update list of categorical features and add those that will need embedding (features with more than 5 unique values):
+# Update list of categorical features:
 
 # + {"Collapsed": "false", "persistent_id": "e6083094-1f99-408d-9b12-dfe4d88ee39a"}
-new_cat_feat = ['pasthistoryvalue', 'pasthistorytype', 'pasthistorydetails']
-[cat_feat.append(col) for col in new_cat_feat]
-
-# + {"Collapsed": "false", "persistent_id": "7d6962aa-6294-4e84-a136-1a04057781da"}
-cat_feat_nunique = [past_hist_df[feature].nunique() for feature in new_cat_feat]
-cat_feat_nunique
-
-# + {"Collapsed": "false", "persistent_id": "6cfc4870-d154-40ad-b3a5-337f8697dc6c"}
-new_cat_embed_feat = []
-for i in range(len(new_cat_feat)):
-    if cat_feat_nunique[i] > 5:
-        # Add feature to the list of those that will be embedded
-        cat_embed_feat.append(new_cat_feat[i])
-        new_cat_embed_feat.append(new_cat_feat[i])
+cat_feat = ['pasthistoryvalue', 'pasthistorytype', 'pasthistorydetails']
 
 # + {"Collapsed": "false", "persistent_id": "aa911443-7f86-44ea-ab90-997fd38ba074"}
-past_hist_df[new_cat_feat].head()
+past_hist_df[cat_feat].head()
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "58e7c624-cfc6-4df1-83dc-a8a22fe7ffc0"}
-for i in range(len(new_cat_embed_feat)):
-    feature = new_cat_embed_feat[i]
-    # Prepare for embedding, i.e. enumerate categories
-    past_hist_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(past_hist_df, feature, nan_value=0,
-                                                                                                forbidden_digit=0)
+past_hist_df = du.data_processing.one_hot_encoding_dataframe(past_hist_df, columns=cat_feat, join_rows=False,
+                                                             join_by=['patientunitstayid', 'drugoffset'])
+past_hist_df
 
 # + {"Collapsed": "false", "persistent_id": "7ee06a1a-cb99-4a94-9271-6f67948fd2a6"}
-past_hist_df[new_cat_feat].head()
+past_hist_df[cat_feat].head()
 
 # + {"Collapsed": "false", "persistent_id": "a77d1170-55de-492e-9c4a-2542c06da94d"}
-cat_embed_feat_enum
+cat_feat_ohe
 
 # + {"Collapsed": "false", "persistent_id": "2b7dde92-fe4b-42ce-9705-9d505878a696"}
-past_hist_df[new_cat_feat].dtypes
+past_hist_df[cat_feat].dtypes
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Save the association between the original categorical features and the new one hot encoded columns:
+
+# + {"Collapsed": "false", "persistent_id": "26eac7f3-9081-4a96-ae4a-40054c223fd7", "execution": {"iopub.status.busy": "2020-03-09T16:37:35.157248Z", "iopub.execute_input": "2020-03-09T16:37:35.157526Z", "iopub.status.idle": "2020-03-09T16:37:35.164656Z", "shell.execute_reply.started": "2020-03-09T16:37:35.157493Z", "shell.execute_reply": "2020-03-09T16:37:35.163771Z"}}
+for orig_col in cat_feat:
+    cat_feat_ohe[orig_col] = [ohe_col for ohe_col in new_columns
+                              if ohe_col.startswith(orig_col)]
+
+# + {"execution": {"iopub.status.busy": "2020-03-09T16:37:35.165864Z", "iopub.execute_input": "2020-03-09T16:37:35.166280Z", "iopub.status.idle": "2020-03-09T16:37:35.190294Z", "shell.execute_reply.started": "2020-03-09T16:37:35.166256Z", "shell.execute_reply": "2020-03-09T16:37:35.189358Z"}, "Collapsed": "false"}
+cat_feat_ohe
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # #### Save enumeration encoding mapping
@@ -634,8 +622,8 @@ past_hist_df[new_cat_feat].dtypes
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
 # + {"Collapsed": "false", "persistent_id": "534d4a78-6d3e-4e3b-b318-5f353835d53a"}
-stream = open(f'{data_path}/cleaned/cat_embed_feat_enum_past_hist.yaml', 'w')
-yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
+stream = open(f'{data_path}/cleaned/cat_feat_ohe_past_hist.yaml', 'w')
+yaml.dump(cat_feat_ohe, stream, default_flow_style=False)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Remove duplicate rows
@@ -678,7 +666,7 @@ past_hist_df, pd = du.utils.convert_dataframe(past_hist_df, to='pandas')
 type(past_hist_df)
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023"}
-past_hist_df = du.embedding.join_repeated_rows(past_hist_df, new_cat_embed_feat, id_columns=['patientunitstayid'], inplace=True)
+past_hist_df = du.embedding.join_repeated_rows(past_hist_df, id_columns=['patientunitstayid'], inplace=True)
 past_hist_df.head()
 
 # + {"Collapsed": "false"}
@@ -712,13 +700,13 @@ past_hist_df.head()
 # Save the dataframe before normalizing:
 
 # + {"Collapsed": "false", "persistent_id": "01cb3dd4-7afa-454b-b8c4-e473cb305367"}
-past_hist_df.to_csv(f'{data_path}cleaned/unnormalized/pastHistory.csv')
+past_hist_df.to_csv(f'{data_path}cleaned/unnormalized/ohe/pastHistory.csv')
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Save the dataframe after normalizing:
 
 # + {"Collapsed": "false", "persistent_id": "5924e842-7b4f-4b3a-bddf-9b89952dfe26"}
-past_hist_df.to_csv(f'{data_path}cleaned/normalized/pastHistory.csv')
+past_hist_df.to_csv(f'{data_path}cleaned/normalized/ohe/pastHistory.csv')
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Confirm that everything is ok through the `describe` method:
@@ -733,9 +721,10 @@ past_hist_df.describe().transpose()
 # ### Initialize variables
 
 # + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82"}
-cat_feat = []                              # List of categorical features
-cat_embed_feat = []                        # List of categorical features that will be embedded
-cat_embed_feat_enum = dict()               # Dictionary of the enumerations of the categorical features that will be embedded
+# List of categorical features
+cat_feat = []
+# Dictionary of the one hot encoded columns originary from each categorical feature, that will be embedded
+cat_feat_ohe = dict()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Read the data
@@ -804,53 +793,47 @@ diagn_df['diagnosis_detailed_3'] = diagn_df.diagnosisstring.apply(lambda x: du.s
 diagn_df = diagn_df.drop('diagnosisstring', axis=1)
 diagn_df.head()
 
-# + {"toc-hr-collapsed": false, "Collapsed": "false", "cell_type": "markdown"}
+# + {"Collapsed": "false", "toc-hr-collapsed": false, "cell_type": "markdown"}
 # ### Discretize categorical features
 #
-# Convert binary categorical features into simple numberings, one hot encode features with a low number of categories (in this case, 5) and enumerate sparse categorical features that will be embedded.
+# Convert binary categorical features into one hot encode columns, which can later be embedded or used as is.
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# #### Separate and prepare features for embedding
-#
-# Identify categorical features that have more than 5 unique categories, which will go through an embedding layer afterwards, and enumerate them.
+# #### One hot encode features
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# Update list of categorical features and add those that will need embedding (features with more than 5 unique values):
+# Update list of categorical features:
 
 # + {"Collapsed": "false", "persistent_id": "67f7e344-f016-4d85-a051-df96d07b5274"}
-new_cat_feat = ['diagnosis_type_1', 'diagnosis_disorder_2', 'diagnosis_detailed_3']
-[cat_feat.append(col) for col in new_cat_feat]
-
-# + {"Collapsed": "false", "persistent_id": "24e349bb-902c-4c6f-a032-647a98ac5834"}
-cat_feat_nunique = [diagn_df[feature].nunique() for feature in new_cat_feat]
-cat_feat_nunique
-
-# + {"Collapsed": "false", "persistent_id": "cb4c7b2b-47ea-4976-8f6f-4e8e9956a62f"}
-new_cat_embed_feat = []
-for i in range(len(new_cat_feat)):
-    if cat_feat_nunique[i] > 5:
-        # Add feature to the list of those that will be embedded
-        cat_embed_feat.append(new_cat_feat[i])
-        new_cat_embed_feat.append(new_cat_feat[i])
+cat_feat = ['diagnosis_type_1', 'diagnosis_disorder_2', 'diagnosis_detailed_3']
 
 # + {"Collapsed": "false", "persistent_id": "72f3e710-08ef-4c9d-9876-c9d8cbaaf5f0"}
-diagn_df[new_cat_feat].head()
+diagn_df[cat_feat].head()
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "bba23ddd-c1e5-49b7-9b7f-8fe5819ee7f9"}
-for i in range(len(new_cat_embed_feat)):
-    feature = new_cat_embed_feat[i]
-    # Prepare for embedding, i.e. enumerate categories
-    diagn_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(diagn_df, feature, nan_value=0,
-                                                                                            forbidden_digit=0)
+diagn_df = du.data_processing.one_hot_encoding_dataframe(diagn_df, columns=cat_feat, join_rows=False,
+                                                         join_by=['patientunitstayid', 'drugoffset'])
+diagn_df
 
 # + {"Collapsed": "false", "persistent_id": "64118894-5fb4-4e31-91cf-695d64a7e633"}
-diagn_df[new_cat_feat].head()
+diagn_df[cat_feat].head()
 
 # + {"Collapsed": "false", "persistent_id": "15f3d224-568b-45b1-8d6d-6bd4eaf35562"}
-cat_embed_feat_enum
+cat_feat_ohe
 
 # + {"Collapsed": "false", "persistent_id": "cbe8c721-69d6-4af1-ba27-ef8a6c166b19"}
-diagn_df[new_cat_feat].dtypes
+diagn_df[cat_feat].dtypes
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Save the association between the original categorical features and the new one hot encoded columns:
+
+# + {"Collapsed": "false", "persistent_id": "26eac7f3-9081-4a96-ae4a-40054c223fd7", "execution": {"iopub.status.busy": "2020-03-09T16:37:35.157248Z", "iopub.execute_input": "2020-03-09T16:37:35.157526Z", "iopub.status.idle": "2020-03-09T16:37:35.164656Z", "shell.execute_reply.started": "2020-03-09T16:37:35.157493Z", "shell.execute_reply": "2020-03-09T16:37:35.163771Z"}}
+for orig_col in cat_feat:
+    cat_feat_ohe[orig_col] = [ohe_col for ohe_col in new_columns
+                              if ohe_col.startswith(orig_col)]
+
+# + {"execution": {"iopub.status.busy": "2020-03-09T16:37:35.165864Z", "iopub.execute_input": "2020-03-09T16:37:35.166280Z", "iopub.status.idle": "2020-03-09T16:37:35.190294Z", "shell.execute_reply.started": "2020-03-09T16:37:35.166256Z", "shell.execute_reply": "2020-03-09T16:37:35.189358Z"}, "Collapsed": "false"}
+cat_feat_ohe
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # #### Save enumeration encoding mapping
@@ -858,8 +841,8 @@ diagn_df[new_cat_feat].dtypes
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
 # + {"Collapsed": "false", "persistent_id": "95ac0351-6a18-41b0-9937-37d255fa34ca"}
-stream = open(f'{data_path}/cleaned/cat_embed_feat_enum_diag.yaml', 'w')
-yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
+stream = open(f'{data_path}/cleaned/cat_feat_ohe_diag.yaml', 'w')
+yaml.dump(cat_feat_ohe, stream, default_flow_style=False)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Create the timestamp feature and sort
@@ -916,7 +899,7 @@ diagn_df, pd = du.utils.convert_dataframe(diagn_df, to='pandas')
 type(diagn_df)
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023"}
-diagn_df = du.embedding.join_repeated_rows(diagn_df, new_cat_embed_feat, inplace=True)
+diagn_df = du.embedding.join_repeated_rows(diagn_df, inplace=True)
 diagn_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -956,13 +939,13 @@ diagn_df.head()
 # Save the dataframe before normalizing:
 
 # + {"Collapsed": "false", "persistent_id": "0c0cc6d4-56a9-40d4-a213-288b7080fb72"}
-diagn_df.to_csv(f'{data_path}cleaned/unnormalized/diagnosis.csv')
+diagn_df.to_csv(f'{data_path}cleaned/unnormalized/ohe/diagnosis.csv')
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Save the dataframe after normalizing:
 
 # + {"Collapsed": "false", "persistent_id": "4c0def92-984f-4dd3-a807-be7188be38e8"}
-diagn_df.to_csv(f'{data_path}cleaned/normalized/diagnosis.csv')
+diagn_df.to_csv(f'{data_path}cleaned/normalized/ohe/diagnosis.csv')
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Confirm that everything is ok through the `describe` method:

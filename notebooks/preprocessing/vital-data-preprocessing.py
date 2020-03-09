@@ -201,9 +201,9 @@ vital_aprdc_df.head()
 # Save the dataframe before normalizing:
 
 # + {"Collapsed": "false", "persistent_id": "e42f577a-db00-4ecf-9e3c-433007a3bdaf"}
-vital_aprdc_df.to_csv(f'{data_path}cleaned/unnormalized/vitalAperiodic.csv')
+vital_aprdc_df.to_csv(f'{data_path}cleaned/unnormalized/ohe/vitalAperiodic.csv')
 
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "d5ad6017-ad4a-419c-badb-9454add7752d", "last_executed_text": "vital_aprdc_df = du.data_processing.normalize_data(vital_aprdc_df, categ_columns=new_cat_feat,\n                                                    id_columns=['patientunitstayid', 'ts', 'death_ts'])\nvital_aprdc_df.head(6)", "execution_event_id": "3d6d0a5c-9160-4ffc-87d4-85632a968a1d"}
+# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "d5ad6017-ad4a-419c-badb-9454add7752d", "last_executed_text": "vital_aprdc_df = du.data_processing.normalize_data(vital_aprdc_df, categ_columns=cat_feat,\n                                                    id_columns=['patientunitstayid', 'ts', 'death_ts'])\nvital_aprdc_df.head(6)", "execution_event_id": "3d6d0a5c-9160-4ffc-87d4-85632a968a1d"}
 vital_aprdc_df = du.data_processing.normalize_data(vital_aprdc_df, inplace=True)
 vital_aprdc_df.head(6)
 
@@ -214,7 +214,7 @@ vital_aprdc_df.head(6)
 # Save the dataframe after normalizing:
 
 # + {"Collapsed": "false", "persistent_id": "812e7eb1-ff92-4a26-a970-2f40fc5bbdb1"}
-vital_aprdc_df.to_csv(f'{data_path}cleaned/normalized/vitalAperiodic.csv')
+vital_aprdc_df.to_csv(f'{data_path}cleaned/normalized/ohe/vitalAperiodic.csv')
 
 # + [markdown] {"Collapsed": "false"}
 # Confirm that everything is ok through the `describe` method:
@@ -400,14 +400,14 @@ type(vital_prdc_df)
 # Save the dataframe before normalizing:
 
 # + {"Collapsed": "false", "persistent_id": "e42f577a-db00-4ecf-9e3c-433007a3bdaf", "execution": {"iopub.status.busy": "2020-02-23T22:52:23.392632Z", "iopub.status.idle": "2020-02-23T23:25:21.863695Z", "iopub.execute_input": "2020-02-23T22:52:23.392853Z", "shell.execute_reply.started": "2020-02-23T22:52:23.392816Z", "shell.execute_reply": "2020-02-23T23:25:21.862696Z"}}
-vital_prdc_df.to_csv(f'{data_path}cleaned/unnormalized/vitalPeriodic.csv')
+vital_prdc_df.to_csv(f'{data_path}cleaned/unnormalized/ohe/vitalPeriodic.csv')
 
 # + {"Collapsed": "false", "persistent_id": "e42f577a-db00-4ecf-9e3c-433007a3bdaf", "execution": {"iopub.status.busy": "2020-02-24T00:05:23.843116Z", "iopub.status.idle": "2020-02-24T00:08:16.755770Z", "iopub.execute_input": "2020-02-24T00:05:23.843348Z", "shell.execute_reply.started": "2020-02-24T00:05:23.843307Z", "shell.execute_reply": "2020-02-24T00:08:16.754743Z"}}
-vital_prdc_df = pd.read_csv(f'{data_path}cleaned/unnormalized/vitalPeriodic.csv')
+vital_prdc_df = pd.read_csv(f'{data_path}cleaned/unnormalized/ohe/vitalPeriodic.csv')
 vital_prdc_df = vital_prdc_df.drop(columns=['Unnamed: 0'])
 vital_prdc_df.head()
 
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "d5ad6017-ad4a-419c-badb-9454add7752d", "last_executed_text": "vital_prdc_df = du.data_processing.normalize_data(vital_prdc_df, categ_columns=new_cat_feat,\n                                                    id_columns=['patientunitstayid', 'ts', 'death_ts'])\nvital_prdc_df.head(6)", "execution_event_id": "3d6d0a5c-9160-4ffc-87d4-85632a968a1d", "execution": {"iopub.status.busy": "2020-02-24T00:10:03.127013Z", "iopub.status.idle": "2020-02-24T00:11:16.615136Z", "iopub.execute_input": "2020-02-24T00:10:03.127293Z", "shell.execute_reply.started": "2020-02-24T00:10:03.127252Z", "shell.execute_reply": "2020-02-24T00:11:16.614331Z"}}
+# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "d5ad6017-ad4a-419c-badb-9454add7752d", "last_executed_text": "vital_prdc_df = du.data_processing.normalize_data(vital_prdc_df, categ_columns=cat_feat,\n                                                    id_columns=['patientunitstayid', 'ts', 'death_ts'])\nvital_prdc_df.head(6)", "execution_event_id": "3d6d0a5c-9160-4ffc-87d4-85632a968a1d", "execution": {"iopub.status.busy": "2020-02-24T00:10:03.127013Z", "iopub.status.idle": "2020-02-24T00:11:16.615136Z", "iopub.execute_input": "2020-02-24T00:10:03.127293Z", "shell.execute_reply.started": "2020-02-24T00:10:03.127252Z", "shell.execute_reply": "2020-02-24T00:11:16.614331Z"}}
 vital_prdc_df = du.data_processing.normalize_data(vital_prdc_df, inplace=True)
 vital_prdc_df.head(6)
 
@@ -418,7 +418,7 @@ vital_prdc_df.head(6)
 # Save the dataframe after normalizing:
 
 # + {"Collapsed": "false", "persistent_id": "812e7eb1-ff92-4a26-a970-2f40fc5bbdb1", "execution": {"iopub.status.busy": "2020-02-24T00:11:16.616663Z", "iopub.status.idle": "2020-02-24T00:56:10.413312Z", "iopub.execute_input": "2020-02-24T00:11:16.616895Z", "shell.execute_reply.started": "2020-02-24T00:11:16.616855Z", "shell.execute_reply": "2020-02-24T00:56:10.412488Z"}}
-vital_prdc_df.to_csv(f'{data_path}cleaned/normalized/vitalPeriodic.csv')
+vital_prdc_df.to_csv(f'{data_path}cleaned/normalized/ohe/vitalPeriodic.csv')
 
 # + [markdown] {"Collapsed": "false"}
 # Confirm that everything is ok through the `describe` method:

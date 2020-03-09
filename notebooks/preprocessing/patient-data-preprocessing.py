@@ -60,9 +60,10 @@ du.set_random_seed(42)
 # ### Initialize variables
 
 # + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82"}
-cat_feat = []                              # List of categorical features
-cat_embed_feat = []                        # List of categorical features that will be embedded
-cat_embed_feat_enum = dict()               # Dictionary of the enumerations of the categorical features that will be embedded
+# List of categorical features
+cat_feat = []
+# Dictionary of the one hot encoded columns originary from each categorical feature, that will be embedded
+cat_feat_ohe = dict()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Read the data
@@ -128,13 +129,16 @@ patient_df.age.value_counts().head()
 # Make the age feature numeric
 patient_df.age = patient_df.age.astype(float)
 
-# + {"toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
+# + {"Collapsed": "false", "toc-hr-collapsed": false, "cell_type": "markdown"}
 # ### Discretize categorical features
 #
-# Convert binary categorical features into simple numberings, one hot encode features with a low number of categories (in this case, 5) and enumerate sparse categorical features that will be embedded.
+# Convert binary categorical features into one hot encode columns, which can later be embedded or used as is.
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# #### Convert binary categorical features into numeric
+# #### One hot encode features
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Update list of categorical features:
 
 # + {"Collapsed": "false", "persistent_id": "825d7d09-34df-43ef-a914-2a68f33723f2", "last_executed_text": "patient_df.gender.value_counts()", "execution_event_id": "a5b9f20c-a2c1-4a75-ace1-6656ab4cdc5f"}
 patient_df.gender.value_counts()
@@ -154,50 +158,42 @@ patient_df.gender.value_counts()
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Update list of categorical features and add those that will need embedding (features with more than 5 unique values):
 
-# + {"Collapsed": "false", "persistent_id": "9fdc9b59-d7e5-47e6-8d32-f3ac7fbb582d", "last_executed_text": "new_cat_feat = ['ethnicity']\n[cat_feat.append(col) for col in new_cat_feat]", "execution_event_id": "6cb657da-f34c-4a83-a358-65adf97f4a5d"}
-new_cat_feat = ['ethnicity']
-[cat_feat.append(col) for col in new_cat_feat]
+# + {"Collapsed": "false", "persistent_id": "9fdc9b59-d7e5-47e6-8d32-f3ac7fbb582d", "last_executed_text": "cat_feat = ['ethnicity']\n[cat_feat.append(col) for col in cat_feat]", "execution_event_id": "6cb657da-f34c-4a83-a358-65adf97f4a5d"}
+cat_feat = ['ethnicity']
 
-# + {"Collapsed": "false", "persistent_id": "78a46d88-d348-49dd-b078-d2511bdf2869", "last_executed_text": "cat_feat_nunique = [patient_df[feature].nunique() for feature in new_cat_feat]\ncat_feat_nunique", "execution_event_id": "3c6fc202-5926-4c63-a7fc-45dfc537009c"}
-cat_feat_nunique = [patient_df[feature].nunique() for feature in new_cat_feat]
-cat_feat_nunique
+# + {"Collapsed": "false", "persistent_id": "99d08bce-69f1-4a19-8e1d-ab2a49574506", "last_executed_text": "patient_df[cat_feat].head()", "execution_event_id": "1a89c528-9de1-4250-a6e6-2a29c6045770"}
+patient_df[cat_feat].head()
 
-# + {"Collapsed": "false", "persistent_id": "9b6f45c2-fbdf-4a00-be73-fecca421ce93", "last_executed_text": "new_cat_embed_feat = []\nfor i in range(len(new_cat_feat)):\n    if cat_feat_nunique[i] > 5:\n        # Add feature to the list of those that will be embedded\n        cat_embed_feat.append(new_cat_feat[i])\n        # Add feature to the list of the new ones (from the current table) that will be embedded\n        new_cat_embed_feat.append(new_cat_feat[i])", "execution_event_id": "8a410af9-bd35-44c8-b394-51bf0f907011"}
-new_cat_embed_feat = []
-for i in range(len(new_cat_feat)):
-    if cat_feat_nunique[i] > 5:
-        # Add feature to the list of those that will be embedded
-        cat_embed_feat.append(new_cat_feat[i])
-        # Add feature to the list of the new ones (from the current table) that will be embedded
-        new_cat_embed_feat.append(new_cat_feat[i])
+# + {"Collapsed": "false", "persistent_id": "32a0ca8b-24f4-41d6-8565-038e39497c7e", "last_executed_text": "for i in range(len(new_cat_embed_feat)):\n    feature = new_cat_embed_feat[i]\n    # Prepare for embedding, i.e. enumerate categories\n    patient_df[feature], cat_feat_ohe[feature] = du.embedding.enum_categorical_feature(patient_df, feature)", "execution_event_id": "9152d797-82f8-46cb-9822-36e46b66b3ac"}
+patient_df = du.data_processing.one_hot_encoding_dataframe(patient_df, columns=cat_feat, join_rows=False,
+                                                           join_by=['patientunitstayid', 'drugoffset'])
+patient_df
 
-# + {"Collapsed": "false", "persistent_id": "99d08bce-69f1-4a19-8e1d-ab2a49574506", "last_executed_text": "patient_df[new_cat_feat].head()", "execution_event_id": "1a89c528-9de1-4250-a6e6-2a29c6045770"}
-patient_df[new_cat_feat].head()
-
-# + {"Collapsed": "false", "persistent_id": "32a0ca8b-24f4-41d6-8565-038e39497c7e", "last_executed_text": "for i in range(len(new_cat_embed_feat)):\n    feature = new_cat_embed_feat[i]\n    # Prepare for embedding, i.e. enumerate categories\n    patient_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(patient_df, feature)", "execution_event_id": "9152d797-82f8-46cb-9822-36e46b66b3ac"}
-for i in range(len(new_cat_embed_feat)):
-    feature = new_cat_embed_feat[i]
-    # Prepare for embedding, i.e. enumerate categories
-    patient_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(patient_df, feature, nan_value=0,
-                                                                                              forbidden_digit=0)
-
-# + {"Collapsed": "false", "persistent_id": "66530762-67c7-4547-953a-b5848c9e4be2", "last_executed_text": "patient_df[new_cat_feat].head()", "execution_event_id": "5a66c551-ae55-4c93-b418-7d3010895def"}
-patient_df[new_cat_feat].head()
-
-# + {"Collapsed": "false", "persistent_id": "a4f93b92-b778-4a56-9372-aa4f4a994c02", "last_executed_text": "cat_embed_feat_enum", "execution_event_id": "97f7c1aa-d16c-416c-82a9-9fd10c28d2b4"}
-cat_embed_feat_enum
+# + {"Collapsed": "false", "persistent_id": "66530762-67c7-4547-953a-b5848c9e4be2", "last_executed_text": "patient_df[cat_feat].head()", "execution_event_id": "5a66c551-ae55-4c93-b418-7d3010895def"}
+patient_df[cat_feat].head()
 
 # + {"Collapsed": "false", "persistent_id": "2d79bb26-bb3f-4d3e-beac-0e809c504bdb", "last_executed_text": "patient_df[cat_feat].dtypes", "execution_event_id": "56578e03-6482-46bb-91fa-271c875f77f2"}
 patient_df[cat_feat].dtypes
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Save the association between the original categorical features and the new one hot encoded columns:
+
+# + {"Collapsed": "false", "persistent_id": "26eac7f3-9081-4a96-ae4a-40054c223fd7", "execution": {"iopub.status.busy": "2020-03-09T16:37:35.157248Z", "iopub.execute_input": "2020-03-09T16:37:35.157526Z", "iopub.status.idle": "2020-03-09T16:37:35.164656Z", "shell.execute_reply.started": "2020-03-09T16:37:35.157493Z", "shell.execute_reply": "2020-03-09T16:37:35.163771Z"}}
+for orig_col in cat_feat:
+    cat_feat_ohe[orig_col] = [ohe_col for ohe_col in new_columns
+                              if ohe_col.startswith(orig_col)]
+
+# + {"execution": {"iopub.status.busy": "2020-03-09T16:37:35.165864Z", "iopub.execute_input": "2020-03-09T16:37:35.166280Z", "iopub.status.idle": "2020-03-09T16:37:35.190294Z", "shell.execute_reply.started": "2020-03-09T16:37:35.166256Z", "shell.execute_reply": "2020-03-09T16:37:35.189358Z"}, "Collapsed": "false"}
+cat_feat_ohe
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # #### Save enumeration encoding mapping
 #
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
-# + {"Collapsed": "false", "persistent_id": "57ad30f0-8e12-482d-91c7-789b3b64b39a", "last_executed_text": "stream = open('cat_embed_feat_enum_patient.yaml', 'w')\nyaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)", "execution_event_id": "fbfc56d3-0060-43b5-937a-c2721d8112d6"}
-stream = open(f'{data_path}/cleaned/cat_embed_feat_enum_patient.yaml', 'w')
-yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
+# + {"Collapsed": "false", "persistent_id": "57ad30f0-8e12-482d-91c7-789b3b64b39a", "last_executed_text": "stream = open('cat_feat_ohe_patient.yaml', 'w')\nyaml.dump(cat_feat_ohe, stream, default_flow_style=False)", "execution_event_id": "fbfc56d3-0060-43b5-937a-c2721d8112d6"}
+stream = open(f'{data_path}/cleaned/cat_feat_ohe_patient.yaml', 'w')
+yaml.dump(cat_feat_ohe, stream, default_flow_style=False)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Create mortality label
@@ -319,20 +315,20 @@ patient_df.head()
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Save the dataframe before normalizing:
 
-# + {"Collapsed": "false", "persistent_id": "8d66425b-0aae-42d5-ac47-9a0456a080b8", "last_executed_text": "patient_df.to_csv(f'{data_path}cleaned/unnormalized/patient.csv')", "execution_event_id": "e1e9c146-1b0e-4659-969e-22838a05b5a5"}
-patient_df.to_csv(f'{data_path}cleaned/unnormalized/patient.csv')
+# + {"Collapsed": "false", "persistent_id": "8d66425b-0aae-42d5-ac47-9a0456a080b8", "last_executed_text": "patient_df.to_csv(f'{data_path}cleaned/unnormalized/ohe/patient.csv')", "execution_event_id": "e1e9c146-1b0e-4659-969e-22838a05b5a5"}
+patient_df.to_csv(f'{data_path}cleaned/unnormalized/ohe/patient.csv')
 
-# + {"Collapsed": "false", "persistent_id": "68e8080e-5cda-4459-ac38-b0eb59e79fac", "last_executed_text": "new_cat_feat", "execution_event_id": "b850941b-dc91-46cc-b03f-9cb3950ab5b6"}
-new_cat_feat
+# + {"Collapsed": "false", "persistent_id": "68e8080e-5cda-4459-ac38-b0eb59e79fac", "last_executed_text": "cat_feat", "execution_event_id": "b850941b-dc91-46cc-b03f-9cb3950ab5b6"}
+cat_feat
 
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "d5ad6017-ad4a-419c-badb-9454add7752d", "last_executed_text": "patient_df_norm = du.data_processing.normalize_data(patient_df, categ_columns=new_cat_feat,\n                                                    id_columns=['patientunitstayid', 'ts', 'death_ts'])\npatient_df_norm.head(6)", "execution_event_id": "3d6d0a5c-9160-4ffc-87d4-85632a968a1d"}
-patient_df_norm = du.data_processing.normalize_data(patient_df, categ_columns=new_cat_feat,
+# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "d5ad6017-ad4a-419c-badb-9454add7752d", "last_executed_text": "patient_df_norm = du.data_processing.normalize_data(patient_df, categ_columns=cat_feat,\n                                                    id_columns=['patientunitstayid', 'ts', 'death_ts'])\npatient_df_norm.head(6)", "execution_event_id": "3d6d0a5c-9160-4ffc-87d4-85632a968a1d"}
+patient_df_norm = du.data_processing.normalize_data(patient_df, categ_columns=cat_feat,
                                                     id_columns=['patientunitstayid', 'ts', 'death_ts'],
                                                     inplace=True)
 patient_df_norm.head(6)
 
-# + {"Collapsed": "false", "persistent_id": "64492d9f-df5d-4940-b931-cbb4c3af2949", "last_executed_text": "patient_df_norm.to_csv(f'{data_path}cleaned/normalized/patient.csv')", "execution_event_id": "3eed71a9-b6b3-4f0f-99b3-0b80313faf98"}
-patient_df_norm.to_csv(f'{data_path}cleaned/normalized/patient.csv')
+# + {"Collapsed": "false", "persistent_id": "64492d9f-df5d-4940-b931-cbb4c3af2949", "last_executed_text": "patient_df_norm.to_csv(f'{data_path}cleaned/normalized/ohe/patient.csv')", "execution_event_id": "3eed71a9-b6b3-4f0f-99b3-0b80313faf98"}
+patient_df_norm.to_csv(f'{data_path}cleaned/normalized/ohe/patient.csv')
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Confirm that everything is ok through the `describe` method:
@@ -350,9 +346,10 @@ patient_df_norm.describe().transpose()
 # ### Initialize variables
 
 # + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82"}
-cat_feat = []                              # List of categorical features
-cat_embed_feat = []                        # List of categorical features that will be embedded
-cat_embed_feat_enum = dict()               # Dictionary of the enumerations of the categorical features that will be embedded
+# List of categorical features
+cat_feat = []
+# Dictionary of the one hot encoded columns originary from each categorical feature, that will be embedded
+cat_feat_ohe = dict()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Read the data
@@ -578,53 +575,47 @@ note_df['CAD'].value_counts()
 # + {"Collapsed": "false", "persistent_id": "67b46f3d-d5bc-4cda-9c2d-4db10304f268"}
 note_df['Cancer'].value_counts()
 
-# + {"toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
+# + {"Collapsed": "false", "toc-hr-collapsed": false, "cell_type": "markdown"}
 # ### Discretize categorical features
 #
-# Convert binary categorical features into simple numberings, one hot encode features with a low number of categories (in this case, 5) and enumerate sparse categorical features that will be embedded.
+# Convert binary categorical features into one hot encode columns, which can later be embedded or used as is.
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# #### Separate and prepare features for embedding
-#
-# Identify categorical features that have more than 5 unique categories, which will go through an embedding layer afterwards, and enumerate them.
+# #### One hot encode features
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# Update list of categorical features and add those that will need embedding (features with more than 5 unique values):
+# Update list of categorical features:
 
 # + {"Collapsed": "false", "persistent_id": "0ea70c94-33a9-46b0-b987-dac01e78ec21"}
-new_cat_feat = ['Smoking Status', 'Ethanol Use', 'CAD', 'Cancer']
-[cat_feat.append(col) for col in new_cat_feat]
-
-# + {"Collapsed": "false", "persistent_id": "09bb5a42-4cdc-43cd-9acb-9029e34dc279"}
-cat_feat_nunique = [note_df[feature].nunique() for feature in new_cat_feat]
-cat_feat_nunique
-
-# + {"Collapsed": "false", "persistent_id": "22c11ea5-130d-4f5a-806f-5a8f63b27b10"}
-new_cat_embed_feat = []
-for i in range(len(new_cat_feat)):
-    if cat_feat_nunique[i] > 5:
-        # Add feature to the list of those that will be embedded
-        cat_embed_feat.append(new_cat_feat[i])
-        new_cat_embed_feat.append(new_cat_feat[i])
+cat_feat = ['Smoking Status', 'Ethanol Use', 'CAD', 'Cancer']
 
 # + {"Collapsed": "false", "persistent_id": "a4a2b9a5-0f9b-442c-9042-ed940501b71e"}
-note_df[new_cat_feat].head()
+note_df[cat_feat].head()
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "318dc10d-8369-45f1-9deb-5acc83616c04"}
-for i in range(len(new_cat_embed_feat)):
-    feature = new_cat_embed_feat[i]
-    # Prepare for embedding, i.e. enumerate categories
-    note_df[feature], cat_embed_feat_enum[feature] = du.embedding.enum_categorical_feature(note_df, feature, nan_value=0,
-                                                                                           forbidden_digit=0)
+note_df = du.data_processing.one_hot_encoding_dataframe(note_df, columns=cat_feat, join_rows=False,
+                                                        join_by=['patientunitstayid', 'drugoffset'])
+note_df
 
 # + {"Collapsed": "false", "persistent_id": "781ff06e-15f5-495c-967d-97c3dd790be7"}
-note_df[new_cat_feat].head()
+note_df[cat_feat].head()
 
 # + {"Collapsed": "false", "persistent_id": "d8fbd1fe-a0fb-4542-99e3-3696b5629e74"}
-cat_embed_feat_enum
+cat_feat_ohe
 
 # + {"Collapsed": "false", "persistent_id": "c7a413ec-d61e-49ba-a7ae-13949fc6f092"}
-note_df[new_cat_feat].dtypes
+note_df[cat_feat].dtypes
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Save the association between the original categorical features and the new one hot encoded columns:
+
+# + {"Collapsed": "false", "persistent_id": "26eac7f3-9081-4a96-ae4a-40054c223fd7", "execution": {"iopub.status.busy": "2020-03-09T16:37:35.157248Z", "iopub.execute_input": "2020-03-09T16:37:35.157526Z", "iopub.status.idle": "2020-03-09T16:37:35.164656Z", "shell.execute_reply.started": "2020-03-09T16:37:35.157493Z", "shell.execute_reply": "2020-03-09T16:37:35.163771Z"}}
+for orig_col in cat_feat:
+    cat_feat_ohe[orig_col] = [ohe_col for ohe_col in new_columns
+                              if ohe_col.startswith(orig_col)]
+
+# + {"execution": {"iopub.status.busy": "2020-03-09T16:37:35.165864Z", "iopub.execute_input": "2020-03-09T16:37:35.166280Z", "iopub.status.idle": "2020-03-09T16:37:35.190294Z", "shell.execute_reply.started": "2020-03-09T16:37:35.166256Z", "shell.execute_reply": "2020-03-09T16:37:35.189358Z"}, "Collapsed": "false"}
+cat_feat_ohe
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # #### Save enumeration encoding mapping
@@ -632,8 +623,8 @@ note_df[new_cat_feat].dtypes
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
 # + {"Collapsed": "false", "persistent_id": "4342f002-c60a-4724-a542-9b7f906d3f2b"}
-stream = open(f'{data_path}/cleaned/cat_embed_feat_enum_note.yaml', 'w')
-yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
+stream = open(f'{data_path}/cleaned/cat_feat_ohe_note.yaml', 'w')
+yaml.dump(cat_feat_ohe, stream, default_flow_style=False)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Create the timestamp feature and sort
@@ -718,13 +709,13 @@ note_df.head()
 # Save the dataframe before normalizing:
 
 # + {"Collapsed": "false", "persistent_id": "e42f577a-db00-4ecf-9e3c-433007a3bdaf"}
-note_df.to_csv(f'{data_path}cleaned/unnormalized/note.csv')
+note_df.to_csv(f'{data_path}cleaned/unnormalized/ohe/note.csv')
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Save the dataframe after normalizing:
 
 # + {"Collapsed": "false", "persistent_id": "812e7eb1-ff92-4a26-a970-2f40fc5bbdb1"}
-note_df.to_csv(f'{data_path}cleaned/normalized/note.csv')
+note_df.to_csv(f'{data_path}cleaned/normalized/ohe/note.csv')
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Confirm that everything is ok through the `describe` method:
