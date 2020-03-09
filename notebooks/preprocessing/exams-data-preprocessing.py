@@ -234,7 +234,7 @@ lab_df[new_cat_feat].dtypes
 
 # + {"Collapsed": "false", "execution": {"iopub.execute_input": "2020-02-19T02:21:31.846912Z", "iopub.status.busy": "2020-02-19T02:21:31.846680Z", "iopub.status.idle": "2020-02-19T02:21:31.951476Z", "shell.execute_reply": "2020-02-19T02:21:31.950669Z", "shell.execute_reply.started": "2020-02-19T02:21:31.846872Z"}, "persistent_id": "e51cc2e0-b598-484f-a3f8-8c764950777f"}
 stream = open(f'{data_path}/cleaned/cat_embed_feat_enum_lab.yaml', 'w')
-yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False) 
+yaml.dump(cat_embed_feat_enum, stream, default_flow_style=False)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Create the timestamp feature and sort
@@ -305,7 +305,7 @@ lab_df_norm.head()
 list(set(lab_df_norm.columns) - set(new_cat_embed_feat) - set(['patientunitstayid', 'ts']))
 
 # + {"Collapsed": "false", "execution": {"iopub.execute_input": "2020-02-21T03:25:32.905157Z", "iopub.status.busy": "2020-02-21T03:25:32.904887Z", "iopub.status.idle": "2020-02-18T18:09:22.840381Z"}, "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023", "pixiedust": {"displayParams": {}}}
-lab_df_norm = du.embedding.join_categorical_enum(lab_df_norm, new_cat_embed_feat, inplace=True)
+lab_df_norm = du.embedding.join_repeated_rows(lab_df_norm, new_cat_embed_feat, inplace=True)
 lab_df_norm.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -327,7 +327,7 @@ lab_df_norm.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='lab_r
 lab_df[(lab_df.patientunitstayid == 3240757) & (lab_df.ts == 162)].head(10)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
+# Comparing the output from the two previous cells with what we had before the `join_repeated_rows` method, we can see that all rows with duplicate IDs have been successfully joined.
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Clean column names
@@ -392,4 +392,3 @@ lab_df.head()
 lab_df.to_csv(f'{data_path}cleaned/normalized/lab.csv')
 
 # + {"Collapsed": "false"}
-

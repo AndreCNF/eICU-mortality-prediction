@@ -179,7 +179,7 @@ resp_care_df[resp_care_df.patientunitstayid == 1113084].head(20)
 # There are no errors of having the start vent timestamp later than the end vent timestamp.
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "6e8377a7-4e89-4371-a663-bd10b5dcf5d9"}
-resp_care_df = du.embedding.join_categorical_enum(resp_care_df, cont_join_method='min', inplace=True)
+resp_care_df = du.embedding.join_repeated_rows(resp_care_df, cont_join_method='min', inplace=True)
 resp_care_df.head()
 
 # + {"Collapsed": "false", "persistent_id": "b054019f-50a4-4326-8bc6-bd31966bbeb4"}
@@ -189,7 +189,7 @@ resp_care_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='vent
 resp_care_df[resp_care_df.patientunitstayid == 1113084].head(10)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
+# Comparing the output from the two previous cells with what we had before the `join_repeated_rows` method, we can see that all rows with duplicate IDs have been successfully joined.
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Convert dataframe to Pandas, as the next cells aren't working properly with Modin:
@@ -567,7 +567,7 @@ resp_chart_df[resp_chart_df.patientunitstayid == 2553254].head(10)
 # ### Join rows that have the same IDs
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# Convert dataframe to Pandas, as the groupby operation in `join_categorical_enum` isn't working properly with Modin:
+# Convert dataframe to Pandas, as the groupby operation in `join_repeated_rows` isn't working properly with Modin:
 
 # + {"Collapsed": "false"}
 resp_chart_df, pd = du.utils.convert_dataframe(resp_chart_df, to='pandas')
@@ -576,7 +576,7 @@ resp_chart_df, pd = du.utils.convert_dataframe(resp_chart_df, to='pandas')
 type(resp_chart_df)
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023"}
-resp_chart_df = du.embedding.join_categorical_enum(resp_chart_df, new_cat_embed_feat, inplace=True)
+resp_chart_df = du.embedding.join_repeated_rows(resp_chart_df, new_cat_embed_feat, inplace=True)
 resp_chart_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -598,7 +598,7 @@ resp_chart_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='Cou
 resp_chart_df[resp_chart_df.patientunitstayid == 2553254].head(10)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
+# Comparing the output from the two previous cells with what we had before the `join_repeated_rows` method, we can see that all rows with duplicate IDs have been successfully joined.
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Clean column names

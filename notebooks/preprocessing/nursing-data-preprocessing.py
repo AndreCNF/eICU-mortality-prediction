@@ -296,7 +296,7 @@ nurse_care_df[nurse_care_df.patientunitstayid == 2798325].head(10)
 # ### Join rows that have the same IDs
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# Convert dataframe to Pandas, as the groupby operation in `join_categorical_enum` isn't working properly with Modin:
+# Convert dataframe to Pandas, as the groupby operation in `join_repeated_rows` isn't working properly with Modin:
 
 # + {"Collapsed": "false"}
 nurse_care_df, pd = du.utils.convert_dataframe(nurse_care_df, to='pandas')
@@ -305,7 +305,7 @@ nurse_care_df, pd = du.utils.convert_dataframe(nurse_care_df, to='pandas')
 type(nurse_care_df)
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023"}
-nurse_care_df = du.embedding.join_categorical_enum(nurse_care_df, new_cat_embed_feat, inplace=True)
+nurse_care_df = du.embedding.join_repeated_rows(nurse_care_df, new_cat_embed_feat, inplace=True)
 nurse_care_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -327,7 +327,7 @@ nurse_care_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='Nut
 nurse_care_df[nurse_care_df.patientunitstayid == 2798325].head(10)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
+# Comparing the output from the two previous cells with what we had before the `join_repeated_rows` method, we can see that all rows with duplicate IDs have been successfully joined.
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Rename columns
@@ -610,7 +610,7 @@ nurse_assess_df[nurse_assess_df.patientunitstayid == 2553254].head(10)
 # ### Join rows that have the same IDs
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# Convert dataframe to Pandas, as the groupby operation in `join_categorical_enum` isn't working properly with Modin:
+# Convert dataframe to Pandas, as the groupby operation in `join_repeated_rows` isn't working properly with Modin:
 
 # + {"Collapsed": "false"}
 nurse_assess_df, pd = du.utils.convert_dataframe(nurse_assess_df, to='pandas')
@@ -619,7 +619,7 @@ nurse_assess_df, pd = du.utils.convert_dataframe(nurse_assess_df, to='pandas')
 type(nurse_assess_df)
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023"}
-nurse_assess_df = du.embedding.join_categorical_enum(nurse_assess_df, new_cat_embed_feat, inplace=True)
+nurse_assess_df = du.embedding.join_repeated_rows(nurse_assess_df, new_cat_embed_feat, inplace=True)
 nurse_assess_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -641,7 +641,7 @@ nurse_assess_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='C
 nurse_assess_df[nurse_assess_df.patientunitstayid == 2553254].head(10)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
+# Comparing the output from the two previous cells with what we had before the `join_repeated_rows` method, we can see that all rows with duplicate IDs have been successfully joined.
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Clean column names
@@ -1045,7 +1045,7 @@ nursechart_df[nursechart_df.patientunitstayid == 2553254].head(10)
 # ### Join rows that have the same IDs
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# Convert dataframe to Pandas, as the groupby operation in `join_categorical_enum` isn't working properly with Modin:
+# Convert dataframe to Pandas, as the groupby operation in `join_repeated_rows` isn't working properly with Modin:
 
 # + {"Collapsed": "false"}
 nursechart_df, pd = du.utils.convert_dataframe(nursechart_df, to='pandas')
@@ -1054,7 +1054,7 @@ nursechart_df, pd = du.utils.convert_dataframe(nursechart_df, to='pandas')
 type(nursechart_df)
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023"}
-nursechart_df = du.embedding.join_categorical_enum(nursechart_df, new_cat_embed_feat, inplace=True)
+nursechart_df = du.embedding.join_repeated_rows(nursechart_df, new_cat_embed_feat, inplace=True)
 nursechart_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -1076,7 +1076,7 @@ nursechart_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='nur
 nursechart_df[nursechart_df.patientunitstayid == 2553254].head(10)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
+# Comparing the output from the two previous cells with what we had before the `join_repeated_rows` method, we can see that all rows with duplicate IDs have been successfully joined.
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Rename columns

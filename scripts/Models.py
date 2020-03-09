@@ -62,6 +62,7 @@ class BaseRNN(nn.Module):
         self.bidir = bidir
         self.is_lstm = is_lstm
         self.padding_value = padding_value
+        # [TODO] Adapt to the new, one hot encoding embedding approach
         # Embedding layers
         if self.embed_features is not None:
             if isinstance(self.embed_features, int):
@@ -279,6 +280,7 @@ class VanillaLSTM(nn.Module):
         self.embedding_dim = embedding_dim
         self.bidir = bidir
         self.padding_value = padding_value
+        # [TODO] Adapt to the new, one hot encoding embedding approach
         # Embedding layers
         if self.embed_features is not None:
             if isinstance(self.embed_features, int):

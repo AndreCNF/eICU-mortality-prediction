@@ -172,8 +172,8 @@ vital_aprdc_df[(vital_aprdc_df.patientunitstayid == 625065) & (vital_aprdc_df.ts
 # + [markdown] {"Collapsed": "false"}
 # ### Join rows that have the same IDs
 
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "591b2ccd-fa5c-4eb2-bec1-8ac21de1c890", "last_executed_text": "vital_aprdc_df = du.embedding.join_categorical_enum(vital_aprdc_df, cont_join_method='max')\nvital_aprdc_df.head()", "execution_event_id": "c6c89c91-ec15-4636-99d0-6ed07bcc921c"}
-vital_aprdc_df = du.embedding.join_categorical_enum(vital_aprdc_df, cont_join_method='mean', inplace=True)
+# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "591b2ccd-fa5c-4eb2-bec1-8ac21de1c890", "last_executed_text": "vital_aprdc_df = du.embedding.join_repeated_rows(vital_aprdc_df, cont_join_method='max')\nvital_aprdc_df.head()", "execution_event_id": "c6c89c91-ec15-4636-99d0-6ed07bcc921c"}
+vital_aprdc_df = du.embedding.join_repeated_rows(vital_aprdc_df, cont_join_method='mean', inplace=True)
 vital_aprdc_df.head()
 
 # + {"Collapsed": "false", "persistent_id": "c94e7b7b-dc34-478b-842b-c34c926c934d"}
@@ -183,7 +183,7 @@ vital_aprdc_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='no
 vital_aprdc_df[(vital_aprdc_df.patientunitstayid == 625065) & (vital_aprdc_df.ts == 1515)].head(10)
 
 # + [markdown] {"Collapsed": "false"}
-# Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
+# Comparing the output from the two previous cells with what we had before the `join_repeated_rows` method, we can see that all rows with duplicate IDs have been successfully joined.
 
 # + [markdown] {"Collapsed": "false"}
 # ### Clean column names
@@ -362,8 +362,8 @@ vital_prdc_df[(vital_prdc_df.patientunitstayid == 2290828.0) & (vital_prdc_df.ts
 # + [markdown] {"Collapsed": "false"}
 # ### Join rows that have the same IDs
 
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "591b2ccd-fa5c-4eb2-bec1-8ac21de1c890", "last_executed_text": "vital_prdc_df = du.embedding.join_categorical_enum(vital_prdc_df, cont_join_method='max')\nvital_prdc_df.head()", "execution_event_id": "c6c89c91-ec15-4636-99d0-6ed07bcc921c", "execution": {"iopub.status.busy": "2020-02-23T22:47:46.943632Z", "iopub.status.idle": "2020-02-23T22:52:23.371793Z", "iopub.execute_input": "2020-02-23T22:47:46.943835Z", "shell.execute_reply.started": "2020-02-23T22:47:46.943801Z", "shell.execute_reply": "2020-02-23T22:52:23.371039Z"}}
-vital_prdc_df = du.embedding.join_categorical_enum(vital_prdc_df, cont_join_method='mean', inplace=True)
+# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "591b2ccd-fa5c-4eb2-bec1-8ac21de1c890", "last_executed_text": "vital_prdc_df = du.embedding.join_repeated_rows(vital_prdc_df, cont_join_method='max')\nvital_prdc_df.head()", "execution_event_id": "c6c89c91-ec15-4636-99d0-6ed07bcc921c", "execution": {"iopub.status.busy": "2020-02-23T22:47:46.943632Z", "iopub.status.idle": "2020-02-23T22:52:23.371793Z", "iopub.execute_input": "2020-02-23T22:47:46.943835Z", "shell.execute_reply.started": "2020-02-23T22:47:46.943801Z", "shell.execute_reply": "2020-02-23T22:52:23.371039Z"}}
+vital_prdc_df = du.embedding.join_repeated_rows(vital_prdc_df, cont_join_method='mean', inplace=True)
 vital_prdc_df.head()
 
 # + {"Collapsed": "false", "persistent_id": "c94e7b7b-dc34-478b-842b-c34c926c934d", "execution": {"iopub.status.busy": "2020-02-23T03:46:33.714909Z", "iopub.status.idle": "2020-02-23T03:51:11.690597Z", "iopub.execute_input": "2020-02-23T03:46:33.715114Z", "shell.execute_reply.started": "2020-02-23T03:46:33.715078Z", "shell.execute_reply": "2020-02-23T03:51:11.689987Z"}}
@@ -373,7 +373,7 @@ vital_prdc_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='hea
 vital_prdc_df[(vital_prdc_df.patientunitstayid == 2290828.0) & (vital_prdc_df.ts == 13842.0)].head(10)
 
 # + [markdown] {"Collapsed": "false"}
-# Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
+# Comparing the output from the two previous cells with what we had before the `join_repeated_rows` method, we can see that all rows with duplicate IDs have been successfully joined.
 
 # + [markdown] {"Collapsed": "false"}
 # ### Clean column names
@@ -430,4 +430,3 @@ vital_prdc_df.info()
 vital_prdc_df.describe().transpose()
 
 # + {"Collapsed": "false"}
-

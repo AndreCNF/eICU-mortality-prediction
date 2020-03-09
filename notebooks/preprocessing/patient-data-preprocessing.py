@@ -683,8 +683,8 @@ note_df[note_df.patientunitstayid == 3052175].head(10)
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Join rows that have the same IDs
 
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "591b2ccd-fa5c-4eb2-bec1-8ac21de1c890", "last_executed_text": "note_df = du.embedding.join_categorical_enum(note_df, cont_join_method='max')\nnote_df.head()", "execution_event_id": "c6c89c91-ec15-4636-99d0-6ed07bcc921c"}
-note_df = du.embedding.join_categorical_enum(note_df, cont_join_method='max', inplace=True)
+# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "591b2ccd-fa5c-4eb2-bec1-8ac21de1c890", "last_executed_text": "note_df = du.embedding.join_repeated_rows(note_df, cont_join_method='max')\nnote_df.head()", "execution_event_id": "c6c89c91-ec15-4636-99d0-6ed07bcc921c"}
+note_df = du.embedding.join_repeated_rows(note_df, cont_join_method='max', inplace=True)
 note_df.head()
 
 # + {"Collapsed": "false", "persistent_id": "d3040cd3-4500-4129-ae90-23f3753045f8", "last_executed_text": "note_df.dtypes", "execution_event_id": "22163577-ad6a-4eed-8b09-c87d5c740199"}
@@ -700,7 +700,7 @@ note_df[note_df.patientunitstayid == 3091883].head(10)
 note_df[note_df.patientunitstayid == 3052175].head(10)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
+# Comparing the output from the two previous cells with what we had before the `join_repeated_rows` method, we can see that all rows with duplicate IDs have been successfully joined.
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Clean column names
@@ -733,4 +733,3 @@ note_df.to_csv(f'{data_path}cleaned/normalized/note.csv')
 note_df.describe().transpose()
 
 # + {"Collapsed": "false"}
-

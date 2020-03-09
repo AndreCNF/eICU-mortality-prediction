@@ -294,7 +294,7 @@ alrg_df[alrg_df.patientunitstayid == 3197554].head(10)
 # data_df.groupby(['patientunitstayid', 'ts']).mean()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# Convert dataframe to Pandas, as the multi-column groupby operation in `join_categorical_enum` isn't working with Modin:
+# Convert dataframe to Pandas, as the multi-column groupby operation in `join_repeated_rows` isn't working with Modin:
 
 # + {"Collapsed": "false"}
 alrg_df, pd = du.utils.convert_dataframe(alrg_df, to='pandas')
@@ -303,7 +303,7 @@ alrg_df, pd = du.utils.convert_dataframe(alrg_df, to='pandas')
 type(alrg_df)
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "bf671749-9886-44f0-923f-24fd31d7d371"}
-alrg_df = du.embedding.join_categorical_enum(alrg_df, new_cat_embed_feat, inplace=True)
+alrg_df = du.embedding.join_repeated_rows(alrg_df, new_cat_embed_feat, inplace=True)
 alrg_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -325,7 +325,7 @@ alrg_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='allergyna
 alrg_df[alrg_df.patientunitstayid == 3197554].head(10)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
+# Comparing the output from the two previous cells with what we had before the `join_repeated_rows` method, we can see that all rows with duplicate IDs have been successfully joined.
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Rename columns
@@ -669,7 +669,7 @@ past_hist_df[past_hist_df.patientunitstayid == 1558102].head(10)
 # ### Join rows that have the same IDs
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# Convert dataframe to Pandas, as the groupby operation in `join_categorical_enum` isn't working properly with Modin:
+# Convert dataframe to Pandas, as the groupby operation in `join_repeated_rows` isn't working properly with Modin:
 
 # + {"Collapsed": "false"}
 past_hist_df, pd = du.utils.convert_dataframe(past_hist_df, to='pandas')
@@ -678,7 +678,7 @@ past_hist_df, pd = du.utils.convert_dataframe(past_hist_df, to='pandas')
 type(past_hist_df)
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023"}
-past_hist_df = du.embedding.join_categorical_enum(past_hist_df, new_cat_embed_feat, id_columns=['patientunitstayid'], inplace=True)
+past_hist_df = du.embedding.join_repeated_rows(past_hist_df, new_cat_embed_feat, id_columns=['patientunitstayid'], inplace=True)
 past_hist_df.head()
 
 # + {"Collapsed": "false"}
@@ -694,7 +694,7 @@ past_hist_df.groupby(['patientunitstayid']).count().nlargest(columns='pasthistor
 past_hist_df[past_hist_df.patientunitstayid == 1558102].head(10)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
+# Comparing the output from the two previous cells with what we had before the `join_repeated_rows` method, we can see that all rows with duplicate IDs have been successfully joined.
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Clean column names
@@ -907,7 +907,7 @@ diagn_df[diagn_df.patientunitstayid == 3089982].head(10)
 # ### Join rows that have the same IDs
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# Convert dataframe to Pandas, as the groupby operation in `join_categorical_enum` isn't working properly with Modin:
+# Convert dataframe to Pandas, as the groupby operation in `join_repeated_rows` isn't working properly with Modin:
 
 # + {"Collapsed": "false"}
 diagn_df, pd = du.utils.convert_dataframe(diagn_df, to='pandas')
@@ -916,7 +916,7 @@ diagn_df, pd = du.utils.convert_dataframe(diagn_df, to='pandas')
 type(diagn_df)
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023"}
-diagn_df = du.embedding.join_categorical_enum(diagn_df, new_cat_embed_feat, inplace=True)
+diagn_df = du.embedding.join_repeated_rows(diagn_df, new_cat_embed_feat, inplace=True)
 diagn_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -938,7 +938,7 @@ diagn_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='diagnosi
 diagn_df[diagn_df.patientunitstayid == 3089982].head(10)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
-# Comparing the output from the two previous cells with what we had before the `join_categorical_enum` method, we can see that all rows with duplicate IDs have been successfully joined.
+# Comparing the output from the two previous cells with what we had before the `join_repeated_rows` method, we can see that all rows with duplicate IDs have been successfully joined.
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Clean column names
@@ -971,4 +971,3 @@ diagn_df.to_csv(f'{data_path}cleaned/normalized/diagnosis.csv')
 diagn_df.describe().transpose()
 
 # + {"Collapsed": "false"}
-
