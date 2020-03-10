@@ -175,6 +175,53 @@ du.search_explore.dataframe_missing_values(lab_df)
 # + {"Collapsed": "false", "execution": {"iopub.execute_input": "2020-02-18T14:44:54.417206Z", "iopub.status.busy": "2020-02-18T14:44:54.416971Z", "iopub.status.idle": "2020-02-18T14:45:59.818614Z", "shell.execute_reply": "2020-02-18T14:45:59.817843Z", "shell.execute_reply.started": "2020-02-18T14:44:54.417164Z"}}
 lab_df.info()
 
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# ### Normalize data
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Update list of categorical features:
+
+# + {"Collapsed": "false", "execution": {"iopub.execute_input": "2020-02-19T02:18:48.409879Z", "iopub.status.busy": "2020-02-19T02:18:48.409662Z", "iopub.status.idle": "2020-02-19T02:18:48.414709Z", "shell.execute_reply": "2020-02-19T02:18:48.414127Z", "shell.execute_reply.started": "2020-02-19T02:18:48.409838Z"}, "persistent_id": "d714ff24-c50b-4dff-9b21-832d030d050f"}
+cat_feat = ['labtypeid', 'labname', 'lab_units']
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Filter just to the most common categories:
+
+# + {"Collapsed": "false"}
+for col in cat_feat:
+    most_common_cat = list(lab_df[col].value_counts().nlargest(500).index)
+    lab_df = lab_df[lab_df[col].isin(most_common_cat)]
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Convert dataframe to Pandas, as the next cells aren't working properly with Modin:
+
+# + {"Collapsed": "false", "execution": {"iopub.execute_input": "2020-02-18T18:49:48.993997Z", "iopub.status.busy": "2020-02-18T18:49:48.993702Z", "iopub.status.idle": "2020-02-18T18:49:52.947587Z", "shell.execute_reply": "2020-02-18T18:49:52.946673Z", "shell.execute_reply.started": "2020-02-18T18:49:48.993943Z"}}
+lab_df, pd = du.utils.convert_dataframe(lab_df, to='pandas')
+
+# + {"Collapsed": "false", "execution": {"iopub.execute_input": "2020-02-18T18:49:52.948969Z", "iopub.status.busy": "2020-02-18T18:49:52.948722Z", "iopub.status.idle": "2020-02-18T18:49:52.954356Z", "shell.execute_reply": "2020-02-18T18:49:52.953463Z", "shell.execute_reply.started": "2020-02-18T18:49:52.948928Z"}}
+type(lab_df)
+
+# + {"Collapsed": "false", "execution": {"iopub.execute_input": "2020-02-21T03:04:09.662593Z", "iopub.status.busy": "2020-02-21T03:04:09.662343Z", "iopub.status.idle": "2020-02-21T03:17:19.416462Z", "shell.execute_reply": "2020-02-21T03:17:19.415653Z", "shell.execute_reply.started": "2020-02-21T03:04:09.662547Z"}, "persistent_id": "a4cd949b-e561-485d-bcb6-10fccc343352", "pixiedust": {"displayParams": {}}}
+lab_df_norm, mean, std = du.data_processing.normalize_data(lab_df, columns_to_normalize=False,
+                                                columns_to_normalize_categ=[(['labname', 'lab_units'], 'lab_result')],
+                                                get_stats=True, inplace=True)
+lab_df_norm.head()
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Save a dictionary with the mean and standard deviation values of each column that was normalized:
+
+# + {"Collapsed": "false"}
+norm_stats = dict()
+for key, _ in mean.items():
+    norm_stats[key] = dict()
+    norm_stats[key]['mean'] = mean[key]
+    norm_stats[key]['std'] = std[key]
+norm_stats
+
+# + {"Collapsed": "false"}
+stream = open(f'{data_path}/cleaned/lab_norm_stats.yaml', 'w')
+yaml.dump(norm_stats, stream, default_flow_style=False)
+
 # + {"Collapsed": "false", "toc-hr-collapsed": false, "cell_type": "markdown"}
 # ### Discretize categorical features
 #
@@ -183,28 +230,24 @@ lab_df.info()
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # #### One hot encode features
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# Update list of categorical features:
-
-# + {"Collapsed": "false", "execution": {"iopub.execute_input": "2020-02-19T02:18:48.409879Z", "iopub.status.busy": "2020-02-19T02:18:48.409662Z", "iopub.status.idle": "2020-02-19T02:18:48.414709Z", "shell.execute_reply": "2020-02-19T02:18:48.414127Z", "shell.execute_reply.started": "2020-02-19T02:18:48.409838Z"}, "persistent_id": "d714ff24-c50b-4dff-9b21-832d030d050f"}
-cat_feat = ['labtypeid', 'labname', 'lab_units']
-
 # + {"Collapsed": "false", "execution": {"iopub.execute_input": "2020-02-19T02:18:48.421015Z", "iopub.status.busy": "2020-02-19T02:18:48.420827Z", "iopub.status.idle": "2020-02-19T02:18:48.988729Z", "shell.execute_reply": "2020-02-19T02:18:48.988096Z", "shell.execute_reply.started": "2020-02-19T02:18:48.420980Z"}, "persistent_id": "ed09c3dd-50b3-48cf-aa04-76534feaf767"}
 lab_df[cat_feat].head()
 
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:36:38.933807Z", "iopub.execute_input": "2020-03-09T16:36:38.934065Z", "iopub.status.idle": "2020-03-09T16:36:38.937828Z", "shell.execute_reply.started": "2020-03-09T16:36:38.934035Z", "shell.execute_reply": "2020-03-09T16:36:38.936941Z"}}
+old_columns = lab_df.columns
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Apply one hot encoding:
+
 # + {"Collapsed": "false", "execution": {"iopub.execute_input": "2020-02-19T02:18:48.990117Z", "iopub.status.busy": "2020-02-19T02:18:48.989706Z", "iopub.status.idle": "2020-02-19T02:21:21.325944Z", "shell.execute_reply": "2020-02-19T02:21:21.325070Z", "shell.execute_reply.started": "2020-02-19T02:18:48.990072Z"}, "persistent_id": "51ac8fd1-cbd2-4f59-a737-f0fcc13043fd", "pixiedust": {"displayParams": {}}}
-lab_df = du.data_processing.one_hot_encoding_dataframe(lab_df, columns=cat_feat, join_rows=False,
-                                                       join_by=['patientunitstayid', 'drugoffset'])
+lab_df = du.data_processing.one_hot_encoding_dataframe(lab_df, columns=cat_feat, join_rows=False)
 lab_df
 
-# + {"Collapsed": "false", "execution": {"iopub.execute_input": "2020-02-19T02:21:21.328295Z", "iopub.status.busy": "2020-02-19T02:21:21.327725Z", "iopub.status.idle": "2020-02-19T02:21:29.995641Z", "shell.execute_reply": "2020-02-19T02:21:29.994965Z", "shell.execute_reply.started": "2020-02-19T02:21:21.328236Z"}, "persistent_id": "e38470e5-73f7-4d35-b91d-ce0793b7f6f6"}
-lab_df[cat_feat].head()
-
-# + {"Collapsed": "false", "execution": {"iopub.execute_input": "2020-02-19T02:21:29.996738Z", "iopub.status.busy": "2020-02-19T02:21:29.996536Z", "iopub.status.idle": "2020-02-19T02:21:30.004860Z", "shell.execute_reply": "2020-02-19T02:21:30.004303Z", "shell.execute_reply.started": "2020-02-19T02:21:29.996701Z"}, "persistent_id": "00b3ce19-756a-4de4-8b05-762de386aa29"}
-cat_feat_ohe
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:37:27.392359Z", "iopub.status.idle": "2020-03-09T16:37:27.399976Z", "iopub.execute_input": "2020-03-09T16:37:27.392616Z", "shell.execute_reply.started": "2020-03-09T16:37:27.392582Z", "shell.execute_reply": "2020-03-09T16:37:27.399076Z"}}
+new_columns = set(lab_df.columns) - set(old_columns)
 
 # + {"Collapsed": "false", "execution": {"iopub.execute_input": "2020-02-19T02:21:30.005873Z", "iopub.status.busy": "2020-02-19T02:21:30.005679Z", "iopub.status.idle": "2020-02-19T02:21:31.845484Z", "shell.execute_reply": "2020-02-19T02:21:31.844781Z", "shell.execute_reply.started": "2020-02-19T02:21:30.005837Z"}, "persistent_id": "e5615265-4372-4117-a368-ec539c871763"}
-lab_df[cat_feat].dtypes
+lab_df.dtypes
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Save the association between the original categorical features and the new one hot encoded columns:
@@ -267,28 +310,6 @@ lab_df[(lab_df.patientunitstayid == 3240757) & (lab_df.ts == 162)].head(10)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # We can see that there are up to ___ categories per set of `patientunitstayid` and `ts`. As such, we must join them. But first, we need to normalize the results by the respective sets of exam name and units, so as to avoid mixing different absolute values.
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# ### Normalize data
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# Convert dataframe to Pandas, as the next cells aren't working properly with Modin:
-
-# + {"Collapsed": "false", "execution": {"iopub.execute_input": "2020-02-18T18:49:48.993997Z", "iopub.status.busy": "2020-02-18T18:49:48.993702Z", "iopub.status.idle": "2020-02-18T18:49:52.947587Z", "shell.execute_reply": "2020-02-18T18:49:52.946673Z", "shell.execute_reply.started": "2020-02-18T18:49:48.993943Z"}}
-lab_df, pd = du.utils.convert_dataframe(lab_df, to='pandas')
-
-# + {"Collapsed": "false", "execution": {"iopub.execute_input": "2020-02-18T18:49:52.948969Z", "iopub.status.busy": "2020-02-18T18:49:52.948722Z", "iopub.status.idle": "2020-02-18T18:49:52.954356Z", "shell.execute_reply": "2020-02-18T18:49:52.953463Z", "shell.execute_reply.started": "2020-02-18T18:49:52.948928Z"}}
-type(lab_df)
-
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T18:09:15.086008Z", "iopub.execute_input": "2020-03-09T18:09:15.086255Z", "iopub.status.idle": "2020-03-09T18:09:15.116364Z", "shell.execute_reply.started": "2020-03-09T18:09:15.086232Z", "shell.execute_reply": "2020-03-09T18:09:15.115458Z"}}
-categ_cols_norm = [col for col in new_columns if col.startswith('labname') or col.startswith('lab_units')]
-categ_cols_norm
-
-# + {"Collapsed": "false", "execution": {"iopub.execute_input": "2020-02-21T03:04:09.662593Z", "iopub.status.busy": "2020-02-21T03:04:09.662343Z", "iopub.status.idle": "2020-02-21T03:17:19.416462Z", "shell.execute_reply": "2020-02-21T03:17:19.415653Z", "shell.execute_reply.started": "2020-02-21T03:04:09.662547Z"}, "persistent_id": "a4cd949b-e561-485d-bcb6-10fccc343352", "pixiedust": {"displayParams": {}}}
-lab_df_norm = du.data_processing.normalize_data(lab_df, columns_to_normalize=False,
-                                                columns_to_normalize_categ=[(categ_cols_norm, 'lab_result')],
-                                                inplace=True)
-lab_df_norm.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Join rows that have the same IDs

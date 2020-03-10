@@ -484,19 +484,29 @@ cat_feat = ['Pupils', 'Neurologic', 'Secretions', 'Cough']
 # + {"Collapsed": "false", "persistent_id": "bef728e1-1608-426e-852a-37e2cf47935c"}
 resp_chart_df[cat_feat].head()
 
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Filter just to the most common categories:
+
+# + {"Collapsed": "false"}
+for col in cat_feat:
+    most_common_cat = list(resp_chart_df[col].value_counts().nlargest(500).index)
+    resp_chart_df = resp_chart_df[resp_chart_df[col].isin(most_common_cat)]
+
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:36:38.933807Z", "iopub.execute_input": "2020-03-09T16:36:38.934065Z", "iopub.status.idle": "2020-03-09T16:36:38.937828Z", "shell.execute_reply.started": "2020-03-09T16:36:38.934035Z", "shell.execute_reply": "2020-03-09T16:36:38.936941Z"}}
+old_columns = resp_chart_df.columns
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Apply one hot encoding:
+
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "f691d6e7-9475-4a5f-a6b8-d1223b9eebe3"}
-resp_chart_df = du.data_processing.one_hot_encoding_dataframe(resp_chart_df, columns=cat_feat, join_rows=False,
-                                                              join_by=['patientunitstayid', 'drugoffset'])
+resp_chart_df = du.data_processing.one_hot_encoding_dataframe(resp_chart_df, columns=cat_feat, join_rows=False)
 resp_chart_df
 
-# + {"Collapsed": "false", "persistent_id": "151d0866-afbb-486c-b4b4-204fda79a0b8"}
-resp_chart_df[cat_feat].head()
-
-# + {"Collapsed": "false", "persistent_id": "8768f50d-589c-44a1-99ea-429f312df58d"}
-cat_feat_ohe
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:37:27.392359Z", "iopub.status.idle": "2020-03-09T16:37:27.399976Z", "iopub.execute_input": "2020-03-09T16:37:27.392616Z", "shell.execute_reply.started": "2020-03-09T16:37:27.392582Z", "shell.execute_reply": "2020-03-09T16:37:27.399076Z"}}
+new_columns = set(resp_chart_df.columns) - set(old_columns)
 
 # + {"Collapsed": "false", "persistent_id": "ab16acb6-7ba4-4ceb-b062-2bda7905acbf"}
-resp_chart_df[cat_feat].dtypes
+resp_chart_df.dtypes
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Save the association between the original categorical features and the new one hot encoded columns:

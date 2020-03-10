@@ -194,6 +194,13 @@ nurse_care_df['Hygiene/ADLs'].value_counts()
 # + {"Collapsed": "false", "persistent_id": "6ae6e48f-2b69-445a-9dd7-f5875e8d1cd5"}
 nurse_care_df['Activity'].value_counts()
 
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# ### Rename columns
+
+# + {"Collapsed": "false", "persistent_id": "9b090273-1c22-4122-9979-8ee2b91f0dfe"}
+nurse_care_df = nurse_care_df.rename(columns={'Treatments': 'nurse_treatments'})
+nurse_care_df.head()
+
 # + {"Collapsed": "false", "toc-hr-collapsed": false, "cell_type": "markdown"}
 # ### Discretize categorical features
 #
@@ -206,24 +213,34 @@ nurse_care_df['Activity'].value_counts()
 # Update list of categorical features:
 
 # + {"Collapsed": "false", "persistent_id": "9836b018-de91-4b41-b107-cb8c9779b4c5"}
-cat_feat = ['Nutrition', 'Treatments', 'Hygiene/ADLs', 'Activity']
+cat_feat = ['Nutrition', 'nurse_treatments', 'Hygiene/ADLs', 'Activity']
 
 # + {"Collapsed": "false", "persistent_id": "19066f2a-58d5-4edb-a33d-6d830424f40c"}
 nurse_care_df[cat_feat].head()
 
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Filter just to the most common categories:
+
+# + {"Collapsed": "false"}
+for col in cat_feat:
+    most_common_cat = list(nurse_care_df[col].value_counts().nlargest(500).index)
+    nurse_care_df = nurse_care_df[nurse_care_df[col].isin(most_common_cat)]
+
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:36:38.933807Z", "iopub.execute_input": "2020-03-09T16:36:38.934065Z", "iopub.status.idle": "2020-03-09T16:36:38.937828Z", "shell.execute_reply.started": "2020-03-09T16:36:38.934035Z", "shell.execute_reply": "2020-03-09T16:36:38.936941Z"}}
+old_columns = nurse_care_df.columns
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Apply one hot encoding:
+
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "51c18fe2-7b70-41c1-95d2-f423b3d7836b"}
-nurse_care_df = du.data_processing.one_hot_encoding_dataframe(nurse_care_df, columns=cat_feat, join_rows=False,
-                                                              join_by=['patientunitstayid', 'drugoffset'])
+nurse_care_df = du.data_processing.one_hot_encoding_dataframe(nurse_care_df, columns=cat_feat, join_rows=False)
 nurse_care_df
 
-# + {"Collapsed": "false", "persistent_id": "9ceba9e2-6821-4a73-8875-5ddebef03516"}
-nurse_care_df[cat_feat].head()
-
-# + {"Collapsed": "false", "persistent_id": "56d49f40-97fe-47d5-ad9d-ef35a4453266"}
-cat_feat_ohe
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:37:27.392359Z", "iopub.status.idle": "2020-03-09T16:37:27.399976Z", "iopub.execute_input": "2020-03-09T16:37:27.392616Z", "shell.execute_reply.started": "2020-03-09T16:37:27.392582Z", "shell.execute_reply": "2020-03-09T16:37:27.399076Z"}}
+new_columns = set(nurse_care_df.columns) - set(old_columns)
 
 # + {"Collapsed": "false", "persistent_id": "49f71013-ebc1-472e-b91b-2a96233b207b"}
-nurse_care_df[cat_feat].dtypes
+nurse_care_df.dtypes
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Save the association between the original categorical features and the new one hot encoded columns:
@@ -323,13 +340,6 @@ nurse_care_df[nurse_care_df.patientunitstayid == 2798325].head(10)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Comparing the output from the two previous cells with what we had before the `join_repeated_rows` method, we can see that all rows with duplicate IDs have been successfully joined.
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# ### Rename columns
-
-# + {"Collapsed": "false", "persistent_id": "9b090273-1c22-4122-9979-8ee2b91f0dfe"}
-nurse_care_df = nurse_care_df.rename(columns={'Treatments':'nurse_treatments'})
-nurse_care_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Clean column names
@@ -520,19 +530,29 @@ cat_feat = ['Pupils', 'Neurologic', 'Secretions', 'Cough']
 # + {"Collapsed": "false", "persistent_id": "29703baf-cba2-4f41-86e5-74912610503c"}
 nurse_assess_df[cat_feat].head()
 
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Filter just to the most common categories:
+
+# + {"Collapsed": "false"}
+for col in cat_feat:
+    most_common_cat = list(nurse_assess_df[col].value_counts().nlargest(500).index)
+    nurse_assess_df = nurse_assess_df[nurse_assess_df[col].isin(most_common_cat)]
+
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:36:38.933807Z", "iopub.execute_input": "2020-03-09T16:36:38.934065Z", "iopub.status.idle": "2020-03-09T16:36:38.937828Z", "shell.execute_reply.started": "2020-03-09T16:36:38.934035Z", "shell.execute_reply": "2020-03-09T16:36:38.936941Z"}}
+old_columns = nurse_assess_df.columns
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Apply one hot encoding:
+
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "c7f73853-ecf8-409e-9351-191e07444213"}
-nurse_assess_df = du.data_processing.one_hot_encoding_dataframe(nurse_assess_df, columns=cat_feat, join_rows=False,
-                                                                join_by=['patientunitstayid', 'drugoffset'])
+nurse_assess_df = du.data_processing.one_hot_encoding_dataframe(nurse_assess_df, columns=cat_feat, join_rows=False)
 nurse_assess_df
 
-# + {"Collapsed": "false", "persistent_id": "6101e468-8fdc-48c2-90f7-7a8db94c1b58"}
-nurse_assess_df[cat_feat].head()
-
-# + {"Collapsed": "false", "persistent_id": "b21d68b6-f26b-469c-9139-b746f027758d"}
-cat_feat_ohe
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:37:27.392359Z", "iopub.status.idle": "2020-03-09T16:37:27.399976Z", "iopub.execute_input": "2020-03-09T16:37:27.392616Z", "shell.execute_reply.started": "2020-03-09T16:37:27.392582Z", "shell.execute_reply": "2020-03-09T16:37:27.399076Z"}}
+new_columns = set(nurse_assess_df.columns) - set(old_columns)
 
 # + {"Collapsed": "false", "persistent_id": "9951459d-c61d-49cf-a9d7-630ced7dfef6"}
-nurse_assess_df[cat_feat].dtypes
+nurse_assess_df.dtypes
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Save the association between the original categorical features and the new one hot encoded columns:
@@ -933,6 +953,13 @@ nursechart_df = nursechart_df.drop(['Pain Assessment', 'GLC Total', 'Score (Glas
                                     'Value', 'Sedation Scale', 'Delirium Scale'], axis=1)
 nursechart_df.head()
 
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# ### Rename columns
+
+# + {"Collapsed": "false", "persistent_id": "69dcd73f-8e18-4672-a74f-586009f65924"}
+nursechart_df = nursechart_df.rename(columns={'nursingchartcelltypecat': 'nurse_assess_label',
+                                              'nursingchartvalue': 'nurse_assess_value'})
+
 # + {"Collapsed": "false", "toc-hr-collapsed": false, "cell_type": "markdown"}
 # ### Discretize categorical features
 #
@@ -945,24 +972,37 @@ nursechart_df.head()
 # Update list of categorical features:
 
 # + {"Collapsed": "false", "persistent_id": "3c800d90-6e44-450b-84c7-adf0490ec664"}
-cat_feat = ['nursingchartcelltypecat', 'nursingchartvalue']
+cat_feat = ['nurse_assess_label', 'nurse_assess_value']
 
 # + {"Collapsed": "false", "persistent_id": "16eaf806-f079-414c-bfb8-eb56b1cf9200"}
 nursechart_df[cat_feat].head()
 
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Filter just to the most common categories:
+
+# + {"Collapsed": "false"}
+for col in cat_feat:
+    most_common_cat = list(nursechart_df[col].value_counts().nlargest(500).index)
+    nursechart_df = nursechart_df[nurse_care_df[col].isin(most_common_cat)]
+
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:36:38.933807Z", "iopub.execute_input": "2020-03-09T16:36:38.934065Z", "iopub.status.idle": "2020-03-09T16:36:38.937828Z", "shell.execute_reply.started": "2020-03-09T16:36:38.934035Z", "shell.execute_reply": "2020-03-09T16:36:38.936941Z"}}
+old_columns = nursechart_df.columns
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Apply one hot encoding:
+
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "71212e7f-2513-4b17-af44-94b893ad18bf"}
-nursechart_df = du.data_processing.one_hot_encoding_dataframe(nursechart_df, columns=cat_feat, join_rows=False,
-                                                              join_by=['patientunitstayid', 'drugoffset'])
+nursechart_df = du.data_processing.one_hot_encoding_dataframe(nursechart_df, columns=cat_feat, join_rows=False)
 nursechart_df
 
-# + {"Collapsed": "false", "persistent_id": "d45b3fbd-7152-4b99-94c1-328a97af385f"}
-nursechart_df[cat_feat].head()
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:37:27.392359Z", "iopub.status.idle": "2020-03-09T16:37:27.399976Z", "iopub.execute_input": "2020-03-09T16:37:27.392616Z", "shell.execute_reply.started": "2020-03-09T16:37:27.392582Z", "shell.execute_reply": "2020-03-09T16:37:27.399076Z"}}
+new_columns = set(nursechart_df.columns) - set(old_columns)
 
-# + {"Collapsed": "false", "persistent_id": "e8519bde-dd73-4afc-9b70-7e6f0a4f85cf"}
-cat_feat_ohe
+# + {"Collapsed": "false", "persistent_id": "d45b3fbd-7152-4b99-94c1-328a97af385f"}
+nursechart_df.head()
 
 # + {"Collapsed": "false", "persistent_id": "3dbfccba-d336-4338-b3a6-5f63876250ff"}
-nursechart_df[cat_feat].dtypes
+nursechart_df.dtypes
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Save the association between the original categorical features and the new one hot encoded columns:
@@ -1018,7 +1058,7 @@ nursechart_df.head()
 # Check for possible multiple rows with the same unit stay ID and timestamp:
 
 # + {"Collapsed": "false", "persistent_id": "6ae4396f-4560-400b-b37d-030a16a1889f"}
-nursechart_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='nursingchartcelltypecat', n=5).head()
+nursechart_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='nurse_assess_label', n=5).head()
 
 # + {"Collapsed": "false", "persistent_id": "e4d4ed26-00ef-4661-ad50-e8517bb60a64"}
 nursechart_df[nursechart_df.patientunitstayid == 2553254].head(10)
@@ -1055,7 +1095,7 @@ type(nursechart_df)
 nursechart_df.dtypes
 
 # + {"Collapsed": "false", "persistent_id": "4aee12fc-0b71-483d-8a59-dfada22a08af"}
-nursechart_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='nursingchartcelltypecat', n=5).head()
+nursechart_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='nurse_assess_label', n=5).head()
 
 # + {"Collapsed": "false", "persistent_id": "6a2b5792-c42f-403d-a79b-fb4619d6c2ba"}
 nursechart_df[nursechart_df.patientunitstayid == 2553254].head(10)
@@ -1063,12 +1103,6 @@ nursechart_df[nursechart_df.patientunitstayid == 2553254].head(10)
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Comparing the output from the two previous cells with what we had before the `join_repeated_rows` method, we can see that all rows with duplicate IDs have been successfully joined.
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# ### Rename columns
-
-# + {"Collapsed": "false", "persistent_id": "69dcd73f-8e18-4672-a74f-586009f65924"}
-nursechart_df = nursechart_df.rename(columns={'nursingchartcelltypecat':'nurse_assess_label',
-                                                'nursingchartvalue':'nurse_assess_value'})
 nursechart_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}

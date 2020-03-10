@@ -164,16 +164,21 @@ cat_feat = ['ethnicity']
 # + {"Collapsed": "false", "persistent_id": "99d08bce-69f1-4a19-8e1d-ab2a49574506", "last_executed_text": "patient_df[cat_feat].head()", "execution_event_id": "1a89c528-9de1-4250-a6e6-2a29c6045770"}
 patient_df[cat_feat].head()
 
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:36:38.933807Z", "iopub.execute_input": "2020-03-09T16:36:38.934065Z", "iopub.status.idle": "2020-03-09T16:36:38.937828Z", "shell.execute_reply.started": "2020-03-09T16:36:38.934035Z", "shell.execute_reply": "2020-03-09T16:36:38.936941Z"}}
+old_columns = patient_df.columns
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Apply one hot encoding:
+
 # + {"Collapsed": "false", "persistent_id": "32a0ca8b-24f4-41d6-8565-038e39497c7e", "last_executed_text": "for i in range(len(new_cat_embed_feat)):\n    feature = new_cat_embed_feat[i]\n    # Prepare for embedding, i.e. enumerate categories\n    patient_df[feature], cat_feat_ohe[feature] = du.embedding.enum_categorical_feature(patient_df, feature)", "execution_event_id": "9152d797-82f8-46cb-9822-36e46b66b3ac"}
-patient_df = du.data_processing.one_hot_encoding_dataframe(patient_df, columns=cat_feat, join_rows=False,
-                                                           join_by=['patientunitstayid', 'drugoffset'])
+patient_df = du.data_processing.one_hot_encoding_dataframe(patient_df, columns=cat_feat, join_rows=False)
 patient_df
 
-# + {"Collapsed": "false", "persistent_id": "66530762-67c7-4547-953a-b5848c9e4be2", "last_executed_text": "patient_df[cat_feat].head()", "execution_event_id": "5a66c551-ae55-4c93-b418-7d3010895def"}
-patient_df[cat_feat].head()
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:37:27.392359Z", "iopub.status.idle": "2020-03-09T16:37:27.399976Z", "iopub.execute_input": "2020-03-09T16:37:27.392616Z", "shell.execute_reply.started": "2020-03-09T16:37:27.392582Z", "shell.execute_reply": "2020-03-09T16:37:27.399076Z"}}
+new_columns = set(patient_df.columns) - set(old_columns)
 
 # + {"Collapsed": "false", "persistent_id": "2d79bb26-bb3f-4d3e-beac-0e809c504bdb", "last_executed_text": "patient_df[cat_feat].dtypes", "execution_event_id": "56578e03-6482-46bb-91fa-271c875f77f2"}
-patient_df[cat_feat].dtypes
+patient_df.dtypes
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Save the association between the original categorical features and the new one hot encoded columns:
@@ -322,10 +327,25 @@ patient_df.to_csv(f'{data_path}cleaned/unnormalized/ohe/patient.csv')
 cat_feat
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "d5ad6017-ad4a-419c-badb-9454add7752d", "last_executed_text": "patient_df_norm = du.data_processing.normalize_data(patient_df, categ_columns=cat_feat,\n                                                    id_columns=['patientunitstayid', 'ts', 'death_ts'])\npatient_df_norm.head(6)", "execution_event_id": "3d6d0a5c-9160-4ffc-87d4-85632a968a1d"}
-patient_df_norm = du.data_processing.normalize_data(patient_df, categ_columns=cat_feat,
-                                                    id_columns=['patientunitstayid', 'ts', 'death_ts'],
-                                                    inplace=True)
+patient_df_norm, mean, std = du.data_processing.normalize_data(patient_df, categ_columns=cat_feat,
+                                                               id_columns=['patientunitstayid', 'ts', 'death_ts'],
+                                                               get_stats=True, inplace=True)
 patient_df_norm.head(6)
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Save a dictionary with the mean and standard deviation values of each column that was normalized:
+
+# + {"Collapsed": "false"}
+norm_stats = dict()
+for key, _ in mean.items():
+    norm_stats[key] = dict()
+    norm_stats[key]['mean'] = mean[key]
+    norm_stats[key]['std'] = std[key]
+norm_stats
+
+# + {"Collapsed": "false"}
+stream = open(f'{data_path}/cleaned/patient_norm_stats.yaml', 'w')
+yaml.dump(norm_stats, stream, default_flow_style=False)
 
 # + {"Collapsed": "false", "persistent_id": "64492d9f-df5d-4940-b931-cbb4c3af2949", "last_executed_text": "patient_df_norm.to_csv(f'{data_path}cleaned/normalized/ohe/patient.csv')", "execution_event_id": "3eed71a9-b6b3-4f0f-99b3-0b80313faf98"}
 patient_df_norm.to_csv(f'{data_path}cleaned/normalized/ohe/patient.csv')
@@ -592,19 +612,22 @@ cat_feat = ['Smoking Status', 'Ethanol Use', 'CAD', 'Cancer']
 # + {"Collapsed": "false", "persistent_id": "a4a2b9a5-0f9b-442c-9042-ed940501b71e"}
 note_df[cat_feat].head()
 
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:36:38.933807Z", "iopub.execute_input": "2020-03-09T16:36:38.934065Z", "iopub.status.idle": "2020-03-09T16:36:38.937828Z", "shell.execute_reply.started": "2020-03-09T16:36:38.934035Z", "shell.execute_reply": "2020-03-09T16:36:38.936941Z"}}
+old_columns = note_df.columns
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Apply one hot encoding:
+
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "318dc10d-8369-45f1-9deb-5acc83616c04"}
-note_df = du.data_processing.one_hot_encoding_dataframe(note_df, columns=cat_feat, join_rows=False,
+note_df = du.data_processing.(note_df, columns=cat_feat, join_rows=False,
                                                         join_by=['patientunitstayid', 'drugoffset'])
 note_df
 
-# + {"Collapsed": "false", "persistent_id": "781ff06e-15f5-495c-967d-97c3dd790be7"}
-note_df[cat_feat].head()
-
-# + {"Collapsed": "false", "persistent_id": "d8fbd1fe-a0fb-4542-99e3-3696b5629e74"}
-cat_feat_ohe
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:37:27.392359Z", "iopub.status.idle": "2020-03-09T16:37:27.399976Z", "iopub.execute_input": "2020-03-09T16:37:27.392616Z", "shell.execute_reply.started": "2020-03-09T16:37:27.392582Z", "shell.execute_reply": "2020-03-09T16:37:27.399076Z"}}
+new_columns = set(note_df.columns) - set(old_columns)
 
 # + {"Collapsed": "false", "persistent_id": "c7a413ec-d61e-49ba-a7ae-13949fc6f092"}
-note_df[cat_feat].dtypes
+note_df.dtypes
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Save the association between the original categorical features and the new one hot encoded columns:

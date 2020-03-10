@@ -129,6 +129,13 @@ alrg_df = alrg_df[['patientunitstayid', 'allergyoffset',
                    'allergyname', 'drughiclseqno']]
 alrg_df.head()
 
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# ### Rename columns
+
+# + {"Collapsed": "false", "persistent_id": "d804e12b-79df-4a29-87ef-89c26d57b8e9"}
+alrg_df = alrg_df.rename(columns={'drughiclseqno': 'drugallergyhiclseqno'})
+alrg_df.head()
+
 # + {"Collapsed": "false", "toc-hr-collapsed": false, "cell_type": "markdown"}
 # ### Discretize categorical features
 #
@@ -141,7 +148,7 @@ alrg_df.head()
 # Update list of categorical features:
 
 # + {"Collapsed": "false", "persistent_id": "621e1414-6268-4641-818b-5f8b5d54a446"}
-cat_feat = ['allergyname', 'drughiclseqno']
+cat_feat = ['allergyname', 'drugallergyhiclseqno']
 
 # + {"Collapsed": "false", "persistent_id": "ce58accd-9f73-407c-b441-6da299604bb1"}
 alrg_df[cat_feat].head()
@@ -152,28 +159,41 @@ alrg_df[alrg_df.allergyname.str.contains('other')].allergyname.value_counts()
 # + {"Collapsed": "false"}
 alrg_df[alrg_df.allergyname.str.contains('unknown')].allergyname.value_counts()
 
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Filter just to the most common categories:
+
+# + {"Collapsed": "false"}
+for col in cat_feat:
+    most_common_cat = list(alrg_df[col].value_counts().nlargest(500).index)
+    alrg_df = alrg_df[alrg_df[col].isin(most_common_cat)]
+
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:36:38.933807Z", "iopub.execute_input": "2020-03-09T16:36:38.934065Z", "iopub.status.idle": "2020-03-09T16:36:38.937828Z", "shell.execute_reply.started": "2020-03-09T16:36:38.934035Z", "shell.execute_reply": "2020-03-09T16:36:38.936941Z"}}
+old_columns = alrg_df.columns
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Apply one hot encoding:
+
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "9c0217cf-66d8-467b-b0df-b75441b1c0dc"}
-alrg_df = du.data_processing.one_hot_encoding_dataframe(alrg_df, columns=cat_feat, join_rows=False,
-                                                        join_by=['patientunitstayid', 'drugoffset'])
+alrg_df = du.data_processing.one_hot_encoding_dataframe(alrg_df, columns=cat_feat, join_rows=False)
 alrg_df
+
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:37:27.392359Z", "iopub.status.idle": "2020-03-09T16:37:27.399976Z", "iopub.execute_input": "2020-03-09T16:37:27.392616Z", "shell.execute_reply.started": "2020-03-09T16:37:27.392582Z", "shell.execute_reply": "2020-03-09T16:37:27.399076Z"}}
+new_columns = set(alrg_df.columns) - set(old_columns)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Fill missing values of the drug and allergies data with 0, so as to prepare for embedding:
 
 # + {"Collapsed": "false", "persistent_id": "50a95412-7211-4780-b0da-aad5e166191e"}
-alrg_df.drughiclseqno = alrg_df.drughiclseqno.fillna(0).astype(int)
+alrg_df.drugallergyhiclseqno = alrg_df.drugallergyhiclseqno.fillna(0).astype(int)
 
 # + {"Collapsed": "false", "persistent_id": "50a95412-7211-4780-b0da-aad5e166191e"}
 alrg_df.allergyname = alrg_df.allergyname.fillna(0).astype(int)
 
 # + {"Collapsed": "false", "persistent_id": "e7ebceaf-e35b-4143-8fea-b5b14016e7f3"}
-alrg_df[cat_feat].head()
-
-# + {"Collapsed": "false", "persistent_id": "e72804a4-82fe-4ce9-930e-6fd615c307f0"}
-cat_feat_ohe
+alrg_df.head()
 
 # + {"Collapsed": "false", "persistent_id": "1b6e81c6-87ba-44dc-9c8d-73e168e946a6"}
-alrg_df[cat_feat].dtypes
+alrg_df.dtypes
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Save the association between the original categorical features and the new one hot encoded columns:
@@ -243,49 +263,6 @@ alrg_df[alrg_df.patientunitstayid == 3197554].head(10)
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Even after removing duplicates rows, there are still some that have different information for the same ID and timestamp. We have to concatenate the categorical enumerations.
 
-# + {"Collapsed": "false"}
-# data_df = alrg_df.copy()
-# data_df.head()
-
-# + {"Collapsed": "false"}
-# data_df['allergyname'] = data_df['allergyname'].astype(str)
-
-# + {"Collapsed": "false", "persistent_id": "d2660024-2f7e-4d37-b312-2a69aea35f0a"}
-# data_df.groupby(['patientunitstayid', 'ts']).count()
-
-# + {"Collapsed": "false", "persistent_id": "d2660024-2f7e-4d37-b312-2a69aea35f0a"}
-# data_df.groupby(['patientunitstayid', 'ts']).sum()
-
-# + {"Collapsed": "false"}
-# data_df.columns
-
-# + {"Collapsed": "false"}
-# data_df.groupby('ts').head().columns
-
-# + {"Collapsed": "false"}
-# data_df.index
-
-# + {"Collapsed": "false"}
-# data_df.columns = data_df.columns.get_level_values(0)
-
-# + {"Collapsed": "false"}
-# pd.Grouper(key='patientunitstayid')
-
-# + {"Collapsed": "false"}
-# data_df.groupby(by=[pd.Grouper(key='patientunitstayid'), pd.Grouper(key='ts')])
-
-# + {"Collapsed": "false"}
-# data_df.groupby(['patientunitstayid', 'ts'])['allergyname'].apply(lambda x: ';'.join(x)).to_frame().reset_index()
-
-# + {"Collapsed": "false"}
-# data_df.groupby('ts')['allergyname'].apply(lambda x: ';'.join(x)).to_frame().reset_index()
-
-# + {"Collapsed": "false"}
-# data_df.groupby(['patientunitstayid', 'ts']).head()
-
-# + {"Collapsed": "false"}
-# data_df.groupby(['patientunitstayid', 'ts']).mean()
-
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Convert dataframe to Pandas, as the multi-column groupby operation in `join_repeated_rows` isn't working with Modin:
 
@@ -319,13 +296,6 @@ alrg_df[alrg_df.patientunitstayid == 3197554].head(10)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Comparing the output from the two previous cells with what we had before the `join_repeated_rows` method, we can see that all rows with duplicate IDs have been successfully joined.
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# ### Rename columns
-
-# + {"Collapsed": "false", "persistent_id": "d804e12b-79df-4a29-87ef-89c26d57b8e9"}
-alrg_df = alrg_df.rename(columns={'drughiclseqno':'drugallergyhiclseqno'})
-alrg_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # ### Clean column names
@@ -591,19 +561,32 @@ cat_feat = ['pasthistoryvalue', 'pasthistorytype', 'pasthistorydetails']
 # + {"Collapsed": "false", "persistent_id": "aa911443-7f86-44ea-ab90-997fd38ba074"}
 past_hist_df[cat_feat].head()
 
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Filter just to the most common categories:
+
+# + {"Collapsed": "false"}
+for col in cat_feat:
+    most_common_cat = list(past_hist_df[col].value_counts().nlargest(500).index)
+    past_hist_df = past_hist_df[past_hist_df[col].isin(most_common_cat)]
+
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:36:38.933807Z", "iopub.execute_input": "2020-03-09T16:36:38.934065Z", "iopub.status.idle": "2020-03-09T16:36:38.937828Z", "shell.execute_reply.started": "2020-03-09T16:36:38.934035Z", "shell.execute_reply": "2020-03-09T16:36:38.936941Z"}}
+old_columns = past_hist_df.columns
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Apply one hot encoding:
+
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "58e7c624-cfc6-4df1-83dc-a8a22fe7ffc0"}
-past_hist_df = du.data_processing.one_hot_encoding_dataframe(past_hist_df, columns=cat_feat, join_rows=False,
-                                                             join_by=['patientunitstayid', 'drugoffset'])
+past_hist_df = du.data_processing.one_hot_encoding_dataframe(past_hist_df, columns=cat_feat, join_rows=False)
 past_hist_df
 
-# + {"Collapsed": "false", "persistent_id": "7ee06a1a-cb99-4a94-9271-6f67948fd2a6"}
-past_hist_df[cat_feat].head()
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:37:27.392359Z", "iopub.status.idle": "2020-03-09T16:37:27.399976Z", "iopub.execute_input": "2020-03-09T16:37:27.392616Z", "shell.execute_reply.started": "2020-03-09T16:37:27.392582Z", "shell.execute_reply": "2020-03-09T16:37:27.399076Z"}}
+new_columns = set(past_hist_df.columns) - set(old_columns)
 
-# + {"Collapsed": "false", "persistent_id": "a77d1170-55de-492e-9c4a-2542c06da94d"}
-cat_feat_ohe
+# + {"Collapsed": "false", "persistent_id": "7ee06a1a-cb99-4a94-9271-6f67948fd2a6"}
+past_hist_df.head()
 
 # + {"Collapsed": "false", "persistent_id": "2b7dde92-fe4b-42ce-9705-9d505878a696"}
-past_hist_df[cat_feat].dtypes
+past_hist_df.dtypes
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Save the association between the original categorical features and the new one hot encoded columns:
@@ -810,19 +793,32 @@ cat_feat = ['diagnosis_type_1', 'diagnosis_disorder_2', 'diagnosis_detailed_3']
 # + {"Collapsed": "false", "persistent_id": "72f3e710-08ef-4c9d-9876-c9d8cbaaf5f0"}
 diagn_df[cat_feat].head()
 
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Filter just to the most common categories:
+
+# + {"Collapsed": "false"}
+for col in cat_feat:
+    most_common_cat = list(diagn_df[col].value_counts().nlargest(500).index)
+    diagn_df = diagn_df[diagn_df[col].isin(most_common_cat)]
+
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:36:38.933807Z", "iopub.execute_input": "2020-03-09T16:36:38.934065Z", "iopub.status.idle": "2020-03-09T16:36:38.937828Z", "shell.execute_reply.started": "2020-03-09T16:36:38.934035Z", "shell.execute_reply": "2020-03-09T16:36:38.936941Z"}}
+old_columns = diagn_df.columns
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Apply one hot encoding:
+
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "bba23ddd-c1e5-49b7-9b7f-8fe5819ee7f9"}
-diagn_df = du.data_processing.one_hot_encoding_dataframe(diagn_df, columns=cat_feat, join_rows=False,
-                                                         join_by=['patientunitstayid', 'drugoffset'])
+diagn_df = du.data_processing.one_hot_encoding_dataframe(diagn_df, columns=cat_feat, join_rows=False)
 diagn_df
 
-# + {"Collapsed": "false", "persistent_id": "64118894-5fb4-4e31-91cf-695d64a7e633"}
-diagn_df[cat_feat].head()
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:37:27.392359Z", "iopub.status.idle": "2020-03-09T16:37:27.399976Z", "iopub.execute_input": "2020-03-09T16:37:27.392616Z", "shell.execute_reply.started": "2020-03-09T16:37:27.392582Z", "shell.execute_reply": "2020-03-09T16:37:27.399076Z"}}
+new_columns = set(diagn_df.columns) - set(old_columns)
 
-# + {"Collapsed": "false", "persistent_id": "15f3d224-568b-45b1-8d6d-6bd4eaf35562"}
-cat_feat_ohe
+# + {"Collapsed": "false", "persistent_id": "64118894-5fb4-4e31-91cf-695d64a7e633"}
+diagn_df.head()
 
 # + {"Collapsed": "false", "persistent_id": "cbe8c721-69d6-4af1-ba27-ef8a6c166b19"}
-diagn_df[cat_feat].dtypes
+diagn_df.dtypes
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Save the association between the original categorical features and the new one hot encoded columns:

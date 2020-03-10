@@ -204,8 +204,23 @@ vital_aprdc_df.head()
 vital_aprdc_df.to_csv(f'{data_path}cleaned/unnormalized/ohe/vitalAperiodic.csv')
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "d5ad6017-ad4a-419c-badb-9454add7752d", "last_executed_text": "vital_aprdc_df = du.data_processing.normalize_data(vital_aprdc_df, categ_columns=cat_feat,\n                                                    id_columns=['patientunitstayid', 'ts', 'death_ts'])\nvital_aprdc_df.head(6)", "execution_event_id": "3d6d0a5c-9160-4ffc-87d4-85632a968a1d"}
-vital_aprdc_df = du.data_processing.normalize_data(vital_aprdc_df, inplace=True)
+vital_aprdc_df, mean, std = du.data_processing.normalize_data(vital_aprdc_df, get_stats=True, inplace=True)
 vital_aprdc_df.head(6)
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Save a dictionary with the mean and standard deviation values of each column that was normalized:
+
+# + {"Collapsed": "false"}
+norm_stats = dict()
+for key, _ in mean.items():
+    norm_stats[key] = dict()
+    norm_stats[key]['mean'] = mean[key]
+    norm_stats[key]['std'] = std[key]
+norm_stats
+
+# + {"Collapsed": "false"}
+stream = open(f'{data_path}/cleaned/vitalAperiodic_norm_stats.yaml', 'w')
+yaml.dump(norm_stats, stream, default_flow_style=False)
 
 # + [markdown] {"Collapsed": "false"}
 # ### Save the dataframe
@@ -408,8 +423,23 @@ vital_prdc_df = vital_prdc_df.drop(columns=['Unnamed: 0'])
 vital_prdc_df.head()
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "d5ad6017-ad4a-419c-badb-9454add7752d", "last_executed_text": "vital_prdc_df = du.data_processing.normalize_data(vital_prdc_df, categ_columns=cat_feat,\n                                                    id_columns=['patientunitstayid', 'ts', 'death_ts'])\nvital_prdc_df.head(6)", "execution_event_id": "3d6d0a5c-9160-4ffc-87d4-85632a968a1d", "execution": {"iopub.status.busy": "2020-02-24T00:10:03.127013Z", "iopub.status.idle": "2020-02-24T00:11:16.615136Z", "iopub.execute_input": "2020-02-24T00:10:03.127293Z", "shell.execute_reply.started": "2020-02-24T00:10:03.127252Z", "shell.execute_reply": "2020-02-24T00:11:16.614331Z"}}
-vital_prdc_df = du.data_processing.normalize_data(vital_prdc_df, inplace=True)
+vital_prdc_df, mean, std = du.data_processing.normalize_data(vital_prdc_df, get_stats=True, inplace=True)
 vital_prdc_df.head(6)
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
+# Save a dictionary with the mean and standard deviation values of each column that was normalized:
+
+# + {"Collapsed": "false"}
+norm_stats = dict()
+for key, _ in mean.items():
+    norm_stats[key] = dict()
+    norm_stats[key]['mean'] = mean[key]
+    norm_stats[key]['std'] = std[key]
+norm_stats
+
+# + {"Collapsed": "false"}
+stream = open(f'{data_path}/cleaned/vitalPeriodic_norm_stats.yaml', 'w')
+yaml.dump(norm_stats, stream, default_flow_style=False)
 
 # + [markdown] {"Collapsed": "false"}
 # ### Save the dataframe
