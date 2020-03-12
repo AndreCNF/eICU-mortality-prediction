@@ -6,7 +6,7 @@ from functools import partial           # Fix some parameters of a function
 import data_utils as du                 # Data science and machine learning relevant methods
 
 class BaseRNN(nn.Module):
-    def __init__(self, rnn_module, n_inputs, n_hidden, n_outputs, n_layers=1,
+    def __init__(self, rnn_module, n_inputs, n_hidden, n_outputs,
                  p_dropout=0, embed_features=None, n_embeddings=None,
                  embedding_dim=None, bidir=False, is_lstm=True,
                  padding_value=999999):
@@ -25,13 +25,12 @@ class BaseRNN(nn.Module):
             units for each layer.
         n_outputs : int
             Number of outputs.
-        n_layers : int, default 1
-            Number of LSTM layers.
         p_dropout : float or int, default 0
             Probability of dropout.
-        embed_features : list of ints, default None
+        embed_features : list of ints or list of lists of ints, default None
             List of features (refered to by their indeces) that need to go
-            through embedding layers.
+            through embedding layers. One list of one hot encoded feature per
+            embedding layer must be set.
         n_embeddings : list of ints, default None
             List of the total number of unique categories for the embedding
             layers. Needs to be in the same order as the embedding layers are
@@ -54,7 +53,6 @@ class BaseRNN(nn.Module):
         self.n_inputs = n_inputs
         self.n_hidden = n_hidden
         self.n_outputs = n_outputs
-        self.n_layers = n_layers
         self.p_dropout = p_dropout
         self.embed_features = embed_features
         self.n_embeddings = n_embeddings
@@ -62,22 +60,41 @@ class BaseRNN(nn.Module):
         self.bidir = bidir
         self.is_lstm = is_lstm
         self.padding_value = padding_value
-        # [TODO] Adapt to the new, one hot encoding embedding approach
         # Embedding layers
         if self.embed_features is not None:
-            if isinstance(self.embed_features, int):
-                self.embed_features = [self.embed_features]
+            if not isinstance(self.embed_features, list):
+                raise Exception(f'ERROR: The embedding features must be indicated in `embed_features` as either a list of indices or a list of lists of indices (there are multiple one hot encoded columns for every original categorical feature). The provided argument has type {type(embed_features)}.')
             if self.n_embeddings is None:
-                raise Exception('ERROR: If the user specifies features to be embedded, each feature\'s number of embeddings must also be specified. Received a `embed_features` argument, but not `n_embeddings`.')
+                # Find the number of embeddings based on the number of one hot encoded feature
+                if all([isinstance(feature, int) for feature in self.embed_features]):
+                    self.n_embeddings = len(self.embed_features) + 1
+                elif (all([isinstance(feat_list, list) for feat_list in self.embed_features])
+                and all([isinstance(feature, int) for feature in feat_list
+                        for feat_list in self.embed_features])):
+                    self.n_embeddings = []
+                    [self.n_embeddings.append(len(feat_list) + 1) for feat_list in self.embed_features]
+                else:
+                    raise Exception(f'ERROR: The embedding features must be indicated in `embed_features` as either a single, integer index or a list of indices. The provided argument has type {type(embed_features)}.')
             else:
                 if isinstance(self.n_embeddings, int):
                     self.n_embeddings = [self.n_embeddings]
                 if len(self.n_embeddings) != len(self.embed_features):
                     raise Exception(f'ERROR: The list of the number of embeddings `n_embeddings` and the embedding features `embed_features` must have the same length. The provided `n_embeddings` has length {len(self.n_embeddings)} while `embed_features` has length {len(self.embed_features)}.')
-            if isinstance(self.embed_features, list):
-                # Create a modules dictionary of embedding bag layers;
-                # each key corresponds to a embedded feature's index
-                self.embed_layers = nn.ModuleDict()
+            if all([isinstance(feature, int) for feature in self.embed_features]):
+                if embedding_dim is None:
+                    # Calculate a reasonable embedding dimension for the
+                    # current feature; the formula sets a minimum embedding
+                    # dimension of 3, with above values being calculated as
+                    # the rounded up base 5 logarithm of the number of
+                    # embeddings.
+                    embedding_dim = max(3, int(math.ceil(math.log(self.n_embeddings, base=5))))
+                # Create a single embedding layer
+                self.embed_layers = nn.EmbeddingBag(self.n_embeddings, embedding_dim)
+            elif (all([isinstance(feat_list, list) for feat_list in self.embed_features])
+            and all([isinstance(feature, int) for feature in feat_list
+                    for feat_list in self.embed_features])):
+                # Create a modules list of embedding bag layers
+                self.embed_layers = nn.ModuleList()
                 for i in range(len(self.embed_features)):
                     if embedding_dim is None:
                         # Calculate a reasonable embedding dimension for the
@@ -87,25 +104,32 @@ class BaseRNN(nn.Module):
                         # embeddings.
                         embedding_dim_i = max(3, int(math.ceil(math.log(self.n_embeddings[i], base=5))))
                     else:
-                        if isinstance(self.embedding_dim, int):
-                            self.embedding_dim = [self.embedding_dim]
                         embedding_dim_i = self.embedding_dim[i]
                     # Create an embedding layer for the current feature
-                    self.embed_layers[f'embed_{self.embed_features[i]}'] = nn.EmbeddingBag(self.n_embeddings[i], embedding_dim_i)
+                    self.embed_layers[f'embed_{i}'] = nn.EmbeddingBag(self.n_embeddings[i], embedding_dim_i)
             else:
                 raise Exception(f'ERROR: The embedding features must be indicated in `embed_features` as either a single, integer index or a list of indices. The provided argument has type {type(embed_features)}.')
-        # LSTM layer(s)
+        # RNN layer(s)
         if self.embed_features is None:
             self.rnn_n_inputs = self.n_inputs
         else:
             # Have into account the new embedding columns that will be added, as
             # well as the removal of the originating categorical columns
-            self.rnn_n_inputs = self.n_inputs + sum(self.embedding_dim) - len(self.embedding_dim)
+            if all([isinstance(feature, int) for feature in self.embed_features]):
+                self.rnn_n_inputs = self.n_inputs + self.embedding_dim - len(self.embed_features)
+            elif (all([isinstance(feat_list, list) for feat_list in self.embed_features])
+            and all([isinstance(feature, int) for feature in feat_list
+                    for feat_list in self.embed_features])):
+                self.rnn_n_inputs = self.n_inputs
+                for i in range(len(self.embed_features)):
+                    self.rnn_n_inputs = self.rnn_n_inputs + self.embedding_dim[i] - len(self.embed_features[i])
         if isinstance(self.n_hidden, int):
             # Create a single RNN layer
             self.rnn_layer = self.rnn_module(self.rnn_n_inputs, self.n_hidden)
             # The output dimension of the last RNN layer
             rnn_output_dim = self.n_hidden
+            # Number of RNN layers
+            self.n_rnn_layers = 1
         elif isinstance(self.n_hidden, list):
             # Create a list of multiple, stacked RNN layers
             self.rnn_layers = nn.ModuleList()
@@ -116,6 +140,8 @@ class BaseRNN(nn.Module):
                 self.rnn_layers.append(self.rnn_module(self.n_hidden[i-1], self.n_hidden[i]))
             # The output dimension of the last RNN layer
             rnn_output_dim = self.n_hidden[-1]
+            # Number of RNN layers
+            self.n_rnn_layers = len(self.n_hidden)
         else:
             raise Exception(f'ERROR: The number of hidden units `n_hidden` must be a single integer (one layer) or a list of integers (multiple layers). Received input `n_hidden` of type {type(n_hidden)}.')
         # Fully connected layer which takes the LSTM's hidden units and
@@ -273,29 +299,48 @@ class VanillaLSTM(nn.Module):
         self.n_inputs = n_inputs
         self.n_hidden = n_hidden
         self.n_outputs = n_outputs
-        self.n_layers = n_layers
         self.p_dropout = p_dropout
         self.embed_features = embed_features
         self.n_embeddings = n_embeddings
         self.embedding_dim = embedding_dim
         self.bidir = bidir
+        self.is_lstm = is_lstm
         self.padding_value = padding_value
-        # [TODO] Adapt to the new, one hot encoding embedding approach
         # Embedding layers
         if self.embed_features is not None:
-            if isinstance(self.embed_features, int):
-                self.embed_features = [self.embed_features]
+            if not isinstance(self.embed_features, list):
+                raise Exception(f'ERROR: The embedding features must be indicated in `embed_features` as either a list of indices or a list of lists of indices (there are multiple one hot encoded columns for every original categorical feature). The provided argument has type {type(embed_features)}.')
             if self.n_embeddings is None:
-                raise Exception('ERROR: If the user specifies features to be embedded, each feature\'s number of embeddings must also be specified. Received a `embed_features` argument, but not `n_embeddings`.')
+                # Find the number of embeddings based on the number of one hot encoded feature
+                if all([isinstance(feature, int) for feature in self.embed_features]):
+                    self.n_embeddings = len(self.embed_features) + 1
+                elif (all([isinstance(feat_list, list) for feat_list in self.embed_features])
+                and all([isinstance(feature, int) for feature in feat_list
+                        for feat_list in self.embed_features])):
+                    self.n_embeddings = []
+                    [self.n_embeddings.append(len(feat_list) + 1) for feat_list in self.embed_features]
+                else:
+                    raise Exception(f'ERROR: The embedding features must be indicated in `embed_features` as either a single, integer index or a list of indices. The provided argument has type {type(embed_features)}.')
             else:
                 if isinstance(self.n_embeddings, int):
                     self.n_embeddings = [self.n_embeddings]
                 if len(self.n_embeddings) != len(self.embed_features):
                     raise Exception(f'ERROR: The list of the number of embeddings `n_embeddings` and the embedding features `embed_features` must have the same length. The provided `n_embeddings` has length {len(self.n_embeddings)} while `embed_features` has length {len(self.embed_features)}.')
-            if isinstance(self.embed_features, list):
-                # Create a modules dictionary of embedding bag layers;
-                # each key corresponds to a embedded feature's index
-                self.embed_layers = nn.ModuleDict()
+            if all([isinstance(feature, int) for feature in self.embed_features]):
+                if embedding_dim is None:
+                    # Calculate a reasonable embedding dimension for the
+                    # current feature; the formula sets a minimum embedding
+                    # dimension of 3, with above values being calculated as
+                    # the rounded up base 5 logarithm of the number of
+                    # embeddings.
+                    embedding_dim = max(3, int(math.ceil(math.log(self.n_embeddings, base=5))))
+                # Create a single embedding layer
+                self.embed_layers = nn.EmbeddingBag(self.n_embeddings, embedding_dim)
+            elif (all([isinstance(feat_list, list) for feat_list in self.embed_features])
+            and all([isinstance(feature, int) for feature in feat_list
+                    for feat_list in self.embed_features])):
+                # Create a modules list of embedding bag layers
+                self.embed_layers = nn.ModuleList()
                 for i in range(len(self.embed_features)):
                     if embedding_dim is None:
                         # Calculate a reasonable embedding dimension for the
@@ -305,11 +350,9 @@ class VanillaLSTM(nn.Module):
                         # embeddings.
                         embedding_dim_i = max(3, int(math.ceil(math.log(self.n_embeddings[i], base=5))))
                     else:
-                        if isinstance(self.embedding_dim, int):
-                            self.embedding_dim = [self.embedding_dim]
                         embedding_dim_i = self.embedding_dim[i]
                     # Create an embedding layer for the current feature
-                    self.embed_layers[f'embed_{self.embed_features[i]}'] = nn.EmbeddingBag(self.n_embeddings[i], embedding_dim_i)
+                    self.embed_layers[f'embed_{i}'] = nn.EmbeddingBag(self.n_embeddings[i], embedding_dim_i)
             else:
                 raise Exception(f'ERROR: The embedding features must be indicated in `embed_features` as either a single, integer index or a list of indices. The provided argument has type {type(embed_features)}.')
         # LSTM layer(s)
@@ -318,13 +361,38 @@ class VanillaLSTM(nn.Module):
         else:
             # Have into account the new embedding columns that will be added, as
             # well as the removal of the originating categorical columns
-            self.lstm_n_inputs = self.n_inputs + sum(self.embedding_dim) - len(self.embedding_dim)
-        self.lstm = nn.LSTM(self.lstm_n_inputs, self.n_hidden, self.n_layers,
-                            batch_first=True, dropout=self.p_dropout,
-                            bidirectional=self.bidir)
+            if all([isinstance(feature, int) for feature in self.embed_features]):
+                self.lstm_n_inputs = self.n_inputs + self.embedding_dim - len(self.embed_features)
+            elif (all([isinstance(feat_list, list) for feat_list in self.embed_features])
+            and all([isinstance(feature, int) for feature in feat_list
+                    for feat_list in self.embed_features])):
+                self.lstm_n_inputs = self.n_inputs
+                for i in range(len(self.embed_features)):
+                    self.lstm_n_inputs = self.lstm_n_inputs + self.embedding_dim[i] - len(self.embed_features[i])
+        if isinstance(self.n_hidden, int):
+            # Create a single LSTM layer
+            self.lstm_layer = self.lstm_module(self.lstm_n_inputs, self.n_hidden)
+            # The output dimension of the last LSTM layer
+            lstm_output_dim = self.n_hidden
+            # Number of LSTM layers
+            self.n_lstm_layers = 1
+        elif isinstance(self.n_hidden, list):
+            # Create a list of multiple, stacked LSTM layers
+            self.lstm_layers = nn.ModuleList()
+            # Add the first LSTM layer
+            self.lstm_layers.append(self.lstm_module(self.lstm_n_inputs, self.n_hidden[0]))
+            # Add the remaining LSTM layers
+            for i in range(1, self.n_layers):
+                self.lstm_layers.append(self.lstm_module(self.n_hidden[i-1], self.n_hidden[i]))
+            # The output dimension of the last LSTM layer
+            lstm_output_dim = self.n_hidden[-1]
+            # Number of LSTM layers
+            self.n_lstm_layers = len(self.n_hidden)
+        else:
+            raise Exception(f'ERROR: The number of hidden units `n_hidden` must be a single integer (one layer) or a list of integers (multiple layers). Received input `n_hidden` of type {type(n_hidden)}.')
         # Fully connected layer which takes the LSTM's hidden units and
         # calculates the output classification
-        self.fc = nn.Linear(self.n_hidden, self.n_outputs)
+        self.fc = nn.Linear(lstm_output_dim, self.n_outputs)
         # Dropout used between the last LSTM layer and the fully connected layer
         self.dropout = nn.Dropout(p=self.p_dropout)
         if self.n_outputs == 1:
@@ -438,13 +506,31 @@ class TLSTM(BaseRNN):
     def __init__(self, n_inputs, n_hidden, n_outputs, n_layers=1, p_dropout=0,
                  embed_features=None, n_embeddings=None, embedding_dim=None,
                  bidir=False, padding_value=999999,
-                 delta_ts_col=-1, elapsed_time='small', no_small_delta=True):
-        self.delta_ts_col = delta_ts_col
+                 delta_ts_col=None, elapsed_time='small', no_small_delta=True):
+        if delta_ts_col is None:
+            if embed_features is None:
+                self.delta_ts_col = n_inputs
+            else:
+                # Have into account the new embedding columns that will be added,
+                # as well as the removal of the originating categorical columns
+                # NOTE: This only works assuming that the delta_ts column is the
+                # last one on the dataframe
+                if all([isinstance(feature, int) for feature in embed_features]):
+                    self.delta_ts_col = n_inputs + embedding_dim - len(embed_features)
+                elif (all([isinstance(feat_list, list) for feat_list in embed_features])
+                and all([isinstance(feature, int) for feature in feat_list
+                        for feat_list in embed_features])):
+                    self.delta_ts_col = n_inputs
+                    for i in range(len(embed_features)):
+                        self.delta_ts_col = rnn_n_inputs + embedding_dim[i] - len(embed_features[i])
+
+        else:
+            self.delta_ts_col = delta_ts_col
         self.elapsed_time = elapsed_time
         self.no_small_delta = no_small_delta
-        TLSTMCell_prtl = partial(TLSTMCell, delta_ts_col=delta_ts_col,
-                                 elapsed_time=elapsed_time,
-                                 no_small_delta=no_small_delta)
+        TLSTMCell_prtl = partial(TLSTMCell, delta_ts_col=self.delta_ts_col,
+                                 elapsed_time=self.elapsed_time,
+                                 no_small_delta=self.no_small_delta)
         if bidir is True:
             rnn_module = lambda *cell_args: BidirLSTMLayer(TLSTMCell_prtl, *cell_args)
         else:

@@ -30,16 +30,16 @@
 # + [markdown] {"Collapsed": "false", "colab_type": "text", "id": "KOdmFzXqF7nq", "toc-hr-collapsed": true}
 # ## Importing the necessary packages
 
-# + {"Collapsed": "false", "colab": {}, "colab_type": "code", "execution_event_id": "deb57b39-6a79-4b3a-95ed-02f8089ff593", "id": "G5RrWE9R_Nkl", "last_executed_text": "import os                                  # os handles directory/workspace changes\nimport numpy as np                         # NumPy to handle numeric and NaN operations\nimport yaml                                # Save and load YAML files", "persistent_id": "522745b5-b5bf-479f-b697-5c7e9e12fc33", "execution": {"iopub.status.busy": "2020-03-09T16:35:00.843458Z", "iopub.execute_input": "2020-03-09T16:35:00.843852Z", "iopub.status.idle": "2020-03-09T16:35:01.054945Z", "shell.execute_reply.started": "2020-03-09T16:35:00.843784Z", "shell.execute_reply": "2020-03-09T16:35:01.054346Z"}}
+# + {"Collapsed": "false", "colab": {}, "colab_type": "code", "execution_event_id": "deb57b39-6a79-4b3a-95ed-02f8089ff593", "id": "G5RrWE9R_Nkl", "last_executed_text": "import os                                  # os handles directory/workspace changes\nimport numpy as np                         # NumPy to handle numeric and NaN operations\nimport yaml                                # Save and load YAML files", "persistent_id": "522745b5-b5bf-479f-b697-5c7e9e12fc33", "execution": {"iopub.status.busy": "2020-03-11T17:32:26.049140Z", "iopub.execute_input": "2020-03-11T17:32:26.049421Z", "iopub.status.idle": "2020-03-11T17:32:26.074986Z", "shell.execute_reply.started": "2020-03-11T17:32:26.049379Z", "shell.execute_reply": "2020-03-11T17:32:26.074161Z"}}
 import os                                  # os handles directory/workspace changes
 import numpy as np                         # NumPy to handle numeric and NaN operations
 import yaml                                # Save and load YAML files
 
-# + {"Collapsed": "false", "execution_event_id": "fa33a2f7-7127-49c6-bbe9-f89555b1f2be", "last_executed_text": "# Debugging packages\nimport pixiedust                           # Debugging in Jupyter Notebook cells", "persistent_id": "02accdbf-be7e-415c-ba11-165906e66c50", "execution": {"iopub.status.busy": "2020-03-09T16:35:01.123814Z", "iopub.execute_input": "2020-03-09T16:35:01.124069Z", "iopub.status.idle": "2020-03-09T16:35:05.726479Z", "shell.execute_reply.started": "2020-03-09T16:35:01.124041Z", "shell.execute_reply": "2020-03-09T16:35:05.725772Z"}}
+# + {"Collapsed": "false", "execution_event_id": "fa33a2f7-7127-49c6-bbe9-f89555b1f2be", "last_executed_text": "# Debugging packages\nimport pixiedust                           # Debugging in Jupyter Notebook cells", "persistent_id": "02accdbf-be7e-415c-ba11-165906e66c50", "execution": {"iopub.status.busy": "2020-03-11T17:32:26.786511Z", "iopub.execute_input": "2020-03-11T17:32:26.786824Z", "iopub.status.idle": "2020-03-11T17:32:27.729929Z", "shell.execute_reply.started": "2020-03-11T17:32:26.786777Z", "shell.execute_reply": "2020-03-11T17:32:27.729039Z"}}
 # Debugging packages
 import pixiedust                           # Debugging in Jupyter Notebook cells
 
-# + {"Collapsed": "false", "execution_event_id": "baeb346a-1c34-42d1-a501-7ae37369255e", "last_executed_text": "# Change to parent directory (presumably \"Documents\")\nos.chdir(\"../../..\")\n\n# Path to the CSV dataset files\ndata_path = 'Documents/Datasets/Thesis/eICU/uncompressed/'\n\n# Path to the code files\nproject_path = 'Documents/GitHub/eICU-mortality-prediction/'", "persistent_id": "a1f6ee7f-36d4-489d-b2dd-ec2a38f15d11", "execution": {"iopub.status.busy": "2020-03-09T16:35:05.728469Z", "iopub.execute_input": "2020-03-09T16:35:05.728770Z", "iopub.status.idle": "2020-03-09T16:35:05.736189Z", "shell.execute_reply.started": "2020-03-09T16:35:05.728729Z", "shell.execute_reply": "2020-03-09T16:35:05.735097Z"}}
+# + {"Collapsed": "false", "execution_event_id": "baeb346a-1c34-42d1-a501-7ae37369255e", "last_executed_text": "# Change to parent directory (presumably \"Documents\")\nos.chdir(\"../../..\")\n\n# Path to the CSV dataset files\ndata_path = 'Documents/Datasets/Thesis/eICU/uncompressed/'\n\n# Path to the code files\nproject_path = 'Documents/GitHub/eICU-mortality-prediction/'", "persistent_id": "a1f6ee7f-36d4-489d-b2dd-ec2a38f15d11", "execution": {"iopub.status.busy": "2020-03-11T17:32:27.731080Z", "iopub.execute_input": "2020-03-11T17:32:27.731290Z", "iopub.status.idle": "2020-03-11T17:32:27.734807Z", "shell.execute_reply.started": "2020-03-11T17:32:27.731252Z", "shell.execute_reply": "2020-03-11T17:32:27.734088Z"}}
 # Change to parent directory (presumably "Documents")
 os.chdir("../../../..")
 # Path to the CSV dataset files
@@ -47,16 +47,35 @@ data_path = 'data/eICU/uncompressed/'
 # Path to the code files
 project_path = 'code/eICU-mortality-prediction/'
 
-# + {"Collapsed": "false", "execution_event_id": "82ef68be-443a-4bb8-8abd-7457a7005b4d", "last_executed_text": "import modin.pandas as pd                  # Optimized distributed version of Pandas\nimport data_utils as du                    # Data science and machine learning relevant methods", "persistent_id": "c0c2e356-d4f4-4a9d-bec2-88bdf9eb6a38", "execution": {"iopub.status.busy": "2020-03-09T16:35:05.738126Z", "iopub.execute_input": "2020-03-09T16:35:05.738351Z", "iopub.status.idle": "2020-03-09T16:35:09.084739Z", "shell.execute_reply.started": "2020-03-09T16:35:05.738325Z", "shell.execute_reply": "2020-03-09T16:35:09.083209Z"}}
-# import modin.pandas as pd                  # Optimized distributed version of Pandas
-import pandas as pd
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-11T17:32:27.736121Z", "iopub.execute_input": "2020-03-11T17:32:27.736325Z", "iopub.status.idle": "2020-03-11T17:32:27.980920Z", "shell.execute_reply.started": "2020-03-11T17:32:27.736288Z", "shell.execute_reply": "2020-03-11T17:32:27.979947Z"}}
+# Make sure that every large operation can be handled, by using the disk as an overflow for the memory
+# !export MODIN_OUT_OF_CORE=true
+# Another trick to do with Pandas so as to be able to allocate bigger objects to memory
+# !sudo bash -c 'echo 1 > /proc/sys/vm/overcommit_memory'
+
+# + {"Collapsed": "false", "execution_event_id": "82ef68be-443a-4bb8-8abd-7457a7005b4d", "last_executed_text": "import modin.pandas as pd                  # Optimized distributed version of Pandas\nimport data_utils as du                    # Data science and machine learning relevant methods", "persistent_id": "c0c2e356-d4f4-4a9d-bec2-88bdf9eb6a38", "execution": {"iopub.status.busy": "2020-03-11T17:32:27.982325Z", "iopub.execute_input": "2020-03-11T17:32:27.982581Z", "iopub.status.idle": "2020-03-11T17:32:30.042596Z", "shell.execute_reply.started": "2020-03-11T17:32:27.982537Z", "shell.execute_reply": "2020-03-11T17:32:30.041550Z"}}
+import modin.pandas as pd                  # Optimized distributed version of Pandas
+# import pandas as pd
 import data_utils as du                    # Data science and machine learning relevant methods
+# -
+
+# Allow pandas to show more columns:
+
+# + {"execution": {"iopub.status.busy": "2020-03-11T17:32:30.044119Z", "iopub.execute_input": "2020-03-11T17:32:30.044365Z", "iopub.status.idle": "2020-03-11T17:32:30.053010Z", "shell.execute_reply.started": "2020-03-11T17:32:30.044323Z", "shell.execute_reply": "2020-03-11T17:32:30.051016Z"}}
+pd.set_option('display.max_columns', 1000)
+pd.set_option('display.max_rows', 1000)
 
 # + [markdown] {"Collapsed": "false"}
 # Set the random seed for reproducibility
 
-# + {"Collapsed": "false", "execution_event_id": "29ab85ce-b7fd-4c5a-a110-5841e741c369", "last_executed_text": "du.set_random_seed(42)", "persistent_id": "39b552cd-6948-4ec8-ac04-42f850c1e05a", "execution": {"iopub.status.busy": "2020-03-09T16:35:09.088126Z", "iopub.execute_input": "2020-03-09T16:35:09.088720Z", "iopub.status.idle": "2020-03-09T16:35:09.095409Z", "shell.execute_reply.started": "2020-03-09T16:35:09.088663Z", "shell.execute_reply": "2020-03-09T16:35:09.094473Z"}}
+# + {"Collapsed": "false", "execution_event_id": "29ab85ce-b7fd-4c5a-a110-5841e741c369", "last_executed_text": "du.set_random_seed(42)", "persistent_id": "39b552cd-6948-4ec8-ac04-42f850c1e05a", "execution": {"iopub.status.busy": "2020-03-11T17:32:30.054392Z", "iopub.execute_input": "2020-03-11T17:32:30.054675Z", "iopub.status.idle": "2020-03-11T17:32:30.059815Z", "shell.execute_reply.started": "2020-03-11T17:32:30.054625Z", "shell.execute_reply": "2020-03-11T17:32:30.058903Z"}}
 du.set_random_seed(42)
+
+# + [markdown] {"Collapsed": "false"}
+# Set the maximum number of categories
+
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-11T17:32:30.061067Z", "iopub.execute_input": "2020-03-11T17:32:30.061303Z", "iopub.status.idle": "2020-03-11T17:32:30.065808Z", "shell.execute_reply.started": "2020-03-11T17:32:30.061262Z", "shell.execute_reply": "2020-03-11T17:32:30.064950Z"}}
+MAX_CATEGORIES = 250
 
 # + [markdown] {"Collapsed": "false", "toc-hr-collapsed": true}
 # ## Infusion drug data
@@ -156,7 +175,7 @@ cat_feat = ['infusion_drugname']
 
 # + {"Collapsed": "false"}
 for col in cat_feat:
-    most_common_cat = list(inf_drug_df[col].value_counts().nlargest(500).index)
+    most_common_cat = list(inf_drug_df[col].value_counts().nlargest(MAX_CATEGORIES).index)
     inf_drug_df = inf_drug_df[inf_drug_df[col].isin(most_common_cat)]
 
 # + {"Collapsed": "false"}
@@ -168,7 +187,7 @@ inf_drug_df, mean, std = du.data_processing.normalize_data(inf_drug_df, columns_
                                                            get_stats=True, inplace=True)
 inf_drug_df.head()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Save a dictionary with the mean and standard deviation values of each column that was normalized:
 
 # + {"Collapsed": "false"}
@@ -190,7 +209,7 @@ yaml.dump(norm_stats, stream, default_flow_style=False)
 inf_drug_df = inf_drug_df.replace(to_replace=np.inf, value=0)
 
 # + {"Collapsed": "false"}
-inf_drug_df.drugrate.max()
+inf_drug_df.infusion_drugrate.max()
 
 # + [markdown] {"Collapsed": "false", "toc-hr-collapsed": false}
 # ### Discretize categorical features
@@ -458,12 +477,6 @@ adms_drug_df.head()
 #
 # Replace blank and unrealistic zero values with NaNs.
 
-# + [markdown] {"Collapsed": "false"}
-# Convert dataframe to Pandas, as the next cells aren't working properly with Modin:
-
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:36:30.341328Z", "iopub.execute_input": "2020-03-09T16:36:30.341672Z", "iopub.status.idle": "2020-03-09T16:36:30.690720Z", "shell.execute_reply.started": "2020-03-09T16:36:30.341629Z", "shell.execute_reply": "2020-03-09T16:36:30.690131Z"}}
-adms_drug_df, pd = du.utils.convert_dataframe(adms_drug_df, to='pandas')
-
 # + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T05:25:03.330537Z", "iopub.execute_input": "2020-03-09T05:25:03.330748Z", "iopub.status.idle": "2020-03-09T05:25:03.335984Z", "shell.execute_reply.started": "2020-03-09T05:25:03.330725Z", "shell.execute_reply": "2020-03-09T05:25:03.335446Z"}}
 type(adms_drug_df)
 
@@ -490,16 +503,16 @@ cat_feat = ['drugunit', 'drugadmitfrequency', 'drughiclseqno']
 
 # + {"Collapsed": "false"}
 for col in cat_feat:
-    most_common_cat = list(adms_drug_df[col].value_counts().nlargest(500).index)
+    most_common_cat = list(adms_drug_df[col].value_counts().nlargest(MAX_CATEGORIES).index)
     adms_drug_df = adms_drug_df[adms_drug_df[col].isin(most_common_cat)]
 
 # + {"Collapsed": "false", "persistent_id": "417dd68c-7c54-4eaf-856c-9f6a44ee1d26", "pixiedust": {"displayParams": {}}, "execution": {"iopub.status.busy": "2020-03-09T18:09:29.409923Z", "iopub.status.idle": "2020-03-09T16:39:57.582416Z", "iopub.execute_input": "2020-03-09T18:09:29.410401Z"}}
-adms_drug_df_norm, mean, std = du.data_processing.normalize_data(adms_drug_df, columns_to_normalize=False,
-                                                                 columns_to_normalize_categ=[(['drughiclseqno', 'drugunit'], 'drugdosage')],
-                                                                 get_stats=True, inplace=True)
-adms_drug_df_norm.head()
+adms_drug_df, mean, std = du.data_processing.normalize_data(adms_drug_df, columns_to_normalize=False,
+                                                            columns_to_normalize_categ=[(['drughiclseqno', 'drugunit'], 'drugdosage')],
+                                                            get_stats=True, inplace=True)
+adms_drug_df.head()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Save a dictionary with the mean and standard deviation values of each column that was normalized:
 
 # + {"Collapsed": "false"}
@@ -515,20 +528,20 @@ stream = open(f'{data_path}/cleaned/admissionDrug_norm_stats.yaml', 'w')
 yaml.dump(norm_stats, stream, default_flow_style=False)
 
 # + {"Collapsed": "false", "persistent_id": "d8f2c0a4-ba81-4958-90b7-7b5165ff1363", "execution": {"iopub.status.busy": "2020-03-09T16:39:57.583568Z", "iopub.status.idle": "2020-03-09T16:39:57.583851Z"}}
-adms_drug_df_norm = adms_drug_df_norm.sort_values('ts')
-adms_drug_df_norm.head()
+adms_drug_df = adms_drug_df.sort_values('drugoffset')
+adms_drug_df.head()
 
 # + [markdown] {"Collapsed": "false"}
 # Prevent infinite values:
 
 # + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:39:57.585474Z", "iopub.status.idle": "2020-03-09T16:39:57.585858Z"}}
-adms_drug_df_norm = adms_drug_df_norm.replace(to_replace=np.inf, value=0)
+adms_drug_df = adms_drug_df.replace(to_replace=np.inf, value=0)
 
 # + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:39:57.587757Z", "iopub.status.idle": "2020-03-09T16:39:57.588271Z"}}
-adms_drug_df_norm = adms_drug_df_norm.replace(to_replace=-np.inf, value=0)
+adms_drug_df = adms_drug_df.replace(to_replace=-np.inf, value=0)
 
 # + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:39:57.590669Z", "iopub.status.idle": "2020-03-09T16:39:57.591218Z"}}
-adms_drug_df_norm.drugdosage.max()
+adms_drug_df.drugdosage.max()
 
 # + [markdown] {"Collapsed": "false", "toc-hr-collapsed": false}
 # ### Discretize categorical features
@@ -560,9 +573,6 @@ adms_drug_df.dtypes
 # + {"execution": {"iopub.status.busy": "2020-03-09T16:37:34.790942Z", "iopub.execute_input": "2020-03-09T16:37:34.791840Z", "iopub.status.idle": "2020-03-09T16:37:34.943668Z", "shell.execute_reply.started": "2020-03-09T16:37:34.791806Z", "shell.execute_reply": "2020-03-09T16:37:34.942531Z"}, "Collapsed": "false"}
 adms_drug_df.patientunitstayid = adms_drug_df.patientunitstayid.astype('uint')
 adms_drug_df.drugoffset = adms_drug_df.drugoffset.astype('int')
-
-# + {"execution": {"iopub.status.busy": "2020-03-09T16:37:34.945240Z", "iopub.execute_input": "2020-03-09T16:37:34.945449Z", "iopub.status.idle": "2020-03-09T16:37:35.155724Z", "shell.execute_reply.started": "2020-03-09T16:37:34.945424Z", "shell.execute_reply": "2020-03-09T16:37:35.154732Z"}, "Collapsed": "false"}
-adms_drug_df.info()
 
 # + [markdown] {"Collapsed": "false"}
 # Save the association between the original categorical features and the new one hot encoded columns:
@@ -632,15 +642,21 @@ adms_drug_df[adms_drug_df.patientunitstayid == 2346930].head(10)
 # + [markdown] {"Collapsed": "false"}
 # Even after removing duplicates rows, there are still some that have different information for the same ID and timestamp. We have to concatenate the categorical enumerations.
 
+# + [markdown] {"Collapsed": "false"}
+# Convert dataframe to Pandas, as the next cells aren't working properly with Modin:
+
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:36:30.341328Z", "iopub.execute_input": "2020-03-09T16:36:30.341672Z", "iopub.status.idle": "2020-03-09T16:36:30.690720Z", "shell.execute_reply.started": "2020-03-09T16:36:30.341629Z", "shell.execute_reply": "2020-03-09T16:36:30.690131Z"}}
+adms_drug_df, pd = du.utils.convert_dataframe(adms_drug_df, to='pandas')
+
 # + {"Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023", "pixiedust": {"displayParams": {}}, "execution": {"iopub.status.busy": "2020-03-09T16:39:57.592923Z", "iopub.status.idle": "2020-03-09T16:39:57.593442Z"}}
-adms_drug_df_norm = du.embedding.join_repeated_rows(adms_drug_df_norm, inplace=True)
-adms_drug_df_norm.head()
+adms_drug_df = du.embedding.join_repeated_rows(adms_drug_df, inplace=True)
+adms_drug_df.head()
 
 # + [markdown] {"Collapsed": "false"}
 # Reconvert dataframe to Modin:
 
 # + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:39:57.595770Z", "iopub.status.idle": "2020-03-09T16:39:57.596200Z"}}
-adms_drug_df_norm, pd = du.utils.convert_dataframe(adms_drug_df_norm, to='modin')
+adms_drug_df, pd = du.utils.convert_dataframe(adms_drug_df, to='modin')
 
 # + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:39:57.597658Z", "iopub.status.idle": "2020-03-09T16:39:57.598035Z"}}
 type(adms_drug_df_norm)
@@ -649,10 +665,10 @@ type(adms_drug_df_norm)
 adms_drug_df_norm.dtypes
 
 # + {"Collapsed": "false", "persistent_id": "efd11709-c95e-4245-a662-188556d66680", "execution": {"iopub.status.busy": "2020-03-09T16:39:57.600624Z", "iopub.status.idle": "2020-03-09T16:39:57.601424Z"}}
-adms_drug_df_norm.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='drughiclseqno_37589', n=5).head()
+adms_drug_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='drughiclseqno_10012', n=5).head()
 
 # + {"Collapsed": "false", "persistent_id": "d6663be1-591b-4c35-b446-978dbc205444", "execution": {"iopub.status.busy": "2020-03-09T16:39:57.602565Z", "iopub.status.idle": "2020-03-09T16:39:57.602911Z"}}
-adms_drug_df_norm[adms_drug_df_norm.patientunitstayid == 2346930].head(10)
+adms_drug_df[adms_drug_df.patientunitstayid == 314029.0].head(10)
 
 # + [markdown] {"Collapsed": "false"}
 # Comparing the output from the two previous cells with what we had before the `join_repeated_rows` method, we can see that all rows with duplicate IDs have been successfully joined.
@@ -664,8 +680,7 @@ adms_drug_df_norm[adms_drug_df_norm.patientunitstayid == 2346930].head(10)
 
 # + {"Collapsed": "false", "persistent_id": "938421fc-57b7-4c40-b7a9-315b5619cbb0", "execution": {"iopub.status.busy": "2020-03-09T16:39:57.603913Z", "iopub.status.idle": "2020-03-09T16:39:57.604426Z"}}
 adms_drug_df.columns = du.data_processing.clean_naming(adms_drug_df.columns)
-adms_drug_df_norm.columns = du.data_processing.clean_naming(adms_drug_df_norm.columns)
-adms_drug_df_norm.head()
+adms_drug_df.head()
 
 # + [markdown] {"Collapsed": "false"}
 # ### Save the dataframe
@@ -674,13 +689,13 @@ adms_drug_df_norm.head()
 # Save the dataframe before normalizing:
 
 # + {"Collapsed": "false", "persistent_id": "15ca1a3f-614e-49da-aa1d-7ac42bceee73", "execution": {"iopub.status.busy": "2020-03-09T16:39:57.605450Z", "iopub.status.idle": "2020-03-09T16:39:57.605735Z"}}
-adms_drug_df.to_csv(f'{data_path}cleaned/unnormalized/ohe/ohe/admissionDrug.csv')
+# adms_drug_df.to_csv(f'{data_path}cleaned/unnormalized/ohe/admissionDrug.csv')
 
 # + [markdown] {"Collapsed": "false"}
 # Save the dataframe after normalizing:
 
 # + {"Collapsed": "false", "persistent_id": "9a20e4a3-a8d6-4842-8470-e6bfccd03267", "execution": {"iopub.status.busy": "2020-03-09T16:39:57.607380Z", "iopub.status.idle": "2020-03-09T16:39:57.607712Z"}}
-adms_drug_df_norm.to_csv(f'{data_path}cleaned/normalized/ohe/ohe/admissionDrug.csv')
+adms_drug_df.to_csv(f'{data_path}cleaned/normalized/ohe/admissionDrug.csv')
 
 # + [markdown] {"Collapsed": "false"}
 # Confirm that everything is ok through the `describe` method:
@@ -694,7 +709,7 @@ adms_drug_df_norm.describe().transpose()
 # + [markdown] {"Collapsed": "false", "toc-hr-collapsed": true}
 # ### Initialize variables
 
-# + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82", "execution": {"iopub.status.busy": "2020-02-17T02:24:13.243501Z", "iopub.execute_input": "2020-02-17T02:24:13.243729Z", "iopub.status.idle": "2020-02-17T02:24:13.247974Z", "shell.execute_reply.started": "2020-02-17T02:24:13.243694Z", "shell.execute_reply": "2020-02-17T02:24:13.246579Z"}}
+# + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82", "execution": {"iopub.status.busy": "2020-03-11T16:39:34.658393Z", "iopub.execute_input": "2020-03-11T16:39:34.658667Z", "iopub.status.idle": "2020-03-11T16:39:34.662415Z", "shell.execute_reply.started": "2020-03-11T16:39:34.658624Z", "shell.execute_reply": "2020-03-11T16:39:34.661481Z"}}
 # List of categorical features
 cat_feat = []
 # Dictionary of the one hot encoded columns originary from each categorical feature, that will be embedded
@@ -703,7 +718,7 @@ cat_feat_ohe = dict()
 # + [markdown] {"Collapsed": "false"}
 # ### Read the data
 
-# + {"Collapsed": "false", "persistent_id": "37d12a8d-d08c-41cd-b904-f005b1497fe1"}
+# + {"Collapsed": "false", "persistent_id": "37d12a8d-d08c-41cd-b904-f005b1497fe1", "execution": {"iopub.status.busy": "2020-03-11T16:39:35.163596Z", "iopub.execute_input": "2020-03-11T16:39:35.163880Z", "iopub.status.idle": "2020-03-11T16:39:40.782359Z", "shell.execute_reply.started": "2020-03-11T16:39:35.163839Z", "shell.execute_reply": "2020-03-11T16:39:40.781690Z"}}
 med_df = pd.read_csv(f'{data_path}original/medication.csv', dtype={'loadingdose': 'object'})
 med_df.head()
 
@@ -758,7 +773,7 @@ med_df[med_df.drugstartoffset == 0].head()
 # + [markdown] {"Collapsed": "false"}
 # Besides removing less interesting data (e.g. `drugivadmixture`), I'm also removing the `drugname` column, which is redundant with the codes `drughiclseqno`, while also being brand dependant.
 
-# + {"Collapsed": "false", "persistent_id": "b31b8605-5a88-4821-a65c-5337128f4264"}
+# + {"Collapsed": "false", "persistent_id": "b31b8605-5a88-4821-a65c-5337128f4264", "execution": {"iopub.status.busy": "2020-03-11T16:39:41.631541Z", "iopub.execute_input": "2020-03-11T16:39:41.631813Z", "iopub.status.idle": "2020-03-11T16:39:41.764729Z", "shell.execute_reply.started": "2020-03-11T16:39:41.631773Z", "shell.execute_reply": "2020-03-11T16:39:41.764096Z"}}
 med_df = med_df[['patientunitstayid', 'drugstartoffset', 'drugstopoffset',
                  'drugordercancelled', 'dosage', 'frequency', 'drughiclseqno']]
 med_df.head()
@@ -769,14 +784,14 @@ med_df.head()
 # + {"Collapsed": "false", "persistent_id": "4ffb498c-d6b5-46f3-9863-d74f672dd9be"}
 med_df.drugordercancelled.value_counts()
 
-# + {"Collapsed": "false", "persistent_id": "93a3e2f3-3632-4c5d-a25b-4e9195335348"}
+# + {"Collapsed": "false", "persistent_id": "93a3e2f3-3632-4c5d-a25b-4e9195335348", "execution": {"iopub.status.busy": "2020-03-11T16:39:44.574355Z", "iopub.execute_input": "2020-03-11T16:39:44.574627Z", "iopub.status.idle": "2020-03-11T16:39:46.875096Z", "shell.execute_reply.started": "2020-03-11T16:39:44.574586Z", "shell.execute_reply": "2020-03-11T16:39:46.874465Z"}}
 med_df = med_df[~((med_df.drugordercancelled == 'Yes') | (med_df.drughiclseqno.isnull()))]
 med_df.head()
 
 # + [markdown] {"Collapsed": "false"}
 # Remove the now unneeded `drugordercancelled` column:
 
-# + {"Collapsed": "false", "persistent_id": "8c832678-d7eb-46d9-9521-a8a389cacc06"}
+# + {"Collapsed": "false", "persistent_id": "8c832678-d7eb-46d9-9521-a8a389cacc06", "execution": {"iopub.status.busy": "2020-03-11T16:39:46.876130Z", "iopub.execute_input": "2020-03-11T16:39:46.876344Z", "iopub.status.idle": "2020-03-11T16:39:47.036144Z", "shell.execute_reply.started": "2020-03-11T16:39:46.876303Z", "shell.execute_reply": "2020-03-11T16:39:47.035515Z"}}
 med_df = med_df.drop('drugordercancelled', axis=1)
 med_df.head()
 
@@ -792,45 +807,28 @@ du.search_explore.dataframe_missing_values(med_df)
 # No need to create a separate `pyxis` feature, which would indicate the use of the popular automated medications manager, as the frequency embedding will have that into account.
 
 # + [markdown] {"Collapsed": "false"}
-# Create dosage and unit features:
-
-# + {"Collapsed": "false", "persistent_id": "68f9ce27-4230-4f52-b7f9-51c67ef4afea"}
-med_df['drugdosage'] = np.nan
-med_df['drugunit'] = np.nan
-med_df.head()
-
-# + [markdown] {"Collapsed": "false"}
-# Convert dataframe to Pandas, as the next cells aren't working properly with Modin:
-
-# + {"Collapsed": "false"}
-med_df, pd = du.utils.convert_dataframe(med_df, to='pandas')
-
-# + {"Collapsed": "false"}
-type(med_df)
-
-# + [markdown] {"Collapsed": "false"}
 # Get the dosage and unit values for each row:
 
-# + {"Collapsed": "false", "persistent_id": "014b4c4e-31cb-487d-8bd9-b8f7048e981e"}
-med_df[['drugdosage', 'drugunit']] = med_df.apply(du.data_processing.set_dosage_and_units, axis=1, result_type='expand')
+# + {"Collapsed": "false", "persistent_id": "014b4c4e-31cb-487d-8bd9-b8f7048e981e", "execution": {"iopub.status.busy": "2020-03-11T16:39:48.629611Z", "iopub.execute_input": "2020-03-11T16:39:48.630032Z", "iopub.status.idle": "2020-03-11T16:41:26.317340Z", "shell.execute_reply.started": "2020-03-11T16:39:48.629839Z", "shell.execute_reply": "2020-03-11T16:41:26.316307Z"}, "pixiedust": {"displayParams": {}}}
+med_df =  du.data_processing.set_dosage_and_units(med_df)
 med_df.head()
 
-# + {"Collapsed": "false"}
-med_df.drugunit.value_counts()
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-11T16:25:09.387814Z", "iopub.status.idle": "2020-03-11T16:25:14.190571Z", "iopub.execute_input": "2020-03-11T16:25:09.388073Z", "shell.execute_reply.started": "2020-03-11T16:25:09.388031Z", "shell.execute_reply": "2020-03-11T16:25:14.189785Z"}}
+med_df.drug_unit.value_counts()
 
 # + [markdown] {"Collapsed": "false"}
 # Remove the now unneeded `dosage` column:
 
-# + {"Collapsed": "false", "persistent_id": "61c02af1-fa9e-49d7-81e1-abd56d133510"}
+# + {"Collapsed": "false", "persistent_id": "61c02af1-fa9e-49d7-81e1-abd56d133510", "execution": {"iopub.status.busy": "2020-03-11T16:41:26.318519Z", "iopub.status.idle": "2020-03-11T16:41:26.389405Z", "iopub.execute_input": "2020-03-11T16:41:26.318742Z", "shell.execute_reply.started": "2020-03-11T16:41:26.318701Z", "shell.execute_reply": "2020-03-11T16:41:26.388231Z"}}
 med_df = med_df.drop('dosage', axis=1)
 med_df.head()
 
 # + [markdown] {"Collapsed": "false"}
 # ### Rename columns
 
-# + {"Collapsed": "false", "persistent_id": "356775df-9204-4fef-b7a0-b82edf4ba85f"}
-med_df_norm = med_df_norm.rename(columns={'frequency': 'drugadmitfrequency'})
-med_df_norm.head()
+# + {"Collapsed": "false", "persistent_id": "356775df-9204-4fef-b7a0-b82edf4ba85f", "execution": {"iopub.status.busy": "2020-03-11T16:41:26.390761Z", "iopub.status.idle": "2020-03-11T16:41:26.640796Z", "iopub.execute_input": "2020-03-11T16:41:26.390993Z", "shell.execute_reply.started": "2020-03-11T16:41:26.390947Z", "shell.execute_reply": "2020-03-11T16:41:26.640078Z"}}
+med_df = med_df.rename(columns={'frequency': 'drugadmitfrequency'})
+med_df.head()
 
 # + [markdown] {"Collapsed": "false"}
 # ### Normalize data
@@ -838,27 +836,49 @@ med_df_norm.head()
 # + [markdown] {"Collapsed": "false"}
 # Update list of categorical features:
 
-# + {"Collapsed": "false", "persistent_id": "d714ff24-c50b-4dff-9b21-832d030d050f"}
-cat_feat = ['drugunit', 'drugadmitfrequency', 'drughiclseqno']
+# + {"Collapsed": "false", "persistent_id": "d714ff24-c50b-4dff-9b21-832d030d050f", "execution": {"iopub.status.busy": "2020-03-11T16:41:26.641959Z", "iopub.execute_input": "2020-03-11T16:41:26.642203Z", "iopub.status.idle": "2020-03-11T16:41:26.645492Z", "shell.execute_reply.started": "2020-03-11T16:41:26.642151Z", "shell.execute_reply": "2020-03-11T16:41:26.644863Z"}}
+cat_feat = ['drug_unit', 'drugadmitfrequency', 'drughiclseqno']
 
 # + [markdown] {"Collapsed": "false"}
 # Filter just to the most common categories:
 
-# + {"Collapsed": "false"}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-11T16:41:26.646410Z", "iopub.execute_input": "2020-03-11T16:41:26.646609Z", "iopub.status.idle": "2020-03-11T16:41:54.491207Z", "shell.execute_reply.started": "2020-03-11T16:41:26.646574Z", "shell.execute_reply": "2020-03-11T16:41:54.490465Z"}}
 for col in cat_feat:
-    most_common_cat = list(med_df[col].value_counts().nlargest(500).index)
+    most_common_cat = list(med_df[col].value_counts().nlargest(MAX_CATEGORIES).index)
     med_df = med_df[med_df[col].isin(most_common_cat)]
 
-# + {"Collapsed": "false", "persistent_id": "a4cd949b-e561-485d-bcb6-10fccc343352", "pixiedust": {"displayParams": {}}}
-med_df_norm, mean, std = du.data_processing.normalize_data(med_df, columns_to_normalize=False,
-                                                           columns_to_normalize_categ=[(['drughiclseqno', 'drugunit'], 'drugdosage')],
-                                                           get_stats=True, inplace=True)
-med_df_norm.head()
+# + [markdown] {"Collapsed": "false"}
+# Convert dataframe to Pandas, as the next cells aren't working properly with Modin:
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-11T16:41:54.492320Z", "iopub.status.idle": "2020-03-11T16:42:01.129061Z", "iopub.execute_input": "2020-03-11T16:41:54.492542Z", "shell.execute_reply.started": "2020-03-11T16:41:54.492504Z", "shell.execute_reply": "2020-03-11T16:42:01.128182Z"}}
+med_df, pd = du.utils.convert_dataframe(med_df, to='pandas')
+
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-11T16:08:30.868285Z", "iopub.execute_input": "2020-03-11T16:08:30.868617Z", "iopub.status.idle": "2020-03-11T16:08:30.873738Z", "shell.execute_reply.started": "2020-03-11T16:08:30.868559Z", "shell.execute_reply": "2020-03-11T16:08:30.872950Z"}}
+type(med_df)
+
+# + {"execution": {"iopub.status.busy": "2020-03-11T16:08:30.875057Z", "iopub.execute_input": "2020-03-11T16:08:30.875276Z", "iopub.status.idle": "2020-03-11T16:08:30.881655Z", "shell.execute_reply.started": "2020-03-11T16:08:30.875239Z", "shell.execute_reply": "2020-03-11T16:08:30.880730Z"}}
+med_df.dtypes
+
+# + {"execution": {"iopub.status.busy": "2020-03-11T16:42:01.130126Z", "iopub.execute_input": "2020-03-11T16:42:01.130359Z", "iopub.status.idle": "2020-03-11T16:42:06.881424Z", "shell.execute_reply.started": "2020-03-11T16:42:01.130317Z", "shell.execute_reply": "2020-03-11T16:42:06.880634Z"}}
+# Fix the dtypes
+med_df.patientunitstayid = med_df.patientunitstayid.astype('uint')
+med_df.drugstartoffset = med_df.drugstartoffset.astype('float')
+med_df.drugstopoffset = med_df.drugstopoffset.astype('float')
+med_df.drugadmitfrequency = med_df.drugadmitfrequency.astype(str)
+med_df.drughiclseqno = med_df.drughiclseqno.astype('uint')
+med_df.drug_dosage = med_df.drug_dosage.astype('float')
+med_df.drug_unit = med_df.drug_unit.astype(str)
+
+# + {"Collapsed": "false", "persistent_id": "a4cd949b-e561-485d-bcb6-10fccc343352", "pixiedust": {"displayParams": {}}, "execution": {"iopub.status.busy": "2020-03-11T16:42:06.883375Z", "iopub.status.idle": "2020-03-11T16:43:25.958789Z", "iopub.execute_input": "2020-03-11T16:42:06.883597Z", "shell.execute_reply.started": "2020-03-11T16:42:06.883555Z", "shell.execute_reply": "2020-03-11T16:43:25.957981Z"}}
+med_df, mean, std = du.data_processing.normalize_data(med_df, columns_to_normalize=False,
+                                                      columns_to_normalize_categ=[(['drughiclseqno', 'drug_unit'], 'drug_dosage')],
+                                                      get_stats=True, inplace=True)
+med_df.head()
+
+# + [markdown] {"Collapsed": "false"}
 # Save a dictionary with the mean and standard deviation values of each column that was normalized:
 
-# + {"Collapsed": "false"}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-11T16:43:25.960203Z", "iopub.status.idle": "2020-03-11T16:43:26.037140Z", "iopub.execute_input": "2020-03-11T16:43:25.960418Z", "shell.execute_reply.started": "2020-03-11T16:43:25.960380Z", "shell.execute_reply": "2020-03-11T16:43:26.036494Z"}}
 norm_stats = dict()
 for key, _ in mean.items():
     norm_stats[key] = dict()
@@ -866,25 +886,25 @@ for key, _ in mean.items():
     norm_stats[key]['std'] = std[key]
 norm_stats
 
-# + {"Collapsed": "false"}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-11T16:43:26.038141Z", "iopub.status.idle": "2020-03-11T16:43:26.510570Z", "iopub.execute_input": "2020-03-11T16:43:26.038348Z", "shell.execute_reply.started": "2020-03-11T16:43:26.038311Z", "shell.execute_reply": "2020-03-11T16:43:26.509897Z"}}
 stream = open(f'{data_path}/cleaned/medication_norm_stats.yaml', 'w')
 yaml.dump(norm_stats, stream, default_flow_style=False)
 
-# + {"Collapsed": "false", "persistent_id": "93145ae0-2204-4553-a7eb-5d235552dd82"}
-med_df_norm = med_df_norm.sort_values('ts')
-med_df_norm.head()
+# + {"Collapsed": "false", "persistent_id": "93145ae0-2204-4553-a7eb-5d235552dd82", "execution": {"iopub.status.busy": "2020-03-11T16:43:26.511549Z", "iopub.status.idle": "2020-03-11T16:43:28.558874Z", "iopub.execute_input": "2020-03-11T16:43:26.511759Z", "shell.execute_reply.started": "2020-03-11T16:43:26.511722Z", "shell.execute_reply": "2020-03-11T16:43:28.558161Z"}}
+med_df = med_df.sort_values('drugstartoffset')
+med_df.head()
 
 # + [markdown] {"Collapsed": "false"}
 # Prevent infinite values:
 
-# + {"Collapsed": "false"}
-med_df_norm = med_df_norm.replace(to_replace=np.inf, value=0)
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-11T16:43:28.559810Z", "iopub.status.idle": "2020-03-11T16:43:32.861217Z", "iopub.execute_input": "2020-03-11T16:43:28.560019Z", "shell.execute_reply.started": "2020-03-11T16:43:28.559983Z", "shell.execute_reply": "2020-03-11T16:43:32.860529Z"}}
+med_df = med_df.replace(to_replace=np.inf, value=0)
 
-# + {"Collapsed": "false"}
-med_df_norm = med_df_norm.replace(to_replace=-np.inf, value=0)
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-11T16:43:32.862343Z", "iopub.status.idle": "2020-03-11T16:43:36.968879Z", "iopub.execute_input": "2020-03-11T16:43:32.862564Z", "shell.execute_reply.started": "2020-03-11T16:43:32.862526Z", "shell.execute_reply": "2020-03-11T16:43:36.968159Z"}}
+med_df = med_df.replace(to_replace=-np.inf, value=0)
 
-# + {"Collapsed": "false"}
-med_df_norm.drugdosage.max()
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-11T16:43:36.969985Z", "iopub.status.idle": "2020-03-11T16:43:36.980492Z", "iopub.execute_input": "2020-03-11T16:43:36.970212Z", "shell.execute_reply.started": "2020-03-11T16:43:36.970172Z", "shell.execute_reply": "2020-03-11T16:43:36.979849Z"}}
+med_df.drug_dosage.max()
 
 # + [markdown] {"Collapsed": "false", "toc-hr-collapsed": false}
 # ### Discretize categorical features
@@ -894,34 +914,34 @@ med_df_norm.drugdosage.max()
 # + [markdown] {"Collapsed": "false"}
 # #### One hot encode features
 
-# + {"Collapsed": "false", "persistent_id": "ed09c3dd-50b3-48cf-aa04-76534feaf767"}
+# + {"Collapsed": "false", "persistent_id": "ed09c3dd-50b3-48cf-aa04-76534feaf767", "execution": {"iopub.status.busy": "2020-03-11T16:27:24.074373Z", "iopub.status.idle": "2020-03-11T16:27:24.222552Z", "iopub.execute_input": "2020-03-11T16:27:24.074602Z", "shell.execute_reply.started": "2020-03-11T16:27:24.074551Z", "shell.execute_reply": "2020-03-11T16:27:24.221928Z"}}
 med_df[cat_feat].head()
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:36:38.933807Z", "iopub.execute_input": "2020-03-09T16:36:38.934065Z", "iopub.status.idle": "2020-03-09T16:36:38.937828Z", "shell.execute_reply.started": "2020-03-09T16:36:38.934035Z", "shell.execute_reply": "2020-03-09T16:36:38.936941Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-11T16:43:36.981769Z", "iopub.execute_input": "2020-03-11T16:43:36.982139Z", "iopub.status.idle": "2020-03-11T16:43:36.985206Z", "shell.execute_reply.started": "2020-03-11T16:43:36.982095Z", "shell.execute_reply": "2020-03-11T16:43:36.984490Z"}}
 old_columns = med_df.columns
 
 # + [markdown] {"Collapsed": "false"}
 # Apply one hot encoding:
 
-# + {"Collapsed": "false", "persistent_id": "51ac8fd1-cbd2-4f59-a737-f0fcc13043fd", "pixiedust": {"displayParams": {}}}
+# + {"Collapsed": "false", "persistent_id": "51ac8fd1-cbd2-4f59-a737-f0fcc13043fd", "pixiedust": {"displayParams": {}}, "execution": {"iopub.status.busy": "2020-03-11T16:43:36.986237Z", "iopub.status.idle": "2020-03-11T16:45:03.544797Z", "iopub.execute_input": "2020-03-11T16:43:36.986441Z", "shell.execute_reply.started": "2020-03-11T16:43:36.986404Z", "shell.execute_reply": "2020-03-11T16:45:03.544044Z"}}
 med_df = du.data_processing.one_hot_encoding_dataframe(med_df, columns=cat_feat, join_rows=False)
 med_df
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:37:27.392359Z", "iopub.status.idle": "2020-03-09T16:37:27.399976Z", "iopub.execute_input": "2020-03-09T16:37:27.392616Z", "shell.execute_reply.started": "2020-03-09T16:37:27.392582Z", "shell.execute_reply": "2020-03-09T16:37:27.399076Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-11T16:45:03.545835Z", "iopub.status.idle": "2020-03-11T16:45:03.550456Z", "iopub.execute_input": "2020-03-11T16:45:03.546333Z", "shell.execute_reply.started": "2020-03-11T16:45:03.546289Z", "shell.execute_reply": "2020-03-11T16:45:03.549314Z"}}
 new_columns = set(med_df.columns) - set(old_columns)
 
-# + {"Collapsed": "false", "persistent_id": "e5615265-4372-4117-a368-ec539c871763"}
+# + {"Collapsed": "false", "persistent_id": "e5615265-4372-4117-a368-ec539c871763", "execution": {"iopub.status.busy": "2020-03-11T03:22:26.866678Z", "iopub.status.idle": "2020-03-11T03:22:26.919725Z", "iopub.execute_input": "2020-03-11T03:22:26.866987Z", "shell.execute_reply.started": "2020-03-11T03:22:26.866938Z", "shell.execute_reply": "2020-03-11T03:22:26.918842Z"}}
 med_df.dtypes
 
 # + [markdown] {"Collapsed": "false"}
 # Save the association between the original categorical features and the new one hot encoded columns:
 
-# + {"Collapsed": "false", "persistent_id": "26eac7f3-9081-4a96-ae4a-40054c223fd7", "execution": {"iopub.status.busy": "2020-03-09T16:37:35.157248Z", "iopub.execute_input": "2020-03-09T16:37:35.157526Z", "iopub.status.idle": "2020-03-09T16:37:35.164656Z", "shell.execute_reply.started": "2020-03-09T16:37:35.157493Z", "shell.execute_reply": "2020-03-09T16:37:35.163771Z"}}
+# + {"Collapsed": "false", "persistent_id": "26eac7f3-9081-4a96-ae4a-40054c223fd7", "execution": {"iopub.status.busy": "2020-03-11T16:45:03.551744Z", "iopub.execute_input": "2020-03-11T16:45:03.552018Z", "iopub.status.idle": "2020-03-11T16:45:03.580639Z", "shell.execute_reply.started": "2020-03-11T16:45:03.551975Z", "shell.execute_reply": "2020-03-11T16:45:03.579839Z"}}
 for orig_col in cat_feat:
     cat_feat_ohe[orig_col] = [ohe_col for ohe_col in new_columns
                               if ohe_col.startswith(orig_col)]
 
-# + {"execution": {"iopub.status.busy": "2020-03-09T16:37:35.165864Z", "iopub.execute_input": "2020-03-09T16:37:35.166280Z", "iopub.status.idle": "2020-03-09T16:37:35.190294Z", "shell.execute_reply.started": "2020-03-09T16:37:35.166256Z", "shell.execute_reply": "2020-03-09T16:37:35.189358Z"}, "Collapsed": "false"}
+# + {"execution": {"iopub.status.busy": "2020-03-11T16:11:37.485000Z", "iopub.execute_input": "2020-03-11T16:11:37.485250Z", "iopub.status.idle": "2020-03-11T16:11:37.525430Z", "shell.execute_reply.started": "2020-03-11T16:11:37.485210Z", "shell.execute_reply": "2020-03-11T16:11:37.524461Z"}, "Collapsed": "false"}
 cat_feat_ohe
 
 # + [markdown] {"Collapsed": "false"}
@@ -929,7 +949,7 @@ cat_feat_ohe
 #
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
-# + {"Collapsed": "false", "persistent_id": "e51cc2e0-b598-484f-a3f8-8c764950777f"}
+# + {"Collapsed": "false", "persistent_id": "e51cc2e0-b598-484f-a3f8-8c764950777f", "execution": {"iopub.status.busy": "2020-03-11T16:45:03.581637Z", "iopub.status.idle": "2020-03-11T16:45:03.624459Z", "iopub.execute_input": "2020-03-11T16:45:03.582404Z", "shell.execute_reply.started": "2020-03-11T16:45:03.581808Z", "shell.execute_reply": "2020-03-11T16:45:03.623714Z"}}
 stream = open(f'{data_path}/cleaned/cat_feat_ohe_med.yaml', 'w')
 yaml.dump(cat_feat_ohe, stream, default_flow_style=False)
 
@@ -941,17 +961,17 @@ yaml.dump(cat_feat_ohe, stream, default_flow_style=False)
 # + [markdown] {"Collapsed": "false"}
 # Duplicate every row, so as to create a discharge event:
 
-# + {"Collapsed": "false", "persistent_id": "db8e91ff-cfd7-4ddd-8873-20c20e1f9e46"}
+# + {"Collapsed": "false", "persistent_id": "db8e91ff-cfd7-4ddd-8873-20c20e1f9e46", "execution": {"iopub.status.busy": "2020-03-11T16:45:03.625426Z", "iopub.status.idle": "2020-03-11T16:45:06.044148Z", "iopub.execute_input": "2020-03-11T16:45:03.625651Z", "shell.execute_reply.started": "2020-03-11T16:45:03.625613Z", "shell.execute_reply": "2020-03-11T16:45:06.043465Z"}}
 new_df = med_df.copy()
 new_df.head()
 
 # + [markdown] {"Collapsed": "false"}
 # Set the new dataframe's rows to have the drug stop timestamp, with no more information on the drug that was being used:
 
-# + {"Collapsed": "false", "persistent_id": "6d2bf14a-b75b-4b4c-ae33-403cde6781d7"}
+# + {"Collapsed": "false", "persistent_id": "6d2bf14a-b75b-4b4c-ae33-403cde6781d7", "execution": {"iopub.status.busy": "2020-03-11T16:45:06.045113Z", "iopub.status.idle": "2020-03-11T16:45:06.270727Z", "iopub.execute_input": "2020-03-11T16:45:06.045330Z", "shell.execute_reply.started": "2020-03-11T16:45:06.045293Z", "shell.execute_reply": "2020-03-11T16:45:06.270017Z"}}
 new_df.drugstartoffset = new_df.drugstopoffset
-new_df.drugunit = 0
-new_df.drugdosage = np.nan
+new_df.drug_unit = 0
+new_df.drug_dosage = np.nan
 new_df.frequency = 0
 new_df.drughiclseqno = 0
 new_df.head()
@@ -959,14 +979,14 @@ new_df.head()
 # + [markdown] {"Collapsed": "false"}
 # Join the new rows to the remaining dataframe:
 
-# + {"Collapsed": "false", "persistent_id": "321fe743-eae2-4b2c-a4ef-5e1c3350a231"}
+# + {"Collapsed": "false", "persistent_id": "321fe743-eae2-4b2c-a4ef-5e1c3350a231", "execution": {"iopub.status.busy": "2020-03-11T16:45:06.271790Z", "iopub.status.idle": "2020-03-11T16:45:08.068082Z", "iopub.execute_input": "2020-03-11T16:45:06.272046Z", "shell.execute_reply.started": "2020-03-11T16:45:06.272004Z", "shell.execute_reply": "2020-03-11T16:45:08.067421Z"}}
 med_df = med_df.append(new_df)
 med_df.head()
 
 # + [markdown] {"Collapsed": "false"}
 # Remove the now unneeded medication stop column:
 
-# + {"Collapsed": "false", "persistent_id": "6b1a48ca-fecc-467f-8071-534fbd4944bb"}
+# + {"Collapsed": "false", "persistent_id": "6b1a48ca-fecc-467f-8071-534fbd4944bb", "execution": {"iopub.status.busy": "2020-03-11T16:45:08.070236Z", "iopub.status.idle": "2020-03-11T16:45:11.753056Z", "iopub.execute_input": "2020-03-11T16:45:08.070462Z", "shell.execute_reply.started": "2020-03-11T16:45:08.070419Z", "shell.execute_reply": "2020-03-11T16:45:11.752212Z"}}
 med_df = med_df.drop('drugstopoffset', axis=1)
 med_df.head(6)
 
@@ -976,27 +996,27 @@ med_df.head(6)
 # + [markdown] {"Collapsed": "false"}
 # Create the timestamp (`ts`) feature:
 
-# + {"Collapsed": "false", "persistent_id": "88ab8d50-b556-4c76-bb0b-33e76900018f"}
+# + {"Collapsed": "false", "persistent_id": "88ab8d50-b556-4c76-bb0b-33e76900018f", "execution": {"iopub.status.busy": "2020-03-11T16:45:11.754045Z", "iopub.status.idle": "2020-03-11T16:45:14.819865Z", "iopub.execute_input": "2020-03-11T16:45:11.754254Z", "shell.execute_reply.started": "2020-03-11T16:45:11.754218Z", "shell.execute_reply": "2020-03-11T16:45:14.819070Z"}}
 med_df = med_df.rename(columns={'drugstartoffset': 'ts'})
 med_df.head()
 
 # + [markdown] {"Collapsed": "false"}
 # Remove duplicate rows:
 
-# + {"Collapsed": "false", "persistent_id": "74b9d214-8083-4d37-acbe-6ce26d6b1629"}
+# + {"Collapsed": "false", "persistent_id": "74b9d214-8083-4d37-acbe-6ce26d6b1629", "execution": {"iopub.status.busy": "2020-03-11T16:45:14.820835Z", "iopub.status.idle": "2020-03-11T16:45:14.825152Z", "iopub.execute_input": "2020-03-11T16:45:14.821039Z", "shell.execute_reply.started": "2020-03-11T16:45:14.821003Z", "shell.execute_reply": "2020-03-11T16:45:14.824355Z"}}
 len(med_df)
 
-# + {"Collapsed": "false", "persistent_id": "a2529353-bf59-464a-a32b-a940dd66007a"}
+# + {"Collapsed": "false", "persistent_id": "a2529353-bf59-464a-a32b-a940dd66007a", "execution": {"iopub.status.busy": "2020-03-11T16:45:14.826535Z", "iopub.status.idle": "2020-03-11T16:47:11.817609Z", "iopub.execute_input": "2020-03-11T16:45:14.826752Z", "shell.execute_reply.started": "2020-03-11T16:45:14.826715Z", "shell.execute_reply": "2020-03-11T16:47:11.816822Z"}}
 med_df = med_df.drop_duplicates()
 med_df.head()
 
-# + {"Collapsed": "false", "persistent_id": "be199b11-006c-4619-ac80-b3d86fd10f3b"}
+# + {"Collapsed": "false", "persistent_id": "be199b11-006c-4619-ac80-b3d86fd10f3b", "execution": {"iopub.status.busy": "2020-03-11T16:47:11.818639Z", "iopub.status.idle": "2020-03-11T16:47:11.822844Z", "iopub.execute_input": "2020-03-11T16:47:11.818851Z", "shell.execute_reply.started": "2020-03-11T16:47:11.818814Z", "shell.execute_reply": "2020-03-11T16:47:11.822140Z"}}
 len(med_df)
 
 # + [markdown] {"Collapsed": "false"}
 # Sort by `ts` so as to be easier to merge with other dataframes later:
 
-# + {"Collapsed": "false", "persistent_id": "81712e88-3b96-4f10-a536-a80268bfe805"}
+# + {"Collapsed": "false", "persistent_id": "81712e88-3b96-4f10-a536-a80268bfe805", "execution": {"iopub.status.busy": "2020-03-11T16:47:11.824047Z", "iopub.status.idle": "2020-03-11T16:47:31.796673Z", "iopub.execute_input": "2020-03-11T16:47:11.824256Z", "shell.execute_reply.started": "2020-03-11T16:47:11.824218Z", "shell.execute_reply": "2020-03-11T16:47:31.795842Z"}}
 med_df = med_df.sort_values('ts')
 med_df.head()
 
@@ -1019,29 +1039,29 @@ med_df[med_df.patientunitstayid == 979183].head(10)
 # Even after removing duplicates rows, there are still some that have different information for the same ID and timestamp. We have to concatenate the categorical enumerations.
 
 # + {"Collapsed": "false", "persistent_id": "ed86d5a7-eeb3-44c4-9a4e-6dd67af307f2"}
-list(set(med_df_norm.columns) - set(cat_feat) - set(['patientunitstayid', 'ts']))
+list(set(med_df.columns) - set(cat_feat) - set(['patientunitstayid', 'ts']))
 
-# + {"Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023", "pixiedust": {"displayParams": {}}}
-med_df_norm = du.embedding.join_repeated_rows(med_df_norm, inplace=True)
-med_df_norm.head()
+# + {"Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023", "pixiedust": {"displayParams": {}}, "execution": {"iopub.status.busy": "2020-03-11T16:47:31.797636Z", "iopub.status.idle": "2020-03-11T16:58:01.995906Z", "iopub.execute_input": "2020-03-11T16:47:31.797839Z", "shell.execute_reply.started": "2020-03-11T16:47:31.797804Z", "shell.execute_reply": "2020-03-11T16:58:01.995067Z"}}
+med_df = du.embedding.join_repeated_rows(med_df, inplace=True)
+med_df.head()
 
 # + [markdown] {"Collapsed": "false"}
 # Reconvert dataframe to Modin:
 
 # + {"Collapsed": "false"}
-med_df_norm, pd = du.utils.convert_dataframe(med_df, to='modin')
+med_df, pd = du.utils.convert_dataframe(med_df, to='modin')
 
 # + {"Collapsed": "false"}
-type(med_df_norm)
+type(med_df)
 
 # + {"Collapsed": "false", "persistent_id": "db6b5624-e600-4d90-bc5a-ffa5a876d8dd"}
-med_df_norm.dtypes
+med_df.dtypes
 
 # + {"Collapsed": "false", "persistent_id": "954d2c26-4ef4-42ec-b0f4-a73febb5115d"}
-med_df_norm.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='drughiclseqno', n=5).head()
+med_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='drughiclseqno', n=5).head()
 
 # + {"Collapsed": "false", "persistent_id": "85536a51-d31a-4b25-aaee-9c9d4ec392f6"}
-med_df_norm[med_df_norm.patientunitstayid == 979183].head(10)
+med_df[med_df.patientunitstayid == 979183].head(10)
 
 # + [markdown] {"Collapsed": "false"}
 # Comparing the output from the two previous cells with what we had before the `join_repeated_rows` method, we can see that all rows with duplicate IDs have been successfully joined.
@@ -1051,10 +1071,9 @@ med_df_norm[med_df_norm.patientunitstayid == 979183].head(10)
 #
 # Standardize all column names to be on lower case, have spaces replaced by underscores and remove comas.
 
-# + {"Collapsed": "false", "persistent_id": "0f255c7d-1d1a-4dd3-94d7-d7fd54e13da0"}
+# + {"Collapsed": "false", "persistent_id": "0f255c7d-1d1a-4dd3-94d7-d7fd54e13da0", "execution": {"iopub.status.busy": "2020-03-11T16:58:01.996912Z", "iopub.status.idle": "2020-03-11T16:58:02.429954Z", "iopub.execute_input": "2020-03-11T16:58:01.997125Z", "shell.execute_reply.started": "2020-03-11T16:58:01.997083Z", "shell.execute_reply": "2020-03-11T16:58:02.429166Z"}}
 med_df.columns = du.data_processing.clean_naming(med_df.columns)
-med_df_norm.columns = du.data_processing.clean_naming(med_df_norm.columns)
-med_df_norm.head()
+med_df.head()
 
 # + [markdown] {"Collapsed": "false"}
 # ### Save the dataframe
@@ -1063,19 +1082,19 @@ med_df_norm.head()
 # Save the dataframe before normalizing:
 
 # + {"Collapsed": "false", "persistent_id": "7c95b423-0fd8-4e65-ac07-a0117f0c36bd"}
-med_df.to_csv(f'{data_path}cleaned/unnormalized/ohe/medication.csv')
+# med_df.to_csv(f'{data_path}cleaned/unnormalized/ohe/medication.csv')
 
 # + [markdown] {"Collapsed": "false"}
 # Save the dataframe after normalizing:
 
-# + {"Collapsed": "false", "persistent_id": "eae5d63f-5635-4fa0-8c42-ff6081336e18"}
-med_df_norm.to_csv(f'{data_path}cleaned/normalized/ohe/medication.csv')
+# + {"Collapsed": "false", "persistent_id": "eae5d63f-5635-4fa0-8c42-ff6081336e18", "execution": {"iopub.status.busy": "2020-03-11T16:58:02.431046Z", "iopub.status.idle": "2020-03-11T17:27:25.750379Z", "iopub.execute_input": "2020-03-11T16:58:02.431284Z", "shell.execute_reply.started": "2020-03-11T16:58:02.431241Z", "shell.execute_reply": "2020-03-11T17:27:25.749204Z"}}
+med_df.to_csv(f'{data_path}cleaned/normalized/ohe/medication.csv')
 
 # + [markdown] {"Collapsed": "false"}
 # Confirm that everything is ok through the `describe` method:
 
-# + {"Collapsed": "false", "persistent_id": "2cdabf5e-7df3-441b-b8ed-a06c404df27e"}
-med_df_norm.describe().transpose()
+# + {"Collapsed": "false", "persistent_id": "2cdabf5e-7df3-441b-b8ed-a06c404df27e", "execution": {"iopub.status.busy": "2020-03-11T15:51:48.132787Z", "iopub.status.idle": "2020-03-11T15:51:48.133109Z"}}
+med_df.describe().transpose()
 
 # + {"Collapsed": "false", "persistent_id": "9255fb38-ba28-4bc2-8f97-7596e8acbc5a"}
 med_df.nlargest(columns='drugdosage', n=5)
@@ -1092,7 +1111,7 @@ med_df.nlargest(columns='drugdosage', n=5)
 # + [markdown] {"Collapsed": "false", "toc-hr-collapsed": true}
 # ### Initialize variables
 
-# + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82", "execution": {"iopub.status.busy": "2020-02-17T02:24:13.243501Z", "iopub.execute_input": "2020-02-17T02:24:13.243729Z", "iopub.status.idle": "2020-02-17T02:24:13.247974Z", "shell.execute_reply.started": "2020-02-17T02:24:13.243694Z", "shell.execute_reply": "2020-02-17T02:24:13.246579Z"}}
+# + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82", "execution": {"iopub.status.busy": "2020-03-11T17:32:33.497220Z", "iopub.execute_input": "2020-03-11T17:32:33.497516Z", "iopub.status.idle": "2020-03-11T17:32:33.501907Z", "shell.execute_reply.started": "2020-03-11T17:32:33.497464Z", "shell.execute_reply": "2020-03-11T17:32:33.501087Z"}}
 # List of categorical features
 cat_feat = []
 # Dictionary of the one hot encoded columns originary from each categorical feature, that will be embedded
@@ -1101,7 +1120,7 @@ cat_feat_ohe = dict()
 # + [markdown] {"Collapsed": "false"}
 # ### Read the data
 
-# + {"Collapsed": "false", "persistent_id": "d0a4e172-9a38-4bef-a052-6310b7fb5214"}
+# + {"Collapsed": "false", "persistent_id": "d0a4e172-9a38-4bef-a052-6310b7fb5214", "execution": {"iopub.status.busy": "2020-03-11T17:32:33.997147Z", "iopub.execute_input": "2020-03-11T17:32:33.997424Z", "iopub.status.idle": "2020-03-11T17:32:37.476467Z", "shell.execute_reply.started": "2020-03-11T17:32:33.997380Z", "shell.execute_reply": "2020-03-11T17:32:37.475824Z"}}
 treat_df = pd.read_csv(f'{data_path}original/treatment.csv')
 treat_df.head()
 
@@ -1135,7 +1154,7 @@ du.search_explore.dataframe_missing_values(treat_df)
 # + [markdown] {"Collapsed": "false"}
 # Besides the usual removal of row identifier, `treatmentid`, I'm also removing `activeupondischarge`, as we don't have complete information as to when diagnosis end.
 
-# + {"Collapsed": "false", "persistent_id": "64f644db-fb9b-45c2-9c93-e4878850ed08"}
+# + {"Collapsed": "false", "persistent_id": "64f644db-fb9b-45c2-9c93-e4878850ed08", "execution": {"iopub.status.busy": "2020-03-11T17:32:43.807139Z", "iopub.execute_input": "2020-03-11T17:32:43.807769Z", "iopub.status.idle": "2020-03-11T17:32:43.853018Z", "shell.execute_reply.started": "2020-03-11T17:32:43.807384Z", "shell.execute_reply": "2020-03-11T17:32:43.852223Z"}}
 treat_df = treat_df.drop(['treatmentid', 'activeupondischarge'], axis=1)
 treat_df.head()
 
@@ -1178,7 +1197,7 @@ treat_df.treatmentstring.apply(lambda x: du.search_explore.get_element_from_spli
 # + [markdown] {"Collapsed": "false"}
 # <!-- There are always 8 levels of the notes. As the first 6 ones are essentially always the same ("notes/Progress Notes/Social History / Family History/Social History/Social History/"), it's best to just preserve the 7th one and isolate the 8th in a new feature. This way, the split provides further insight to the model on similar notes. However, it's also worth taking note that the 8th level of `notepath` seems to be identical to the feature `notevalue`. We'll look more into it later. -->
 
-# + {"Collapsed": "false", "persistent_id": "44721e19-f088-4cf3-be69-5201d1260d52"}
+# + {"Collapsed": "false", "persistent_id": "44721e19-f088-4cf3-be69-5201d1260d52", "execution": {"iopub.status.busy": "2020-03-11T17:32:55.901972Z", "iopub.execute_input": "2020-03-11T17:32:55.902379Z", "iopub.status.idle": "2020-03-11T17:33:02.182622Z", "shell.execute_reply.started": "2020-03-11T17:32:55.902325Z", "shell.execute_reply": "2020-03-11T17:33:02.179487Z"}}
 treat_df['treatmenttype'] = treat_df.treatmentstring.apply(lambda x: du.search_explore.get_element_from_split(x, 0, separator='|'))
 treat_df['treatmenttherapy'] = treat_df.treatmentstring.apply(lambda x: du.search_explore.get_element_from_split(x, 1, separator='|'))
 treat_df['treatmentdetails'] = treat_df.treatmentstring.apply(lambda x: du.search_explore.get_element_from_split(x, 2, separator='|', till_the_end=True))
@@ -1187,7 +1206,7 @@ treat_df.head()
 # + [markdown] {"Collapsed": "false"}
 # Remove the now redundant `treatmentstring` column:
 
-# + {"Collapsed": "false", "persistent_id": "5e8dd6a3-d086-442e-9845-ea701b36ecf8"}
+# + {"Collapsed": "false", "persistent_id": "5e8dd6a3-d086-442e-9845-ea701b36ecf8", "execution": {"iopub.status.busy": "2020-03-11T17:33:02.185738Z", "iopub.execute_input": "2020-03-11T17:33:02.186929Z", "iopub.status.idle": "2020-03-11T17:33:02.344339Z", "shell.execute_reply.started": "2020-03-11T17:33:02.186854Z", "shell.execute_reply": "2020-03-11T17:33:02.342622Z"}}
 treat_df = treat_df.drop('treatmentstring', axis=1)
 treat_df.head()
 
@@ -1211,31 +1230,31 @@ treat_df.treatmentdetails.value_counts()
 # + [markdown] {"Collapsed": "false"}
 # Update list of categorical features:
 
-# + {"Collapsed": "false", "persistent_id": "e015c37e-1537-409f-b67e-9eaabf295873"}
+# + {"Collapsed": "false", "persistent_id": "e015c37e-1537-409f-b67e-9eaabf295873", "execution": {"iopub.status.busy": "2020-03-11T17:33:02.347767Z", "iopub.execute_input": "2020-03-11T17:33:02.348117Z", "iopub.status.idle": "2020-03-11T17:33:02.354703Z", "shell.execute_reply.started": "2020-03-11T17:33:02.348052Z", "shell.execute_reply": "2020-03-11T17:33:02.353343Z"}}
 cat_feat = ['treatmenttype', 'treatmenttherapy', 'treatmentdetails']
 
-# + {"Collapsed": "false", "persistent_id": "29451e32-cf24-47b0-a783-9acc9b71b1c3"}
+# + {"Collapsed": "false", "persistent_id": "29451e32-cf24-47b0-a783-9acc9b71b1c3", "execution": {"iopub.status.busy": "2020-03-11T17:33:02.357297Z", "iopub.execute_input": "2020-03-11T17:33:02.357959Z", "iopub.status.idle": "2020-03-11T17:33:02.536111Z", "shell.execute_reply.started": "2020-03-11T17:33:02.357809Z", "shell.execute_reply": "2020-03-11T17:33:02.534068Z"}}
 treat_df[cat_feat].head()
 
 # + [markdown] {"Collapsed": "false"}
 # Filter just to the most common categories:
 
-# + {"Collapsed": "false"}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-11T17:33:02.538414Z", "iopub.execute_input": "2020-03-11T17:33:02.539096Z", "iopub.status.idle": "2020-03-11T17:33:16.261354Z", "shell.execute_reply.started": "2020-03-11T17:33:02.538972Z", "shell.execute_reply": "2020-03-11T17:33:16.260539Z"}}
 for col in cat_feat:
-    most_common_cat = list(treat_df[col].value_counts().nlargest(500).index)
+    most_common_cat = list(treat_df[col].value_counts().nlargest(MAX_CATEGORIES).index)
     treat_df = treat_df[treat_df[col].isin(most_common_cat)]
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:36:38.933807Z", "iopub.execute_input": "2020-03-09T16:36:38.934065Z", "iopub.status.idle": "2020-03-09T16:36:38.937828Z", "shell.execute_reply.started": "2020-03-09T16:36:38.934035Z", "shell.execute_reply": "2020-03-09T16:36:38.936941Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-11T17:33:16.262479Z", "iopub.execute_input": "2020-03-11T17:33:16.262710Z", "iopub.status.idle": "2020-03-11T17:33:16.266451Z", "shell.execute_reply.started": "2020-03-11T17:33:16.262660Z", "shell.execute_reply": "2020-03-11T17:33:16.265709Z"}}
 old_columns = treat_df.columns
 
 # + [markdown] {"Collapsed": "false"}
 # Apply one hot encoding:
 
-# + {"Collapsed": "false", "persistent_id": "3c0aa3dc-34e6-4a10-b01e-439fe2c6f991", "pixiedust": {"displayParams": {}}}
+# + {"Collapsed": "false", "persistent_id": "3c0aa3dc-34e6-4a10-b01e-439fe2c6f991", "pixiedust": {"displayParams": {}}, "execution": {"iopub.status.busy": "2020-03-11T17:33:16.267939Z", "iopub.execute_input": "2020-03-11T17:33:16.268164Z", "iopub.status.idle": "2020-03-11T17:34:17.264759Z", "shell.execute_reply.started": "2020-03-11T17:33:16.268125Z", "shell.execute_reply": "2020-03-11T17:34:17.263898Z"}}
 treat_df = du.data_processing.one_hot_encoding_dataframe(treat_df, columns=cat_feat, join_rows=False)
 treat_df
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:37:27.392359Z", "iopub.status.idle": "2020-03-09T16:37:27.399976Z", "iopub.execute_input": "2020-03-09T16:37:27.392616Z", "shell.execute_reply.started": "2020-03-09T16:37:27.392582Z", "shell.execute_reply": "2020-03-09T16:37:27.399076Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-11T17:34:17.266149Z", "iopub.status.idle": "2020-03-11T17:34:17.270306Z", "iopub.execute_input": "2020-03-11T17:34:17.266376Z", "shell.execute_reply.started": "2020-03-11T17:34:17.266329Z", "shell.execute_reply": "2020-03-11T17:34:17.269670Z"}}
 new_columns = set(treat_df.columns) - set(old_columns)
 
 # + {"Collapsed": "false", "persistent_id": "ff54e442-e896-4310-8a95-c205cd2cbf93"}
@@ -1244,23 +1263,23 @@ treat_df.dtypes
 # + [markdown] {"Collapsed": "false"}
 # Save the association between the original categorical features and the new one hot encoded columns:
 
-# + {"Collapsed": "false", "persistent_id": "26eac7f3-9081-4a96-ae4a-40054c223fd7", "execution": {"iopub.status.busy": "2020-03-09T16:37:35.157248Z", "iopub.execute_input": "2020-03-09T16:37:35.157526Z", "iopub.status.idle": "2020-03-09T16:37:35.164656Z", "shell.execute_reply.started": "2020-03-09T16:37:35.157493Z", "shell.execute_reply": "2020-03-09T16:37:35.163771Z"}}
+# + {"Collapsed": "false", "persistent_id": "26eac7f3-9081-4a96-ae4a-40054c223fd7", "execution": {"iopub.status.busy": "2020-03-11T17:34:17.271184Z", "iopub.execute_input": "2020-03-11T17:34:17.271388Z", "iopub.status.idle": "2020-03-11T17:34:17.326168Z", "shell.execute_reply.started": "2020-03-11T17:34:17.271351Z", "shell.execute_reply": "2020-03-11T17:34:17.325399Z"}}
 for orig_col in cat_feat:
     cat_feat_ohe[orig_col] = [ohe_col for ohe_col in new_columns
                               if ohe_col.startswith(orig_col)]
 
-# + {"execution": {"iopub.status.busy": "2020-03-09T16:37:35.165864Z", "iopub.execute_input": "2020-03-09T16:37:35.166280Z", "iopub.status.idle": "2020-03-09T16:37:35.190294Z", "shell.execute_reply.started": "2020-03-09T16:37:35.166256Z", "shell.execute_reply": "2020-03-09T16:37:35.189358Z"}, "Collapsed": "false"}
+# + {"execution": {"iopub.status.busy": "2020-03-11T17:34:17.327211Z", "iopub.execute_input": "2020-03-11T17:34:17.327435Z", "iopub.status.idle": "2020-03-11T17:34:17.362048Z", "shell.execute_reply.started": "2020-03-11T17:34:17.327395Z", "shell.execute_reply": "2020-03-11T17:34:17.361228Z"}, "Collapsed": "false"}
 cat_feat_ohe
 
 # + [markdown] {"Collapsed": "false"}
 # Save the association between the original categorical features and the new one hot encoded columns:
 
-# + {"Collapsed": "false", "persistent_id": "26eac7f3-9081-4a96-ae4a-40054c223fd7", "execution": {"iopub.status.busy": "2020-03-09T16:37:35.157248Z", "iopub.execute_input": "2020-03-09T16:37:35.157526Z", "iopub.status.idle": "2020-03-09T16:37:35.164656Z", "shell.execute_reply.started": "2020-03-09T16:37:35.157493Z", "shell.execute_reply": "2020-03-09T16:37:35.163771Z"}}
+# + {"Collapsed": "false", "persistent_id": "26eac7f3-9081-4a96-ae4a-40054c223fd7", "execution": {"iopub.status.busy": "2020-03-11T17:34:17.363027Z", "iopub.execute_input": "2020-03-11T17:34:17.363252Z", "iopub.status.idle": "2020-03-11T17:34:17.367203Z", "shell.execute_reply.started": "2020-03-11T17:34:17.363208Z", "shell.execute_reply": "2020-03-11T17:34:17.366490Z"}}
 for orig_col in cat_feat:
     cat_feat_ohe[orig_col] = [ohe_col for ohe_col in new_columns
                               if ohe_col.startswith(orig_col)]
 
-# + {"execution": {"iopub.status.busy": "2020-03-09T16:37:35.165864Z", "iopub.execute_input": "2020-03-09T16:37:35.166280Z", "iopub.status.idle": "2020-03-09T16:37:35.190294Z", "shell.execute_reply.started": "2020-03-09T16:37:35.166256Z", "shell.execute_reply": "2020-03-09T16:37:35.189358Z"}, "Collapsed": "false"}
+# + {"execution": {"iopub.status.busy": "2020-03-11T17:34:17.368146Z", "iopub.execute_input": "2020-03-11T17:34:17.368365Z", "iopub.status.idle": "2020-03-11T17:34:17.376181Z", "shell.execute_reply.started": "2020-03-11T17:34:17.368327Z", "shell.execute_reply": "2020-03-11T17:34:17.375531Z"}, "Collapsed": "false"}
 cat_feat_ohe
 
 # + [markdown] {"Collapsed": "false"}
@@ -1268,7 +1287,7 @@ cat_feat_ohe
 #
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
-# + {"Collapsed": "false", "persistent_id": "373ef393-e31d-4778-a902-78fc1ce179f3"}
+# + {"Collapsed": "false", "persistent_id": "373ef393-e31d-4778-a902-78fc1ce179f3", "execution": {"iopub.status.busy": "2020-03-11T17:34:17.378209Z", "iopub.execute_input": "2020-03-11T17:34:17.378453Z", "iopub.status.idle": "2020-03-11T17:34:17.404576Z", "shell.execute_reply.started": "2020-03-11T17:34:17.378409Z", "shell.execute_reply": "2020-03-11T17:34:17.403852Z"}}
 stream = open(f'{data_path}/cleaned/cat_feat_ohe_treat.yaml', 'w')
 yaml.dump(cat_feat_ohe, stream, default_flow_style=False)
 
@@ -1278,27 +1297,27 @@ yaml.dump(cat_feat_ohe, stream, default_flow_style=False)
 # + [markdown] {"Collapsed": "false"}
 # Create the timestamp (`ts`) feature:
 
-# + {"Collapsed": "false", "persistent_id": "e9364015-9dc8-45ed-a526-fbfd85a7d249"}
+# + {"Collapsed": "false", "persistent_id": "e9364015-9dc8-45ed-a526-fbfd85a7d249", "execution": {"iopub.status.busy": "2020-03-11T17:34:17.405836Z", "iopub.execute_input": "2020-03-11T17:34:17.406076Z", "iopub.status.idle": "2020-03-11T17:34:17.629357Z", "shell.execute_reply.started": "2020-03-11T17:34:17.406038Z", "shell.execute_reply": "2020-03-11T17:34:17.628581Z"}}
 treat_df = treat_df.rename(columns={'treatmentoffset': 'ts'})
 treat_df.head()
 
 # + [markdown] {"Collapsed": "false"}
 # Remove duplicate rows:
 
-# + {"Collapsed": "false", "persistent_id": "a833b09c-2fb0-46fc-af33-629e67113663"}
+# + {"Collapsed": "false", "persistent_id": "a833b09c-2fb0-46fc-af33-629e67113663", "execution": {"iopub.status.busy": "2020-03-11T17:34:17.630438Z", "iopub.execute_input": "2020-03-11T17:34:17.630703Z", "iopub.status.idle": "2020-03-11T17:34:17.635635Z", "shell.execute_reply.started": "2020-03-11T17:34:17.630667Z", "shell.execute_reply": "2020-03-11T17:34:17.634728Z"}}
 len(treat_df)
 
-# + {"Collapsed": "false", "persistent_id": "45d801a9-e196-4940-92c9-9e73a4cccbb1"}
+# + {"Collapsed": "false", "persistent_id": "45d801a9-e196-4940-92c9-9e73a4cccbb1", "execution": {"iopub.status.busy": "2020-03-11T17:34:17.636698Z", "iopub.execute_input": "2020-03-11T17:34:17.636931Z", "iopub.status.idle": "2020-03-11T17:34:30.313822Z", "shell.execute_reply.started": "2020-03-11T17:34:17.636887Z", "shell.execute_reply": "2020-03-11T17:34:30.312944Z"}}
 treat_df = treat_df.drop_duplicates()
 treat_df.head()
 
-# + {"Collapsed": "false", "persistent_id": "6f07e6d2-788a-4c5b-a0d8-0fced42215a7"}
+# + {"Collapsed": "false", "persistent_id": "6f07e6d2-788a-4c5b-a0d8-0fced42215a7", "execution": {"iopub.status.busy": "2020-03-11T17:34:30.314930Z", "iopub.execute_input": "2020-03-11T17:34:30.315158Z", "iopub.status.idle": "2020-03-11T17:34:30.320477Z", "shell.execute_reply.started": "2020-03-11T17:34:30.315117Z", "shell.execute_reply": "2020-03-11T17:34:30.319649Z"}}
 len(treat_df)
 
 # + [markdown] {"Collapsed": "false"}
 # Sort by `ts` so as to be easier to merge with other dataframes later:
 
-# + {"Collapsed": "false", "persistent_id": "79121961-77a1-4657-a374-dd5d389174ed"}
+# + {"Collapsed": "false", "persistent_id": "79121961-77a1-4657-a374-dd5d389174ed", "execution": {"iopub.status.busy": "2020-03-11T17:34:30.322116Z", "iopub.execute_input": "2020-03-11T17:34:30.322453Z", "iopub.status.idle": "2020-03-11T17:34:44.902273Z", "shell.execute_reply.started": "2020-03-11T17:34:30.322399Z", "shell.execute_reply": "2020-03-11T17:34:44.901573Z"}}
 treat_df = treat_df.sort_values('ts')
 treat_df.head()
 
@@ -1320,13 +1339,13 @@ treat_df[treat_df.patientunitstayid == 1352520].head(10)
 # + [markdown] {"Collapsed": "false"}
 # Convert dataframe to Pandas, as the groupby operation in `join_repeated_rows` isn't working properly with Modin:
 
-# + {"Collapsed": "false"}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-11T17:34:44.903310Z", "iopub.execute_input": "2020-03-11T17:34:44.903700Z", "iopub.status.idle": "2020-03-11T17:34:48.429630Z", "shell.execute_reply.started": "2020-03-11T17:34:44.903644Z", "shell.execute_reply": "2020-03-11T17:34:48.428837Z"}}
 treat_df, pd = du.utils.convert_dataframe(treat_df, to='pandas')
 
 # + {"Collapsed": "false"}
 type(treat_df)
 
-# + {"Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023", "pixiedust": {"displayParams": {}}}
+# + {"Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023", "pixiedust": {"displayParams": {}}, "execution": {"iopub.status.busy": "2020-03-11T17:34:48.430832Z", "iopub.execute_input": "2020-03-11T17:34:48.431050Z", "iopub.status.idle": "2020-03-11T17:36:11.534583Z", "shell.execute_reply.started": "2020-03-11T17:34:48.431011Z", "shell.execute_reply": "2020-03-11T17:36:11.533920Z"}}
 treat_df = du.embedding.join_repeated_rows(treat_df, inplace=True)
 treat_df.head()
 
@@ -1356,7 +1375,7 @@ treat_df[treat_df.patientunitstayid == 1352520].head(10)
 #
 # Standardize all column names to be on lower case, have spaces replaced by underscores and remove comas.
 
-# + {"Collapsed": "false", "persistent_id": "4decdcbe-bf08-4577-b55c-dda15fbef130"}
+# + {"Collapsed": "false", "persistent_id": "4decdcbe-bf08-4577-b55c-dda15fbef130", "execution": {"iopub.status.busy": "2020-03-11T17:36:11.535624Z", "iopub.execute_input": "2020-03-11T17:36:11.535949Z", "iopub.status.idle": "2020-03-11T17:36:11.793105Z", "shell.execute_reply.started": "2020-03-11T17:36:11.535907Z", "shell.execute_reply": "2020-03-11T17:36:11.792446Z"}}
 treat_df.columns = du.data_processing.clean_naming(treat_df.columns)
 treat_df.head()
 
@@ -1367,12 +1386,12 @@ treat_df.head()
 # Save the dataframe before normalizing:
 
 # + {"Collapsed": "false", "persistent_id": "7fecf050-a520-499d-ba70-96bc406e0a7e"}
-treat_df.to_csv(f'{data_path}cleaned/unnormalized/ohe/treatment.csv')
+# treat_df.to_csv(f'{data_path}cleaned/unnormalized/ohe/treatment.csv')
 
 # + [markdown] {"Collapsed": "false"}
 # Save the dataframe after normalizing:
 
-# + {"Collapsed": "false", "persistent_id": "8ec7af26-406d-4870-8475-0acca2b92876"}
+# + {"Collapsed": "false", "persistent_id": "8ec7af26-406d-4870-8475-0acca2b92876", "execution": {"iopub.status.busy": "2020-03-11T17:36:11.794100Z", "iopub.execute_input": "2020-03-11T17:36:11.794333Z", "iopub.status.idle": "2020-03-11T17:37:24.700523Z", "shell.execute_reply.started": "2020-03-11T17:36:11.794295Z", "shell.execute_reply": "2020-03-11T17:37:24.699798Z"}}
 treat_df.to_csv(f'{data_path}cleaned/normalized/ohe/treatment.csv')
 
 # + [markdown] {"Collapsed": "false"}
@@ -1683,7 +1702,7 @@ in_out_df.to_csv(f'{data_path}cleaned/unnormalized/ohe/intakeOutput.csv')
 in_out_df_norm, mean, std = du.data_processing.normalize_data(in_out_df, get_stats=True, inplace=True)
 in_out_df_norm.head()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Save a dictionary with the mean and standard deviation values of each column that was normalized:
 
 # + {"Collapsed": "false"}
@@ -1717,3 +1736,4 @@ in_out_df.describe().transpose()
 du.search_explore.dataframe_missing_values(in_out_df)
 
 # + {"Collapsed": "false"}
+

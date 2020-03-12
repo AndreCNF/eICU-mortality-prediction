@@ -35,17 +35,31 @@ import yaml                                # Save and load YAML files
 # Debugging packages
 import pixiedust                           # Debugging in Jupyter Notebook cells
 
-# + {"Collapsed": "false", "persistent_id": "a1f6ee7f-36d4-489d-b2dd-ec2a38f15d11", "last_executed_text": "# Change to parent directory (presumably \"Documents\")\nos.chdir(\"../../../..\")\n\n# Path to the CSV dataset files\ndata_path = 'Datasets/Thesis/eICU/uncompressed/'\n\n# Path to the code files\nproject_path = 'GitHub/eICU-mortality-prediction/'", "execution_event_id": "46042469-3ab8-4a47-9e1c-76eda99b5075"}
+# + {"Collapsed": "false", "execution_event_id": "baeb346a-1c34-42d1-a501-7ae37369255e", "last_executed_text": "# Change to parent directory (presumably \"Documents\")\nos.chdir(\"../../..\")\n\n# Path to the CSV dataset files\ndata_path = 'Documents/Datasets/Thesis/eICU/uncompressed/'\n\n# Path to the code files\nproject_path = 'Documents/GitHub/eICU-mortality-prediction/'", "persistent_id": "a1f6ee7f-36d4-489d-b2dd-ec2a38f15d11", "execution": {"iopub.status.busy": "2020-03-11T02:55:21.503003Z", "iopub.execute_input": "2020-03-11T02:55:21.503271Z", "iopub.status.idle": "2020-03-11T02:55:21.507321Z", "shell.execute_reply.started": "2020-03-11T02:55:21.503228Z", "shell.execute_reply": "2020-03-11T02:55:21.506626Z"}}
 # Change to parent directory (presumably "Documents")
 os.chdir("../../../..")
 # Path to the CSV dataset files
-data_path = 'Datasets/Thesis/eICU/uncompressed/'
+data_path = 'data/eICU/uncompressed/'
 # Path to the code files
-project_path = 'GitHub/eICU-mortality-prediction/'
+project_path = 'code/eICU-mortality-prediction/'
 
-# + {"Collapsed": "false", "persistent_id": "c0c2e356-d4f4-4a9d-bec2-88bdf9eb6a38", "last_executed_text": "# os.environ['MODIN_ENGINE'] = 'dask'        # Modin will use Dask\nimport modin.pandas as pd                  # Optimized distributed version of Pandas\nimport data_utils as du                    # Data science and machine learning relevant methods", "execution_event_id": "22d5ef08-0e70-4578-be22-dfaaef28a146"}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-06T02:39:14.255803Z", "iopub.execute_input": "2020-03-06T02:39:14.256033Z", "iopub.status.idle": "2020-03-06T02:39:14.509317Z", "shell.execute_reply.started": "2020-03-06T02:39:14.255994Z", "shell.execute_reply": "2020-03-06T02:39:14.508277Z"}}
+# Make sure that every large operation can be handled, by using the disk as an overflow for the memory
+# !export MODIN_OUT_OF_CORE=true
+# Another trick to do with Pandas so as to be able to allocate bigger objects to memory
+# !sudo bash -c 'echo 1 > /proc/sys/vm/overcommit_memory'
+
+# + {"Collapsed": "false", "execution_event_id": "82ef68be-443a-4bb8-8abd-7457a7005b4d", "last_executed_text": "import modin.pandas as pd                  # Optimized distributed version of Pandas\nimport data_utils as du                    # Data science and machine learning relevant methods", "persistent_id": "c0c2e356-d4f4-4a9d-bec2-88bdf9eb6a38", "execution": {"iopub.status.busy": "2020-03-11T02:55:21.508636Z", "iopub.execute_input": "2020-03-11T02:55:21.508881Z", "iopub.status.idle": "2020-03-11T02:55:23.475317Z", "shell.execute_reply.started": "2020-03-11T02:55:21.508828Z", "shell.execute_reply": "2020-03-11T02:55:23.473880Z"}}
 import modin.pandas as pd                  # Optimized distributed version of Pandas
+# import pandas as pd
 import data_utils as du                    # Data science and machine learning relevant methods
+# -
+
+# Allow pandas to show more columns:
+
+# + {"execution": {"iopub.status.busy": "2020-03-06T02:40:18.427780Z", "iopub.execute_input": "2020-03-06T02:40:18.428128Z", "iopub.status.idle": "2020-03-06T02:40:18.437422Z", "shell.execute_reply.started": "2020-03-06T02:40:18.428078Z", "shell.execute_reply": "2020-03-06T02:40:18.436390Z"}}
+pd.set_option('display.max_columns', 1000)
+pd.set_option('display.max_rows', 1000)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Set the random seed for reproducibility
