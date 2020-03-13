@@ -187,18 +187,15 @@ for col in cat_feat:
     most_common_cat = list(alrg_df[col].value_counts().nlargest(MAX_CATEGORIES).index)
     alrg_df = alrg_df[alrg_df[col].isin(most_common_cat)]
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:36:38.933807Z", "iopub.execute_input": "2020-03-09T16:36:38.934065Z", "iopub.status.idle": "2020-03-09T16:36:38.937828Z", "shell.execute_reply.started": "2020-03-09T16:36:38.934035Z", "shell.execute_reply": "2020-03-09T16:36:38.936941Z"}}
-old_columns = alrg_df.columns
-
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Apply one hot encoding:
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "9c0217cf-66d8-467b-b0df-b75441b1c0dc"}
-alrg_df = du.data_processing.one_hot_encoding_dataframe(alrg_df, columns=cat_feat, join_rows=False)
+alrg_df, new_columns = du.data_processing.one_hot_encoding_dataframe(alrg_df, columns=cat_feat,
+                                                                     join_rows=False,
+                                                                     get_new_column_names=True,
+                                                                     inplace=True)
 alrg_df
-
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:37:27.392359Z", "iopub.status.idle": "2020-03-09T16:37:27.399976Z", "iopub.execute_input": "2020-03-09T16:37:27.392616Z", "shell.execute_reply.started": "2020-03-09T16:37:27.392582Z", "shell.execute_reply": "2020-03-09T16:37:27.399076Z"}}
-new_columns = set(alrg_df.columns) - set(old_columns)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Fill missing values of the drug and allergies data with 0, so as to prepare for embedding:
@@ -589,18 +586,15 @@ for col in cat_feat:
     most_common_cat = list(past_hist_df[col].value_counts().nlargest(MAX_CATEGORIES).index)
     past_hist_df = past_hist_df[past_hist_df[col].isin(most_common_cat)]
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:36:38.933807Z", "iopub.execute_input": "2020-03-09T16:36:38.934065Z", "iopub.status.idle": "2020-03-09T16:36:38.937828Z", "shell.execute_reply.started": "2020-03-09T16:36:38.934035Z", "shell.execute_reply": "2020-03-09T16:36:38.936941Z"}}
-old_columns = past_hist_df.columns
-
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Apply one hot encoding:
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "58e7c624-cfc6-4df1-83dc-a8a22fe7ffc0"}
-past_hist_df = du.data_processing.one_hot_encoding_dataframe(past_hist_df, columns=cat_feat, join_rows=False)
+past_hist_df, new_columns = du.data_processing.one_hot_encoding_dataframe(past_hist_df, columns=cat_feat,
+                                                                          join_rows=False,
+                                                                          get_new_column_names=True,
+                                                                          inplace=True)
 past_hist_df
-
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:37:27.392359Z", "iopub.status.idle": "2020-03-09T16:37:27.399976Z", "iopub.execute_input": "2020-03-09T16:37:27.392616Z", "shell.execute_reply.started": "2020-03-09T16:37:27.392582Z", "shell.execute_reply": "2020-03-09T16:37:27.399076Z"}}
-new_columns = set(past_hist_df.columns) - set(old_columns)
 
 # + {"Collapsed": "false", "persistent_id": "7ee06a1a-cb99-4a94-9271-6f67948fd2a6"}
 past_hist_df.head()
@@ -821,18 +815,15 @@ for col in cat_feat:
     most_common_cat = list(diagn_df[col].value_counts().nlargest(MAX_CATEGORIES).index)
     diagn_df = diagn_df[diagn_df[col].isin(most_common_cat)]
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:36:38.933807Z", "iopub.execute_input": "2020-03-09T16:36:38.934065Z", "iopub.status.idle": "2020-03-09T16:36:38.937828Z", "shell.execute_reply.started": "2020-03-09T16:36:38.934035Z", "shell.execute_reply": "2020-03-09T16:36:38.936941Z"}}
-old_columns = diagn_df.columns
-
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Apply one hot encoding:
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "bba23ddd-c1e5-49b7-9b7f-8fe5819ee7f9"}
-diagn_df = du.data_processing.one_hot_encoding_dataframe(diagn_df, columns=cat_feat, join_rows=False)
+diagn_df, new_columns = du.data_processing.one_hot_encoding_dataframe(diagn_df, columns=cat_feat,
+                                                                      join_rows=False,
+                                                                      get_new_column_names=True,
+                                                                      inplace=True)
 diagn_df
-
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:37:27.392359Z", "iopub.status.idle": "2020-03-09T16:37:27.399976Z", "iopub.execute_input": "2020-03-09T16:37:27.392616Z", "shell.execute_reply.started": "2020-03-09T16:37:27.392582Z", "shell.execute_reply": "2020-03-09T16:37:27.399076Z"}}
-new_columns = set(diagn_df.columns) - set(old_columns)
 
 # + {"Collapsed": "false", "persistent_id": "64118894-5fb4-4e31-91cf-695d64a7e633"}
 diagn_df.head()

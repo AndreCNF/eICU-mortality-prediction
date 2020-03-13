@@ -178,18 +178,15 @@ cat_feat = ['ethnicity']
 # + {"Collapsed": "false", "persistent_id": "99d08bce-69f1-4a19-8e1d-ab2a49574506", "last_executed_text": "patient_df[cat_feat].head()", "execution_event_id": "1a89c528-9de1-4250-a6e6-2a29c6045770"}
 patient_df[cat_feat].head()
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:36:38.933807Z", "iopub.execute_input": "2020-03-09T16:36:38.934065Z", "iopub.status.idle": "2020-03-09T16:36:38.937828Z", "shell.execute_reply.started": "2020-03-09T16:36:38.934035Z", "shell.execute_reply": "2020-03-09T16:36:38.936941Z"}}
-old_columns = patient_df.columns
-
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Apply one hot encoding:
 
 # + {"Collapsed": "false", "persistent_id": "32a0ca8b-24f4-41d6-8565-038e39497c7e", "last_executed_text": "for i in range(len(new_cat_embed_feat)):\n    feature = new_cat_embed_feat[i]\n    # Prepare for embedding, i.e. enumerate categories\n    patient_df[feature], cat_feat_ohe[feature] = du.embedding.enum_categorical_feature(patient_df, feature)", "execution_event_id": "9152d797-82f8-46cb-9822-36e46b66b3ac"}
-patient_df = du.data_processing.one_hot_encoding_dataframe(patient_df, columns=cat_feat, join_rows=False)
+patient_df, new_columns = du.data_processing.one_hot_encoding_dataframe(patient_df, columns=cat_feat,
+                                                                        join_rows=False,
+                                                                        get_new_column_names=True,
+                                                                        inplace=True)
 patient_df
-
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:37:27.392359Z", "iopub.status.idle": "2020-03-09T16:37:27.399976Z", "iopub.execute_input": "2020-03-09T16:37:27.392616Z", "shell.execute_reply.started": "2020-03-09T16:37:27.392582Z", "shell.execute_reply": "2020-03-09T16:37:27.399076Z"}}
-new_columns = set(patient_df.columns) - set(old_columns)
 
 # + {"Collapsed": "false", "persistent_id": "2d79bb26-bb3f-4d3e-beac-0e809c504bdb", "last_executed_text": "patient_df[cat_feat].dtypes", "execution_event_id": "56578e03-6482-46bb-91fa-271c875f77f2"}
 patient_df.dtypes

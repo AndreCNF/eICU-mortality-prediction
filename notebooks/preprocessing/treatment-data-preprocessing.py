@@ -221,9 +221,6 @@ inf_drug_df.infusion_drugrate.max()
 
 # + {"Collapsed": "false", "persistent_id": "82bf9aa5-c5de-433a-97d3-01d6af81e2e4"}
 inf_drug_df[cat_feat].head()
-
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:36:38.933807Z", "iopub.execute_input": "2020-03-09T16:36:38.934065Z", "iopub.status.idle": "2020-03-09T16:36:38.937828Z", "shell.execute_reply.started": "2020-03-09T16:36:38.934035Z", "shell.execute_reply": "2020-03-09T16:36:38.936941Z"}}
-old_columns = inf_drug_df.columns
 # -
 
 inf_drug_df.drugname.nunique()
@@ -232,11 +229,11 @@ inf_drug_df.drugname.nunique()
 # Apply one hot encoding:
 
 # + {"Collapsed": "false", "persistent_id": "8b0f065b-fb2b-4330-b155-d86769ac1635", "pixiedust": {"displayParams": {}}}
-inf_drug_df = du.data_processing.one_hot_encoding_dataframe(inf_drug_df, columns=cat_feat, join_rows=False)
+inf_drug_df, new_columns = du.data_processing.one_hot_encoding_dataframe(inf_drug_df, columns=cat_feat,
+                                                                         join_rows=False,
+                                                                         get_new_column_names=True,
+                                                                         inplace=True)
 inf_drug_df
-
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:37:27.392359Z", "iopub.status.idle": "2020-03-09T16:37:27.399976Z", "iopub.execute_input": "2020-03-09T16:37:27.392616Z", "shell.execute_reply.started": "2020-03-09T16:37:27.392582Z", "shell.execute_reply": "2020-03-09T16:37:27.399076Z"}}
-new_columns = set(inf_drug_df.columns) - set(old_columns)
 
 # + {"Collapsed": "false", "persistent_id": "b0e7a06d-f451-470f-8cf5-d154f76e83a2"}
 inf_drug_df.dtypes
@@ -554,18 +551,15 @@ adms_drug_df.drugdosage.max()
 # + {"Collapsed": "false", "persistent_id": "a33e788b-d6ba-4d79-9fee-54a32959d453", "execution": {"iopub.status.busy": "2020-03-09T16:36:38.520331Z", "iopub.execute_input": "2020-03-09T16:36:38.520674Z", "iopub.status.idle": "2020-03-09T16:36:38.547357Z", "shell.execute_reply.started": "2020-03-09T16:36:38.520605Z", "shell.execute_reply": "2020-03-09T16:36:38.546646Z"}}
 adms_drug_df[cat_feat].head()
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:36:38.933807Z", "iopub.execute_input": "2020-03-09T16:36:38.934065Z", "iopub.status.idle": "2020-03-09T16:36:38.937828Z", "shell.execute_reply.started": "2020-03-09T16:36:38.934035Z", "shell.execute_reply": "2020-03-09T16:36:38.936941Z"}}
-old_columns = adms_drug_df.columns
-
 # + [markdown] {"Collapsed": "false"}
 # Apply one hot encoding:
 
 # + {"Collapsed": "false", "persistent_id": "8f69d437-6fec-4e7e-ae76-226b742b03a7", "pixiedust": {"displayParams": {}}, "execution": {"iopub.status.busy": "2020-03-09T16:36:42.370906Z", "iopub.execute_input": "2020-03-09T16:36:42.371306Z", "iopub.status.idle": "2020-03-09T16:37:27.388470Z", "shell.execute_reply.started": "2020-03-09T16:36:42.371258Z", "shell.execute_reply": "2020-03-09T16:37:27.387133Z"}}
-adms_drug_df = du.data_processing.one_hot_encoding_dataframe(adms_drug_df, columns=cat_feat, join_rows=False)
+adms_drug_df, new_columns = du.data_processing.one_hot_encoding_dataframe(adms_drug_df, columns=cat_feat,
+                                                                          join_rows=False,
+                                                                          get_new_column_names=True,
+                                                                          inplace=True)
 adms_drug_df
-
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:37:27.392359Z", "iopub.status.idle": "2020-03-09T16:37:27.399976Z", "iopub.execute_input": "2020-03-09T16:37:27.392616Z", "shell.execute_reply.started": "2020-03-09T16:37:27.392582Z", "shell.execute_reply": "2020-03-09T16:37:27.399076Z"}}
-new_columns = set(adms_drug_df.columns) - set(old_columns)
 
 # + {"Collapsed": "false", "persistent_id": "b54a0213-dfda-46d3-aef5-a7a5ed8c2810", "execution": {"iopub.status.busy": "2020-03-09T05:26:40.696643Z", "iopub.status.idle": "2020-03-09T05:26:40.707182Z", "iopub.execute_input": "2020-03-09T05:26:40.696987Z", "shell.execute_reply.started": "2020-03-09T05:26:40.696953Z", "shell.execute_reply": "2020-03-09T05:26:40.706286Z"}}
 adms_drug_df.dtypes
@@ -917,18 +911,15 @@ med_df.drug_dosage.max()
 # + {"Collapsed": "false", "persistent_id": "ed09c3dd-50b3-48cf-aa04-76534feaf767", "execution": {"iopub.status.busy": "2020-03-11T16:27:24.074373Z", "iopub.status.idle": "2020-03-11T16:27:24.222552Z", "iopub.execute_input": "2020-03-11T16:27:24.074602Z", "shell.execute_reply.started": "2020-03-11T16:27:24.074551Z", "shell.execute_reply": "2020-03-11T16:27:24.221928Z"}}
 med_df[cat_feat].head()
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-11T16:43:36.981769Z", "iopub.execute_input": "2020-03-11T16:43:36.982139Z", "iopub.status.idle": "2020-03-11T16:43:36.985206Z", "shell.execute_reply.started": "2020-03-11T16:43:36.982095Z", "shell.execute_reply": "2020-03-11T16:43:36.984490Z"}}
-old_columns = med_df.columns
-
 # + [markdown] {"Collapsed": "false"}
 # Apply one hot encoding:
 
 # + {"Collapsed": "false", "persistent_id": "51ac8fd1-cbd2-4f59-a737-f0fcc13043fd", "pixiedust": {"displayParams": {}}, "execution": {"iopub.status.busy": "2020-03-11T16:43:36.986237Z", "iopub.status.idle": "2020-03-11T16:45:03.544797Z", "iopub.execute_input": "2020-03-11T16:43:36.986441Z", "shell.execute_reply.started": "2020-03-11T16:43:36.986404Z", "shell.execute_reply": "2020-03-11T16:45:03.544044Z"}}
-med_df = du.data_processing.one_hot_encoding_dataframe(med_df, columns=cat_feat, join_rows=False)
+med_df, new_columns = du.data_processing.one_hot_encoding_dataframe(med_df, columns=cat_feat,
+                                                                    join_rows=False,
+                                                                    get_new_column_names=True,
+                                                                    inplace=True)
 med_df
-
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-11T16:45:03.545835Z", "iopub.status.idle": "2020-03-11T16:45:03.550456Z", "iopub.execute_input": "2020-03-11T16:45:03.546333Z", "shell.execute_reply.started": "2020-03-11T16:45:03.546289Z", "shell.execute_reply": "2020-03-11T16:45:03.549314Z"}}
-new_columns = set(med_df.columns) - set(old_columns)
 
 # + {"Collapsed": "false", "persistent_id": "e5615265-4372-4117-a368-ec539c871763", "execution": {"iopub.status.busy": "2020-03-11T03:22:26.866678Z", "iopub.status.idle": "2020-03-11T03:22:26.919725Z", "iopub.execute_input": "2020-03-11T03:22:26.866987Z", "shell.execute_reply.started": "2020-03-11T03:22:26.866938Z", "shell.execute_reply": "2020-03-11T03:22:26.918842Z"}}
 med_df.dtypes
@@ -1244,18 +1235,15 @@ for col in cat_feat:
     most_common_cat = list(treat_df[col].value_counts().nlargest(MAX_CATEGORIES).index)
     treat_df = treat_df[treat_df[col].isin(most_common_cat)]
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-11T17:33:16.262479Z", "iopub.execute_input": "2020-03-11T17:33:16.262710Z", "iopub.status.idle": "2020-03-11T17:33:16.266451Z", "shell.execute_reply.started": "2020-03-11T17:33:16.262660Z", "shell.execute_reply": "2020-03-11T17:33:16.265709Z"}}
-old_columns = treat_df.columns
-
 # + [markdown] {"Collapsed": "false"}
 # Apply one hot encoding:
 
 # + {"Collapsed": "false", "persistent_id": "3c0aa3dc-34e6-4a10-b01e-439fe2c6f991", "pixiedust": {"displayParams": {}}, "execution": {"iopub.status.busy": "2020-03-11T17:33:16.267939Z", "iopub.execute_input": "2020-03-11T17:33:16.268164Z", "iopub.status.idle": "2020-03-11T17:34:17.264759Z", "shell.execute_reply.started": "2020-03-11T17:33:16.268125Z", "shell.execute_reply": "2020-03-11T17:34:17.263898Z"}}
-treat_df = du.data_processing.one_hot_encoding_dataframe(treat_df, columns=cat_feat, join_rows=False)
+treat_df, new_columns = du.data_processing.one_hot_encoding_dataframe(treat_df, columns=cat_feat,
+                                                                      join_rows=False,
+                                                                      get_new_column_names=True,
+                                                                      inplace=True)
 treat_df
-
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-11T17:34:17.266149Z", "iopub.status.idle": "2020-03-11T17:34:17.270306Z", "iopub.execute_input": "2020-03-11T17:34:17.266376Z", "shell.execute_reply.started": "2020-03-11T17:34:17.266329Z", "shell.execute_reply": "2020-03-11T17:34:17.269670Z"}}
-new_columns = set(treat_df.columns) - set(old_columns)
 
 # + {"Collapsed": "false", "persistent_id": "ff54e442-e896-4310-8a95-c205cd2cbf93"}
 treat_df.dtypes
@@ -1736,4 +1724,3 @@ in_out_df.describe().transpose()
 du.search_explore.dataframe_missing_values(in_out_df)
 
 # + {"Collapsed": "false"}
-

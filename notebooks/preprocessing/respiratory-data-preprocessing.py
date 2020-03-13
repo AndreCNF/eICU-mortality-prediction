@@ -73,15 +73,6 @@ du.set_random_seed(42)
 # + {"Collapsed": "false"}
 MAX_CATEGORIES = 250
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# ## Initialize variables
-
-# + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82"}
-# List of categorical features
-cat_feat = []
-# Dictionary of the one hot encoded columns originary from each categorical feature, that will be embedded
-cat_feat_ohe = dict()
-
 # + {"toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
 # ## Respiratory care data
 
@@ -198,6 +189,15 @@ resp_care_df[resp_care_df.patientunitstayid == 1113084].head(20)
 ((resp_care_df.ts > resp_care_df.ventendoffset) & resp_care_df.ventendoffset != 0).value_counts()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
+# Convert dataframe to Pandas, as the next cells aren't working properly with Modin:
+
+# + {"Collapsed": "false"}
+resp_care_df, pd = du.utils.convert_dataframe(resp_care_df, to='pandas')
+
+# + {"Collapsed": "false"}
+type(resp_care_df)
+
+# + {"Collapsed": "false", "cell_type": "markdown"}
 # There are no errors of having the start vent timestamp later than the end vent timestamp.
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "6e8377a7-4e89-4371-a663-bd10b5dcf5d9"}
@@ -212,15 +212,6 @@ resp_care_df[resp_care_df.patientunitstayid == 1113084].head(10)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Comparing the output from the two previous cells with what we had before the `join_repeated_rows` method, we can see that all rows with duplicate IDs have been successfully joined.
-
-# + {"Collapsed": "false", "cell_type": "markdown"}
-# Convert dataframe to Pandas, as the next cells aren't working properly with Modin:
-
-# + {"Collapsed": "false"}
-resp_care_df, pd = du.utils.convert_dataframe(resp_care_df, to='pandas')
-
-# + {"Collapsed": "false"}
-type(resp_care_df)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Only keep the first instance of each patient, as we're only keeping track of when they are on ventilation:
@@ -327,7 +318,7 @@ resp_care_df.head()
 # Save the dataframe before normalizing:
 
 # + {"Collapsed": "false", "persistent_id": "8da4c80c-a6a7-499f-90b2-e86416218caf"}
-resp_care_df.to_csv(f'{data_path}cleaned/unnormalized/ohe/respiratoryCare.csv')
+# resp_care_df.to_csv(f'{data_path}cleaned/unnormalized/ohe/respiratoryCare.csv')
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Save the dataframe after normalizing:
@@ -512,18 +503,15 @@ for col in cat_feat:
     most_common_cat = list(resp_chart_df[col].value_counts().nlargest(MAX_CATEGORIES).index)
     resp_chart_df = resp_chart_df[resp_chart_df[col].isin(most_common_cat)]
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:36:38.933807Z", "iopub.execute_input": "2020-03-09T16:36:38.934065Z", "iopub.status.idle": "2020-03-09T16:36:38.937828Z", "shell.execute_reply.started": "2020-03-09T16:36:38.934035Z", "shell.execute_reply": "2020-03-09T16:36:38.936941Z"}}
-old_columns = resp_chart_df.columns
-
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Apply one hot encoding:
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "f691d6e7-9475-4a5f-a6b8-d1223b9eebe3"}
-resp_chart_df = du.data_processing.one_hot_encoding_dataframe(resp_chart_df, columns=cat_feat, join_rows=False)
-resp_chart_df
-
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:37:27.392359Z", "iopub.status.idle": "2020-03-09T16:37:27.399976Z", "iopub.execute_input": "2020-03-09T16:37:27.392616Z", "shell.execute_reply.started": "2020-03-09T16:37:27.392582Z", "shell.execute_reply": "2020-03-09T16:37:27.399076Z"}}
-new_columns = set(resp_chart_df.columns) - set(old_columns)
+resp_care_df, new_columns = du.data_processing.one_hot_encoding_dataframe(resp_care_df, columns=cat_feat,
+                                                                          join_rows=False,
+                                                                          get_new_column_names=True,
+                                                                          inplace=True)
+resp_care_df
 
 # + {"Collapsed": "false", "persistent_id": "ab16acb6-7ba4-4ceb-b062-2bda7905acbf"}
 resp_chart_df.dtypes

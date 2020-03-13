@@ -2,11 +2,12 @@ import torch                            # PyTorch to create and apply deep learn
 from torch import nn                    # nn for neural network layers
 import torch.jit as jit                 # TorchScript for faster custom models
 import math                             # Useful package for logarithm operations
+import numpy as np                      # Mathematical operations package, allowing also for missing values representation
 from functools import partial           # Fix some parameters of a function
 import data_utils as du                 # Data science and machine learning relevant methods
 
 class BaseRNN(nn.Module):
-    def __init__(self, rnn_module, n_inputs, n_hidden, n_outputs,
+    def __init__(self, rnn_module, n_inputs, n_hidden, n_outputs, n_rnn_layers=1,
                  p_dropout=0, embed_features=None, n_embeddings=None,
                  embedding_dim=None, bidir=False, is_lstm=True,
                  padding_value=999999):
@@ -19,12 +20,12 @@ class BaseRNN(nn.Module):
             Recurrent neural network module to be used in this model.
         n_inputs : int
             Number of input features.
-        n_hidden : int or list of ints
-            Number of hidden units. If there are multiple RNN layers (n_layers > 1),
-            this parameter must be a list of integers, with the number of hidden
-            units for each layer.
+        n_hidden : int
+            Number of hidden units.
         n_outputs : int
             Number of outputs.
+        n_rnn_layers : int, default 1
+            Number of RNN layers.
         p_dropout : float or int, default 0
             Probability of dropout.
         embed_features : list of ints or list of lists of ints, default None
@@ -53,6 +54,7 @@ class BaseRNN(nn.Module):
         self.n_inputs = n_inputs
         self.n_hidden = n_hidden
         self.n_outputs = n_outputs
+        self.n_rnn_layers = n_rnn_layers
         self.p_dropout = p_dropout
         self.embed_features = embed_features
         self.n_embeddings = n_embeddings
@@ -123,31 +125,25 @@ class BaseRNN(nn.Module):
                 self.rnn_n_inputs = self.n_inputs
                 for i in range(len(self.embed_features)):
                     self.rnn_n_inputs = self.rnn_n_inputs + self.embedding_dim[i] - len(self.embed_features[i])
-        if isinstance(self.n_hidden, int):
+        if self.n_rnn_layers == 1:
             # Create a single RNN layer
             self.rnn_layer = self.rnn_module(self.rnn_n_inputs, self.n_hidden)
             # The output dimension of the last RNN layer
             rnn_output_dim = self.n_hidden
-            # Number of RNN layers
-            self.n_rnn_layers = 1
-        elif isinstance(self.n_hidden, list):
+        else:
             # Create a list of multiple, stacked RNN layers
             self.rnn_layers = nn.ModuleList()
             # Add the first RNN layer
-            self.rnn_layers.append(self.rnn_module(self.rnn_n_inputs, self.n_hidden[0]))
+            self.rnn_layers.append(self.rnn_module(self.rnn_n_inputs, self.n_hidden))
             # Add the remaining RNN layers
-            for i in range(1, self.n_layers):
-                self.rnn_layers.append(self.rnn_module(self.n_hidden[i-1], self.n_hidden[i]))
+            for i in range(1, self.n_rnn_layers):
+                self.rnn_layers.append(self.rnn_module(self.n_hidden, self.n_hidden))
             # The output dimension of the last RNN layer
-            rnn_output_dim = self.n_hidden[-1]
-            # Number of RNN layers
-            self.n_rnn_layers = len(self.n_hidden)
-        else:
-            raise Exception(f'ERROR: The number of hidden units `n_hidden` must be a single integer (one layer) or a list of integers (multiple layers). Received input `n_hidden` of type {type(n_hidden)}.')
-        # Fully connected layer which takes the LSTM's hidden units and
+            rnn_output_dim = self.n_hidden
+        # Fully connected layer which takes the RNN's hidden units and
         # calculates the output classification
         self.fc = nn.Linear(rnn_output_dim, self.n_outputs)
-        # Dropout used between the last LSTM layer and the fully connected layer
+        # Dropout used between the last RNN layer and the fully connected layer
         self.dropout = nn.Dropout(p=self.p_dropout)
         if self.n_outputs == 1:
             # Use the sigmoid activation function
@@ -181,7 +177,7 @@ class BaseRNN(nn.Module):
             # Use the specified hidden state
             self.hidden = hidden_state
         # Get the outputs and hidden states from the RNN layer(s)
-        if self.n_layers == 1:
+        if self.n_rnn_layers == 1:
             if self.bidir is False:
                 # Since there's only one layer and the model is not bidirectional,
                 # we only need one set of hidden state
@@ -192,7 +188,7 @@ class BaseRNN(nn.Module):
             rnn_output, self.hidden = self.rnn_layer(x, hidden_state)
         else:
             # List[RNNState]: One state per layer
-            output_states = jit.annotate(List[Tuple[Tensor, Tensor]], [])
+            # output_states = jit.annotate(List[Tuple[Tensor, Tensor]], [])
             i = 0
             # The first RNN layer's input is the original input;
             # the following layers will use their respective previous layer's
@@ -205,7 +201,7 @@ class BaseRNN(nn.Module):
                     hidden_state = self.hidden[i]
                 rnn_output, out_state = rnn_layer(rnn_output, hidden_state)
                 # Apply the dropout layer except the last layer
-                if i < self.num_layers - 1:
+                if i < self.n_rnn_layers - 1:
                     rnn_output = self.dropout(rnn_output)
                 output_states += [out_state]
                 i += 1
@@ -253,16 +249,16 @@ class BaseRNN(nn.Module):
         # Check if GPU is available
         train_on_gpu = torch.cuda.is_available()
         if train_on_gpu is True:
-            hidden = (weight.new(self.n_layers * (1 + self.bidir), batch_size, self.n_hidden).zero_().cuda(),
-                      weight.new(self.n_layers * (1 + self.bidir), batch_size, self.n_hidden).zero_().cuda())
+            hidden = (weight.new(self.n_rnn_layers * (1 + self.bidir), batch_size, self.n_hidden).zero_().cuda(),
+                      weight.new(self.n_rnn_layers * (1 + self.bidir), batch_size, self.n_hidden).zero_().cuda())
         else:
-            hidden = (weight.new(self.n_layers * (1 + self.bidir), batch_size, self.n_hidden).zero_(),
-                      weight.new(self.n_layers * (1 + self.bidir), batch_size, self.n_hidden).zero_())
+            hidden = (weight.new(self.n_rnn_layers * (1 + self.bidir), batch_size, self.n_hidden).zero_(),
+                      weight.new(self.n_rnn_layers * (1 + self.bidir), batch_size, self.n_hidden).zero_())
         return hidden
 
 
 class VanillaLSTM(nn.Module):
-    def __init__(self, n_inputs, n_hidden, n_outputs, n_layers=1, p_dropout=0,
+    def __init__(self, n_inputs, n_hidden, n_outputs, n_lstm_layers=1, p_dropout=0,
                  embed_features=None, n_embeddings=None, embedding_dim=None,
                  bidir=False, padding_value=999999):
         '''A vanilla LSTM model, using PyTorch's predefined LSTM module, with
@@ -275,7 +271,7 @@ class VanillaLSTM(nn.Module):
             Number of hidden units.
         n_outputs : int
             Number of outputs.
-        n_layers : int, default 1
+        n_lstm_layers : int, default 1
             Number of LSTM layers.
         p_dropout : float or int, default 0
             Probability of dropout.
@@ -299,12 +295,12 @@ class VanillaLSTM(nn.Module):
         self.n_inputs = n_inputs
         self.n_hidden = n_hidden
         self.n_outputs = n_outputs
+        self.n_lstm_layers = n_lstm_layers
         self.p_dropout = p_dropout
         self.embed_features = embed_features
         self.n_embeddings = n_embeddings
         self.embedding_dim = embedding_dim
         self.bidir = bidir
-        self.is_lstm = is_lstm
         self.padding_value = padding_value
         # Embedding layers
         if self.embed_features is not None:
@@ -369,30 +365,12 @@ class VanillaLSTM(nn.Module):
                 self.lstm_n_inputs = self.n_inputs
                 for i in range(len(self.embed_features)):
                     self.lstm_n_inputs = self.lstm_n_inputs + self.embedding_dim[i] - len(self.embed_features[i])
-        if isinstance(self.n_hidden, int):
-            # Create a single LSTM layer
-            self.lstm_layer = self.lstm_module(self.lstm_n_inputs, self.n_hidden)
-            # The output dimension of the last LSTM layer
-            lstm_output_dim = self.n_hidden
-            # Number of LSTM layers
-            self.n_lstm_layers = 1
-        elif isinstance(self.n_hidden, list):
-            # Create a list of multiple, stacked LSTM layers
-            self.lstm_layers = nn.ModuleList()
-            # Add the first LSTM layer
-            self.lstm_layers.append(self.lstm_module(self.lstm_n_inputs, self.n_hidden[0]))
-            # Add the remaining LSTM layers
-            for i in range(1, self.n_layers):
-                self.lstm_layers.append(self.lstm_module(self.n_hidden[i-1], self.n_hidden[i]))
-            # The output dimension of the last LSTM layer
-            lstm_output_dim = self.n_hidden[-1]
-            # Number of LSTM layers
-            self.n_lstm_layers = len(self.n_hidden)
-        else:
-            raise Exception(f'ERROR: The number of hidden units `n_hidden` must be a single integer (one layer) or a list of integers (multiple layers). Received input `n_hidden` of type {type(n_hidden)}.')
+        self.lstm = nn.LSTM(self.lstm_n_inputs, self.n_hidden, self.n_lstm_layers,
+                            batch_first=True, dropout=self.p_dropout,
+                            bidirectional=self.bidir)
         # Fully connected layer which takes the LSTM's hidden units and
         # calculates the output classification
-        self.fc = nn.Linear(lstm_output_dim, self.n_outputs)
+        self.fc = nn.Linear(self.n_hidden, self.n_outputs)
         # Dropout used between the last LSTM layer and the fully connected layer
         self.dropout = nn.Dropout(p=self.p_dropout)
         if self.n_outputs == 1:
@@ -476,16 +454,16 @@ class VanillaLSTM(nn.Module):
         # Check if GPU is available
         train_on_gpu = torch.cuda.is_available()
         if train_on_gpu is True:
-            hidden = (weight.new(self.n_layers * (1 + self.bidir), batch_size, self.n_hidden).zero_().cuda(),
-                      weight.new(self.n_layers * (1 + self.bidir), batch_size, self.n_hidden).zero_().cuda())
+            hidden = (weight.new(self.n_lstm_layers * (1 + self.bidir), batch_size, self.n_hidden).zero_().cuda(),
+                      weight.new(self.n_lstm_layers * (1 + self.bidir), batch_size, self.n_hidden).zero_().cuda())
         else:
-            hidden = (weight.new(self.n_layers * (1 + self.bidir), batch_size, self.n_hidden).zero_(),
-                      weight.new(self.n_layers * (1 + self.bidir), batch_size, self.n_hidden).zero_())
+            hidden = (weight.new(self.n_lstm_layers * (1 + self.bidir), batch_size, self.n_hidden).zero_(),
+                      weight.new(self.n_lstm_layers * (1 + self.bidir), batch_size, self.n_hidden).zero_())
         return hidden
 
 
 class CustomLSTM(BaseRNN):
-    def __init__(self, n_inputs, n_hidden, n_outputs, n_layers=1, p_dropout=0,
+    def __init__(self, n_inputs, n_hidden, n_outputs, n_lstm_layers=1, p_dropout=0,
                  embed_features=None, n_embeddings=None, embedding_dim=None,
                  bidir=False, padding_value=999999):
         if bidir is True:
@@ -494,7 +472,7 @@ class CustomLSTM(BaseRNN):
             rnn_module = lambda *cell_args: LSTMLayer(LSTMCell, *cell_args)
         super(CustomLSTM, self).__init__(rnn_module=rnn_module, n_inputs=n_inputs,
                                          n_hidden=n_hidden, n_outputs=n_outputs,
-                                         n_layers=n_layers, p_dropout=p_dropout,
+                                         n_lstm_layers=n_lstm_layers, p_dropout=p_dropout,
                                          embed_features=embed_features,
                                          n_embeddings=n_embeddings,
                                          embedding_dim=embedding_dim,
@@ -503,7 +481,7 @@ class CustomLSTM(BaseRNN):
 
 
 class TLSTM(BaseRNN):
-    def __init__(self, n_inputs, n_hidden, n_outputs, n_layers=1, p_dropout=0,
+    def __init__(self, n_inputs, n_hidden, n_outputs, n_rnn_layers=1, p_dropout=0,
                  embed_features=None, n_embeddings=None, embedding_dim=None,
                  bidir=False, padding_value=999999,
                  delta_ts_col=None, elapsed_time='small', no_small_delta=True):
@@ -514,15 +492,16 @@ class TLSTM(BaseRNN):
                 # Have into account the new embedding columns that will be added,
                 # as well as the removal of the originating categorical columns
                 # NOTE: This only works assuming that the delta_ts column is the
-                # last one on the dataframe
+                # last one on the dataframe, standing to the left of all the
+                # embedding features
                 if all([isinstance(feature, int) for feature in embed_features]):
-                    self.delta_ts_col = n_inputs + embedding_dim - len(embed_features)
+                    self.delta_ts_col = n_inputs - len(embed_features)
                 elif (all([isinstance(feat_list, list) for feat_list in embed_features])
                 and all([isinstance(feature, int) for feature in feat_list
                         for feat_list in embed_features])):
                     self.delta_ts_col = n_inputs
                     for i in range(len(embed_features)):
-                        self.delta_ts_col = rnn_n_inputs + embedding_dim[i] - len(embed_features[i])
+                        self.delta_ts_col = rnn_n_inputs - len(embed_features[i])
 
         else:
             self.delta_ts_col = delta_ts_col
@@ -532,17 +511,92 @@ class TLSTM(BaseRNN):
                                  elapsed_time=self.elapsed_time,
                                  no_small_delta=self.no_small_delta)
         if bidir is True:
-            rnn_module = lambda *cell_args: BidirLSTMLayer(TLSTMCell_prtl, *cell_args)
+            rnn_module = lambda *cell_args: BidirTLSTMLayer(TLSTMCell_prtl, *cell_args)
         else:
-            rnn_module = lambda *cell_args: LSTMLayer(TLSTMCell_prtl, *cell_args)
+            rnn_module = lambda *cell_args: TLSTMLayer(TLSTMCell_prtl, *cell_args)
         super(TLSTM, self).__init__(rnn_module=rnn_module, n_inputs=n_inputs,
                                     n_hidden=n_hidden, n_outputs=n_outputs,
-                                    n_layers=n_layers, p_dropout=p_dropout,
+                                    n_rnn_layers=n_rnn_layers,
+                                    p_dropout=p_dropout,
                                     embed_features=embed_features,
                                     n_embeddings=n_embeddings,
                                     embedding_dim=embedding_dim,
                                     bidir=bidir, is_lstm=True,
                                     padding_value=padding_value)
+
+    def forward(self, x, get_hidden_state=False,
+                hidden_state=None, prob_output=True, already_embedded=True):
+        if self.embed_features is not None and already_embedded is False:
+            # Run each embedding layer on each respective feature, adding the
+            # resulting embedding values to the tensor and removing the original,
+            # categorical encoded columns
+            x = du.embedding.embedding_bag_pipeline(x, self.embed_layers, self.embed_features,
+                                                    model_forward=True, inplace=True)
+        # Make sure that the input data is of type float
+        x = x.float()
+        # Get the batch size (might not be always the same)
+        batch_size = x.shape[0]
+        # Isolate the delta_ts feature
+        delta_ts = x[:, :, self.delta_ts_col].clone()
+        left_to_delta = x[:, :, :self.delta_ts_col]
+        right_to_delta = x[:, :, self.delta_ts_col+1:]
+        x = torch.cat([left_to_delta, right_to_delta], 2)
+        if hidden_state is None:
+            # Reset the LSTM hidden state. Must be done before you run a new
+            # batch. Otherwise the LSTM will treat a new batch as a continuation
+            # of a sequence.
+            self.hidden = self.init_hidden(batch_size)
+        else:
+            # Use the specified hidden state
+            self.hidden = hidden_state
+        # Make sure that the data is input in the format of (timestamp x sample x features)
+        x = x.permute(1, 0, 2)
+        # Get the outputs and hidden states from the RNN layer(s)
+        if self.n_rnn_layers == 1:
+            if self.bidir is False:
+                # Since there's only one layer and the model is not bidirectional,
+                # we only need one set of hidden state
+                hidden_state = (self.hidden[0][0], self.hidden[1][0])
+            # Run the RNN layer on the data
+            rnn_output, self.hidden = self.rnn_layer(x, hidden_state)
+        else:
+            # List[RNNState]: One state per layer
+            # output_states = jit.annotate(List[Tuple[Tensor, Tensor]], [])
+            output_states = []
+            i = 0
+            # The first RNN layer's input is the original input;
+            # the following layers will use their respective previous layer's
+            # output as input
+            rnn_output = x
+            for rnn_layer in self.rnn_layers:
+                hidden_state = (self.hidden[0][i], self.hidden[1][i])
+                # Run the RNN layer on the data
+                rnn_output, out_state = rnn_layer(rnn_output, hidden_state, delta_ts=delta_ts)
+                # Apply the dropout layer except the last layer
+                if i < self.n_rnn_layers - 1:
+                    rnn_output = self.dropout(rnn_output)
+                output_states += [out_state]
+                i += 1
+            # Update the hidden states variable
+            self.hidden = output_states
+        # Apply dropout to the last RNN layer
+        # [TODO] Consider if it makes sense to add dropout to the last RNN layer
+        # rnn_output = self.dropout(rnn_output)
+        # Flatten RNN output to fit into the fully connected layer
+        flat_rnn_output = rnn_output.contiguous().view(-1, self.n_hidden)
+        # Apply the final fully connected layer
+        output = self.fc(flat_rnn_output)
+        if prob_output is True:
+            # Get the outputs in the form of probabilities
+            if self.n_outputs == 1:
+                output = self.activation(output)
+            else:
+                # Normalize outputs on their last dimension
+                output = self.activation(output, dim=len(output.shape)-1)
+        if get_hidden_state is True:
+            return output, self.hidden
+        else:
+            return output
 
 
 # [TODO]
@@ -604,13 +658,14 @@ class TLSTMCell(jit.ScriptModule):
         self.bias_ch = nn.Parameter(torch.randn(hidden_size))
 
     @jit.script_method
-    def forward(self, input, state):
-        # type: (Tensor, Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tuple[Tensor, Tensor]]
+    def forward(self, input, state, delta_ts=torch.tensor(np.nan)):
+        # type: (Tensor, Tuple[Tensor, Tensor], Tensor) -> Tuple[Tensor, Tuple[Tensor, Tensor]]
         # Separate the elapsed time from the remaining features
-        delta_ts = input[:, self.delta_ts_col].clone()
-        left_to_delta = input[:, :self.delta_ts_col]
-        right_to_delta = input[:, self.delta_ts_col+1:]
-        input = torch.cat([left_to_delta, right_to_delta], 1)
+        if torch.all(delta_ts.eq(torch.tensor(np.nan))):
+            delta_ts = input[:, self.delta_ts_col].clone()
+            left_to_delta = input[:, :self.delta_ts_col]
+            right_to_delta = input[:, self.delta_ts_col+1:]
+            input = torch.cat([left_to_delta, right_to_delta], 1)
         # Get the hidden state and cell memory from the state variable
         hx, cx = state
         # Perform the LSTM gates operations
@@ -669,8 +724,7 @@ class LSTMLayer(jit.ScriptModule):
     def forward(self, input, state):
         # type: (Tensor, Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tuple[Tensor, Tensor]]
         # Get mini batches of data on each timestamp
-        # (I use time as the second dimension, which is why I do `unbind(1)`)`
-        inputs = input.unbind(1)
+        inputs = input.unbind(0)
         outputs = []
         # Run the LSTM cell on each timestamp, for multiple sequences at the same time
         for i in range(len(inputs)):
@@ -688,8 +742,7 @@ class ReverseLSTMLayer(jit.ScriptModule):
     def forward(self, input, state):
         # type: (Tensor, Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tuple[Tensor, Tensor]]
         # Get mini batches of data on each timestamp
-        # (I use time as the second dimension, which is why I do `unbind(1)`)`
-        inputs = du.utils.reverse(input.unbind(1))
+        inputs = du.utils.reverse(input.unbind(0))
         outputs = jit.annotate(List[Tensor], [])
         for i in range(len(inputs)):
             out, state = self.cell(inputs[i], state)
@@ -718,6 +771,68 @@ class BidirLSTMLayer(jit.ScriptModule):
         for direction in self.directions:
             state = (states[0][i], states[1][i])
             out, out_state = direction(input, state)
+            outputs += [out]
+            output_states += [out_state]
+            i += 1
+        return torch.cat(outputs, -1), output_states
+
+
+class TLSTMLayer(jit.ScriptModule):
+    def __init__(self, cell, *cell_args):
+        super(TLSTMLayer, self).__init__()
+        self.cell = cell(*cell_args)
+
+    @jit.script_method
+    def forward(self, input, state, delta_ts=torch.tensor(np.nan)):
+        # type: (Tensor, Tuple[Tensor, Tensor], Tensor) -> Tuple[Tensor, Tuple[Tensor, Tensor]]
+        # Get mini batches of data on each timestamp
+        inputs = input.unbind(0)
+        outputs = []
+        # Run the LSTM cell on each timestamp, for multiple sequences at the same time
+        for i in range(len(inputs)):
+            out, state = self.cell(inputs[i], state, delta_ts[:, i])
+            outputs += [out]
+        return torch.stack(outputs), state
+
+
+class ReverseTLSTMLayer(jit.ScriptModule):
+    def __init__(self, cell, *cell_args):
+        super(ReverseTLSTMLayer, self).__init__()
+        self.cell = cell(*cell_args)
+
+    @jit.script_method
+    def forward(self, input, state, delta_ts=torch.tensor(np.nan)):
+        # type: (Tensor, Tuple[Tensor, Tensor], Tensor) -> Tuple[Tensor, Tuple[Tensor, Tensor]]
+        # Get mini batches of data on each timestamp
+        inputs = du.utils.reverse(input.unbind(0))
+        outputs = jit.annotate(List[Tensor], [])
+        for i in range(len(inputs)):
+            out, state = self.cell(inputs[i], state, delta_ts)
+            outputs += [out]
+        return torch.stack(du.utils.reverse(outputs)), state
+
+
+class BidirTLSTMLayer(jit.ScriptModule):
+    __constants__ = ['directions']
+
+    def __init__(self, cell, *cell_args):
+        super(BidirTLSTMLayer, self).__init__()
+        self.directions = nn.ModuleList([
+            TLSTMLayer(cell, *cell_args),
+            ReverseTLSTMLayer(cell, *cell_args),
+        ])
+
+    @jit.script_method
+    def forward(self, input, states, delta_ts=torch.tensor(np.nan)):
+        # type: (Tensor, Tuple[Tensor, Tensor], Tensor) -> Tuple[Tensor, Tuple[Tensor, Tensor]]
+        # List[LSTMState]: [forward LSTMState, backward LSTMState]
+        outputs = jit.annotate(List[Tensor], [])
+        output_states = jit.annotate(List[Tuple[Tensor, Tensor]], [])
+        # XXX: enumerate https://github.com/pytorch/pytorch/issues/14471
+        i = 0
+        for direction in self.directions:
+            state = (states[0][i], states[1][i])
+            out, out_state = direction(input, state, delta_ts)
             outputs += [out]
             output_states += [out_state]
             i += 1

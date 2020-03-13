@@ -249,18 +249,15 @@ yaml.dump(norm_stats, stream, default_flow_style=False)
 # + {"Collapsed": "false", "execution": {"iopub.execute_input": "2020-02-19T02:18:48.421015Z", "iopub.status.busy": "2020-02-19T02:18:48.420827Z", "iopub.status.idle": "2020-02-19T02:18:48.988729Z", "shell.execute_reply": "2020-02-19T02:18:48.988096Z", "shell.execute_reply.started": "2020-02-19T02:18:48.420980Z"}, "persistent_id": "ed09c3dd-50b3-48cf-aa04-76534feaf767"}
 lab_df[cat_feat].head()
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:36:38.933807Z", "iopub.execute_input": "2020-03-09T16:36:38.934065Z", "iopub.status.idle": "2020-03-09T16:36:38.937828Z", "shell.execute_reply.started": "2020-03-09T16:36:38.934035Z", "shell.execute_reply": "2020-03-09T16:36:38.936941Z"}}
-old_columns = lab_df.columns
-
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Apply one hot encoding:
 
 # + {"Collapsed": "false", "execution": {"iopub.execute_input": "2020-02-19T02:18:48.990117Z", "iopub.status.busy": "2020-02-19T02:18:48.989706Z", "iopub.status.idle": "2020-02-19T02:21:21.325944Z", "shell.execute_reply": "2020-02-19T02:21:21.325070Z", "shell.execute_reply.started": "2020-02-19T02:18:48.990072Z"}, "persistent_id": "51ac8fd1-cbd2-4f59-a737-f0fcc13043fd", "pixiedust": {"displayParams": {}}}
-lab_df = du.data_processing.one_hot_encoding_dataframe(lab_df, columns=cat_feat, join_rows=False)
+lab_df, new_columns = du.data_processing.one_hot_encoding_dataframe(lab_df, columns=cat_feat,
+                                                                    join_rows=False,
+                                                                    get_new_column_names=True,
+                                                                    inplace=True)
 lab_df
-
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:37:27.392359Z", "iopub.status.idle": "2020-03-09T16:37:27.399976Z", "iopub.execute_input": "2020-03-09T16:37:27.392616Z", "shell.execute_reply.started": "2020-03-09T16:37:27.392582Z", "shell.execute_reply": "2020-03-09T16:37:27.399076Z"}}
-new_columns = set(lab_df.columns) - set(old_columns)
 
 # + {"Collapsed": "false", "execution": {"iopub.execute_input": "2020-02-19T02:21:30.005873Z", "iopub.status.busy": "2020-02-19T02:21:30.005679Z", "iopub.status.idle": "2020-02-19T02:21:31.845484Z", "shell.execute_reply": "2020-02-19T02:21:31.844781Z", "shell.execute_reply.started": "2020-02-19T02:21:30.005837Z"}, "persistent_id": "e5615265-4372-4117-a368-ec539c871763"}
 lab_df.dtypes

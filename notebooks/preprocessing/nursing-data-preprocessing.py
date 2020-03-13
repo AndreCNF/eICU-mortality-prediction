@@ -246,18 +246,15 @@ for col in cat_feat:
     most_common_cat = list(nurse_care_df[col].value_counts().nlargest(MAX_CATEGORIES).index)
     nurse_care_df = nurse_care_df[nurse_care_df[col].isin(most_common_cat)]
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:36:38.933807Z", "iopub.execute_input": "2020-03-09T16:36:38.934065Z", "iopub.status.idle": "2020-03-09T16:36:38.937828Z", "shell.execute_reply.started": "2020-03-09T16:36:38.934035Z", "shell.execute_reply": "2020-03-09T16:36:38.936941Z"}}
-old_columns = nurse_care_df.columns
-
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Apply one hot encoding:
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "51c18fe2-7b70-41c1-95d2-f423b3d7836b"}
-nurse_care_df = du.data_processing.one_hot_encoding_dataframe(nurse_care_df, columns=cat_feat, join_rows=False)
+nurse_care_df, new_columns = du.data_processing.one_hot_encoding_dataframe(nurse_care_df, columns=cat_feat,
+                                                                           join_rows=False,
+                                                                           get_new_column_names=True,
+                                                                           inplace=True)
 nurse_care_df
-
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:37:27.392359Z", "iopub.status.idle": "2020-03-09T16:37:27.399976Z", "iopub.execute_input": "2020-03-09T16:37:27.392616Z", "shell.execute_reply.started": "2020-03-09T16:37:27.392582Z", "shell.execute_reply": "2020-03-09T16:37:27.399076Z"}}
-new_columns = set(nurse_care_df.columns) - set(old_columns)
 
 # + {"Collapsed": "false", "persistent_id": "49f71013-ebc1-472e-b91b-2a96233b207b"}
 nurse_care_df.dtypes
@@ -558,18 +555,15 @@ for col in cat_feat:
     most_common_cat = list(nurse_assess_df[col].value_counts().nlargest(MAX_CATEGORIES).index)
     nurse_assess_df = nurse_assess_df[nurse_assess_df[col].isin(most_common_cat)]
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:36:38.933807Z", "iopub.execute_input": "2020-03-09T16:36:38.934065Z", "iopub.status.idle": "2020-03-09T16:36:38.937828Z", "shell.execute_reply.started": "2020-03-09T16:36:38.934035Z", "shell.execute_reply": "2020-03-09T16:36:38.936941Z"}}
-old_columns = nurse_assess_df.columns
-
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Apply one hot encoding:
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "c7f73853-ecf8-409e-9351-191e07444213"}
-nurse_assess_df = du.data_processing.one_hot_encoding_dataframe(nurse_assess_df, columns=cat_feat, join_rows=False)
+nurse_assess_df, new_columns = du.data_processing.one_hot_encoding_dataframe(nurse_assess_df, columns=cat_feat,
+                                                                             join_rows=False,
+                                                                             get_new_column_names=True,
+                                                                             inplace=True)
 nurse_assess_df
-
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:37:27.392359Z", "iopub.status.idle": "2020-03-09T16:37:27.399976Z", "iopub.execute_input": "2020-03-09T16:37:27.392616Z", "shell.execute_reply.started": "2020-03-09T16:37:27.392582Z", "shell.execute_reply": "2020-03-09T16:37:27.399076Z"}}
-new_columns = set(nurse_assess_df.columns) - set(old_columns)
 
 # + {"Collapsed": "false", "persistent_id": "9951459d-c61d-49cf-a9d7-630ced7dfef6"}
 nurse_assess_df.dtypes
@@ -1005,18 +999,15 @@ for col in cat_feat:
     most_common_cat = list(nursechart_df[col].value_counts().nlargest(MAX_CATEGORIES).index)
     nursechart_df = nursechart_df[nurse_care_df[col].isin(most_common_cat)]
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:36:38.933807Z", "iopub.execute_input": "2020-03-09T16:36:38.934065Z", "iopub.status.idle": "2020-03-09T16:36:38.937828Z", "shell.execute_reply.started": "2020-03-09T16:36:38.934035Z", "shell.execute_reply": "2020-03-09T16:36:38.936941Z"}}
-old_columns = nursechart_df.columns
-
 # + {"Collapsed": "false", "cell_type": "markdown"}
 # Apply one hot encoding:
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "71212e7f-2513-4b17-af44-94b893ad18bf"}
-nursechart_df = du.data_processing.one_hot_encoding_dataframe(nursechart_df, columns=cat_feat, join_rows=False)
+nursechart_df, new_columns = du.data_processing.one_hot_encoding_dataframe(nursechart_df, columns=cat_feat,
+                                                                           join_rows=False,
+                                                                           get_new_column_names=True,
+                                                                           inplace=True)
 nursechart_df
-
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:37:27.392359Z", "iopub.status.idle": "2020-03-09T16:37:27.399976Z", "iopub.execute_input": "2020-03-09T16:37:27.392616Z", "shell.execute_reply.started": "2020-03-09T16:37:27.392582Z", "shell.execute_reply": "2020-03-09T16:37:27.399076Z"}}
-new_columns = set(nursechart_df.columns) - set(old_columns)
 
 # + {"Collapsed": "false", "persistent_id": "d45b3fbd-7152-4b99-94c1-328a97af385f"}
 nursechart_df.head()
