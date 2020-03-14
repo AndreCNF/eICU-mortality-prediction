@@ -295,7 +295,7 @@ inf_drug_df.head(6)
 inf_drug_df.dtypes
 
 # + {"Collapsed": "false"}
-inf_drug_df, pd = du.utils.convert_dataframe(inf_drug_df, to='pandas')
+inf_drug_df, pd = du.utils.convert_dataframe(inf_drug_df, to='pandas', dtypes=dict(inf_drug_df.dtypes))
 
 # + {"Collapsed": "false"}
 type(inf_drug_df)
@@ -640,7 +640,7 @@ adms_drug_df[adms_drug_df.patientunitstayid == 2346930].head(10)
 # Convert dataframe to Pandas, as the next cells aren't working properly with Modin:
 
 # + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:36:30.341328Z", "iopub.execute_input": "2020-03-09T16:36:30.341672Z", "iopub.status.idle": "2020-03-09T16:36:30.690720Z", "shell.execute_reply.started": "2020-03-09T16:36:30.341629Z", "shell.execute_reply": "2020-03-09T16:36:30.690131Z"}}
-adms_drug_df, pd = du.utils.convert_dataframe(adms_drug_df, to='pandas')
+adms_drug_df, pd = du.utils.convert_dataframe(adms_drug_df, to='pandas', dtypes=dict(adms_drug_df.dtypes))
 
 # + {"Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023", "pixiedust": {"displayParams": {}}, "execution": {"iopub.status.busy": "2020-03-09T16:39:57.592923Z", "iopub.status.idle": "2020-03-09T16:39:57.593442Z"}}
 adms_drug_df = du.embedding.join_repeated_rows(adms_drug_df, inplace=True)
@@ -845,7 +845,7 @@ for col in cat_feat:
 # Convert dataframe to Pandas, as the next cells aren't working properly with Modin:
 
 # + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-11T16:41:54.492320Z", "iopub.status.idle": "2020-03-11T16:42:01.129061Z", "iopub.execute_input": "2020-03-11T16:41:54.492542Z", "shell.execute_reply.started": "2020-03-11T16:41:54.492504Z", "shell.execute_reply": "2020-03-11T16:42:01.128182Z"}}
-med_df, pd = du.utils.convert_dataframe(med_df, to='pandas')
+med_df, pd = du.utils.convert_dataframe(med_df, to='pandas', dtypes=dict(med_df.dtypes))
 
 # + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-11T16:08:30.868285Z", "iopub.execute_input": "2020-03-11T16:08:30.868617Z", "iopub.status.idle": "2020-03-11T16:08:30.873738Z", "shell.execute_reply.started": "2020-03-11T16:08:30.868559Z", "shell.execute_reply": "2020-03-11T16:08:30.872950Z"}}
 type(med_df)
@@ -1328,7 +1328,7 @@ treat_df[treat_df.patientunitstayid == 1352520].head(10)
 # Convert dataframe to Pandas, as the groupby operation in `join_repeated_rows` isn't working properly with Modin:
 
 # + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-11T17:34:44.903310Z", "iopub.execute_input": "2020-03-11T17:34:44.903700Z", "iopub.status.idle": "2020-03-11T17:34:48.429630Z", "shell.execute_reply.started": "2020-03-11T17:34:44.903644Z", "shell.execute_reply": "2020-03-11T17:34:48.428837Z"}}
-treat_df, pd = du.utils.convert_dataframe(treat_df, to='pandas')
+treat_df, pd = du.utils.convert_dataframe(treat_df, to='pandas', dtypes=dict(treat_df.dtypes))
 
 # + {"Collapsed": "false"}
 type(treat_df)
@@ -1626,7 +1626,7 @@ in_out_df[(in_out_df.patientunitstayid == 433661) & (in_out_df.ts == 661)].head(
 # Convert dataframe to Pandas, as the groupby operation in `join_repeated_rows` isn't working properly with Modin:
 
 # + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-17T13:06:53.787183Z", "iopub.status.idle": "2020-02-17T13:06:55.306457Z", "iopub.execute_input": "2020-02-17T13:06:53.787521Z", "shell.execute_reply.started": "2020-02-17T13:06:53.787460Z", "shell.execute_reply": "2020-02-17T13:06:55.305810Z"}}
-in_out_df, pd = du.utils.convert_dataframe(in_out_df, to='pandas')
+in_out_df, pd = du.utils.convert_dataframe(in_out_df, to='pandas', dtypes=dict(in_out_df.dtypes))
 
 # + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-17T13:06:55.307563Z", "iopub.status.idle": "2020-02-17T13:06:55.311534Z", "iopub.execute_input": "2020-02-17T13:06:55.307774Z", "shell.execute_reply.started": "2020-02-17T13:06:55.307734Z", "shell.execute_reply": "2020-02-17T13:06:55.310874Z"}}
 type(in_out_df)

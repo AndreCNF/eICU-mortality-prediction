@@ -328,7 +328,7 @@ nurse_care_df[nurse_care_df.patientunitstayid == 2798325].head(10)
 # Convert dataframe to Pandas, as the groupby operation in `join_repeated_rows` isn't working properly with Modin:
 
 # + {"Collapsed": "false"}
-nurse_care_df, pd = du.utils.convert_dataframe(nurse_care_df, to='pandas')
+nurse_care_df, pd = du.utils.convert_dataframe(nurse_care_df, to='pandas', dtypes=dict(nurse_care_df.dtypes))
 
 # + {"Collapsed": "false"}
 type(nurse_care_df)
@@ -637,7 +637,7 @@ nurse_assess_df[nurse_assess_df.patientunitstayid == 2553254].head(10)
 # Convert dataframe to Pandas, as the groupby operation in `join_repeated_rows` isn't working properly with Modin:
 
 # + {"Collapsed": "false"}
-nurse_assess_df, pd = du.utils.convert_dataframe(nurse_assess_df, to='pandas')
+nurse_assess_df, pd = du.utils.convert_dataframe(nurse_assess_df, to='pandas', dtypes=dict(nurse_assess_df.dtypes))
 
 # + {"Collapsed": "false"}
 type(nurse_assess_df)
@@ -1084,7 +1084,7 @@ nursechart_df[nursechart_df.patientunitstayid == 2553254].head(10)
 # Convert dataframe to Pandas, as the groupby operation in `join_repeated_rows` isn't working properly with Modin:
 
 # + {"Collapsed": "false"}
-nursechart_df, pd = du.utils.convert_dataframe(nursechart_df, to='pandas')
+nursechart_df, pd = du.utils.convert_dataframe(nursechart_df, to='pandas', dtypes=dict(nursechart_df.dtypes))
 
 # + {"Collapsed": "false"}
 type(nursechart_df)

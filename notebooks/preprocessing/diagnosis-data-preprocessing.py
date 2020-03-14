@@ -1,19 +1,20 @@
 # ---
 # jupyter:
 #   jupytext:
+#     cell_metadata_json: true
 #     formats: ipynb,py:light
 #     text_representation:
 #       extension: .py
 #       format_name: light
-#       format_version: '1.4'
-#       jupytext_version: 1.2.1
+#       format_version: '1.5'
+#       jupytext_version: 1.3.2
 #   kernelspec:
-#     display_name: eicu-mortality-prediction
+#     display_name: Python 3
 #     language: python
-#     name: eicu-mortality-prediction
+#     name: python3
 # ---
 
-# + {"toc-hr-collapsed": false, "Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"toc-hr-collapsed": false, "Collapsed": "false"}
 # # Diagnosis Data Preprocessing
 # ---
 #
@@ -24,19 +25,19 @@
 # * diagnosis
 # * pastHistory
 
-# + {"colab_type": "text", "id": "KOdmFzXqF7nq", "toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"colab_type": "text", "id": "KOdmFzXqF7nq", "toc-hr-collapsed": true, "Collapsed": "false"}
 # ## Importing the necessary packages
 
-# + {"colab": {}, "colab_type": "code", "id": "G5RrWE9R_Nkl", "Collapsed": "false", "persistent_id": "522745b5-b5bf-479f-b697-5c7e9e12fc33", "last_executed_text": "import os                                  # os handles directory/workspace changes\nimport numpy as np                         # NumPy to handle numeric and NaN operations\nimport yaml                                # Save and load YAML files", "execution_event_id": "deb57b39-6a79-4b3a-95ed-02f8089ff593"}
+# + {"colab": {}, "colab_type": "code", "id": "G5RrWE9R_Nkl", "Collapsed": "false", "persistent_id": "522745b5-b5bf-479f-b697-5c7e9e12fc33", "last_executed_text": "import os                                  # os handles directory/workspace changes\nimport numpy as np                         # NumPy to handle numeric and NaN operations\nimport yaml                                # Save and load YAML files", "execution_event_id": "deb57b39-6a79-4b3a-95ed-02f8089ff593", "execution": {"iopub.status.busy": "2020-03-13T01:32:55.903945Z", "iopub.execute_input": "2020-03-13T01:32:55.904252Z", "iopub.status.idle": "2020-03-13T01:32:55.929378Z", "shell.execute_reply.started": "2020-03-13T01:32:55.904212Z", "shell.execute_reply": "2020-03-13T01:32:55.928404Z"}}
 import os                                  # os handles directory/workspace changes
 import numpy as np                         # NumPy to handle numeric and NaN operations
 import yaml                                # Save and load YAML files
 
-# + {"Collapsed": "false", "persistent_id": "02accdbf-be7e-415c-ba11-165906e66c50", "last_executed_text": "# Debugging packages\nimport pixiedust                           # Debugging in Jupyter Notebook cells", "execution_event_id": "fa33a2f7-7127-49c6-bbe9-f89555b1f2be"}
+# + {"Collapsed": "false", "persistent_id": "02accdbf-be7e-415c-ba11-165906e66c50", "last_executed_text": "# Debugging packages\nimport pixiedust                           # Debugging in Jupyter Notebook cells", "execution_event_id": "fa33a2f7-7127-49c6-bbe9-f89555b1f2be", "execution": {"iopub.status.busy": "2020-03-13T01:32:56.466671Z", "iopub.execute_input": "2020-03-13T01:32:56.466949Z", "iopub.status.idle": "2020-03-13T01:32:57.500877Z", "shell.execute_reply.started": "2020-03-13T01:32:56.466908Z", "shell.execute_reply": "2020-03-13T01:32:57.500072Z"}}
 # Debugging packages
 import pixiedust                           # Debugging in Jupyter Notebook cells
 
-# + {"Collapsed": "false", "execution_event_id": "baeb346a-1c34-42d1-a501-7ae37369255e", "last_executed_text": "# Change to parent directory (presumably \"Documents\")\nos.chdir(\"../../..\")\n\n# Path to the CSV dataset files\ndata_path = 'Documents/Datasets/Thesis/eICU/uncompressed/'\n\n# Path to the code files\nproject_path = 'Documents/GitHub/eICU-mortality-prediction/'", "persistent_id": "a1f6ee7f-36d4-489d-b2dd-ec2a38f15d11", "execution": {"iopub.status.busy": "2020-03-11T02:55:21.503003Z", "iopub.execute_input": "2020-03-11T02:55:21.503271Z", "iopub.status.idle": "2020-03-11T02:55:21.507321Z", "shell.execute_reply.started": "2020-03-11T02:55:21.503228Z", "shell.execute_reply": "2020-03-11T02:55:21.506626Z"}}
+# + {"Collapsed": "false", "execution_event_id": "baeb346a-1c34-42d1-a501-7ae37369255e", "last_executed_text": "# Change to parent directory (presumably \"Documents\")\nos.chdir(\"../../..\")\n\n# Path to the CSV dataset files\ndata_path = 'Documents/Datasets/Thesis/eICU/uncompressed/'\n\n# Path to the code files\nproject_path = 'Documents/GitHub/eICU-mortality-prediction/'", "persistent_id": "a1f6ee7f-36d4-489d-b2dd-ec2a38f15d11", "execution": {"iopub.status.busy": "2020-03-13T01:32:57.502260Z", "iopub.execute_input": "2020-03-13T01:32:57.502494Z", "iopub.status.idle": "2020-03-13T01:32:57.506416Z", "shell.execute_reply.started": "2020-03-13T01:32:57.502453Z", "shell.execute_reply": "2020-03-13T01:32:57.505607Z"}}
 # Change to parent directory (presumably "Documents")
 os.chdir("../../../..")
 # Path to the CSV dataset files
@@ -44,13 +45,13 @@ data_path = 'data/eICU/uncompressed/'
 # Path to the code files
 project_path = 'code/eICU-mortality-prediction/'
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-06T02:39:14.255803Z", "iopub.execute_input": "2020-03-06T02:39:14.256033Z", "iopub.status.idle": "2020-03-06T02:39:14.509317Z", "shell.execute_reply.started": "2020-03-06T02:39:14.255994Z", "shell.execute_reply": "2020-03-06T02:39:14.508277Z"}}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-13T01:32:58.499959Z", "iopub.execute_input": "2020-03-13T01:32:58.500259Z", "iopub.status.idle": "2020-03-13T01:32:58.744257Z", "shell.execute_reply.started": "2020-03-13T01:32:58.500215Z", "shell.execute_reply": "2020-03-13T01:32:58.743301Z"}}
 # Make sure that every large operation can be handled, by using the disk as an overflow for the memory
 # !export MODIN_OUT_OF_CORE=true
 # Another trick to do with Pandas so as to be able to allocate bigger objects to memory
 # !sudo bash -c 'echo 1 > /proc/sys/vm/overcommit_memory'
 
-# + {"Collapsed": "false", "execution_event_id": "82ef68be-443a-4bb8-8abd-7457a7005b4d", "last_executed_text": "import modin.pandas as pd                  # Optimized distributed version of Pandas\nimport data_utils as du                    # Data science and machine learning relevant methods", "persistent_id": "c0c2e356-d4f4-4a9d-bec2-88bdf9eb6a38", "execution": {"iopub.status.busy": "2020-03-11T02:55:21.508636Z", "iopub.execute_input": "2020-03-11T02:55:21.508881Z", "iopub.status.idle": "2020-03-11T02:55:23.475317Z", "shell.execute_reply.started": "2020-03-11T02:55:21.508828Z", "shell.execute_reply": "2020-03-11T02:55:23.473880Z"}}
+# + {"Collapsed": "false", "execution_event_id": "82ef68be-443a-4bb8-8abd-7457a7005b4d", "last_executed_text": "import modin.pandas as pd                  # Optimized distributed version of Pandas\nimport data_utils as du                    # Data science and machine learning relevant methods", "persistent_id": "c0c2e356-d4f4-4a9d-bec2-88bdf9eb6a38", "execution": {"iopub.status.busy": "2020-03-13T01:33:09.660334Z", "iopub.execute_input": "2020-03-13T01:33:09.660651Z", "iopub.status.idle": "2020-03-13T01:33:11.423861Z", "shell.execute_reply.started": "2020-03-13T01:33:09.660603Z", "shell.execute_reply": "2020-03-13T01:33:11.422423Z"}}
 import modin.pandas as pd                  # Optimized distributed version of Pandas
 # import pandas as pd
 import data_utils as du                    # Data science and machine learning relevant methods
@@ -58,26 +59,26 @@ import data_utils as du                    # Data science and machine learning r
 
 # Allow pandas to show more columns:
 
-# + {"execution": {"iopub.status.busy": "2020-03-06T02:40:18.427780Z", "iopub.execute_input": "2020-03-06T02:40:18.428128Z", "iopub.status.idle": "2020-03-06T02:40:18.437422Z", "shell.execute_reply.started": "2020-03-06T02:40:18.428078Z", "shell.execute_reply": "2020-03-06T02:40:18.436390Z"}}
+# + {"execution": {"iopub.status.busy": "2020-03-13T01:33:13.348131Z", "iopub.execute_input": "2020-03-13T01:33:13.348949Z", "iopub.status.idle": "2020-03-13T01:33:13.353428Z", "shell.execute_reply.started": "2020-03-13T01:33:13.348859Z", "shell.execute_reply": "2020-03-13T01:33:13.352409Z"}}
 pd.set_option('display.max_columns', 1000)
 pd.set_option('display.max_rows', 1000)
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Set the random seed for reproducibility
 
-# + {"Collapsed": "false", "persistent_id": "39b552cd-6948-4ec8-ac04-42f850c1e05a", "last_executed_text": "du.set_random_seed(42)", "execution_event_id": "29ab85ce-b7fd-4c5a-a110-5841e741c369"}
+# + {"Collapsed": "false", "persistent_id": "39b552cd-6948-4ec8-ac04-42f850c1e05a", "last_executed_text": "du.set_random_seed(42)", "execution_event_id": "29ab85ce-b7fd-4c5a-a110-5841e741c369", "execution": {"iopub.status.busy": "2020-03-13T01:33:13.901532Z", "iopub.execute_input": "2020-03-13T01:33:13.901810Z", "iopub.status.idle": "2020-03-13T01:33:13.907114Z", "shell.execute_reply.started": "2020-03-13T01:33:13.901769Z", "shell.execute_reply": "2020-03-13T01:33:13.906132Z"}}
 du.set_random_seed(42)
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Set the maximum number of categories
 
-# + {"Collapsed": "false"}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-13T01:33:14.537823Z", "iopub.execute_input": "2020-03-13T01:33:14.538131Z", "iopub.status.idle": "2020-03-13T01:33:14.542494Z", "shell.execute_reply.started": "2020-03-13T01:33:14.538084Z", "shell.execute_reply": "2020-03-13T01:33:14.541091Z"}}
 MAX_CATEGORIES = 250
 
-# + {"toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"toc-hr-collapsed": true, "Collapsed": "false"}
 # ## Allergy data
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Initialize variables
 
 # + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82"}
@@ -86,7 +87,7 @@ cat_feat = []
 # Dictionary of the one hot encoded columns originary from each categorical feature, that will be embedded
 cat_feat_ohe = dict()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Read the data
 
 # + {"Collapsed": "false", "persistent_id": "9383001f-c733-4cf4-8b59-abfd57cf49e5"}
@@ -99,7 +100,7 @@ len(alrg_df)
 # + {"Collapsed": "false", "persistent_id": "5cdf0cb6-3179-459c-844d-46edb8a71619"}
 alrg_df.patientunitstayid.nunique()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Get an overview of the dataframe through the `describe` method:
 
 # + {"Collapsed": "false", "persistent_id": "e0483a75-628e-48bd-97e8-0350d7c4f889"}
@@ -111,7 +112,7 @@ alrg_df.columns
 # + {"Collapsed": "false", "persistent_id": "df596865-c169-4738-a491-1a0694c8144a"}
 alrg_df.dtypes
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Check for missing values
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "c309a388-c464-4fa2-85b3-9f6aab6bbb1d"}
@@ -123,7 +124,7 @@ du.search_explore.dataframe_missing_values(alrg_df, 'allergyname')
 # + {"Collapsed": "false"}
 alrg_df.allergyname.isnull().sum()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Remove unneeded features
 
 # + {"Collapsed": "false", "persistent_id": "e8352cc0-cec5-4fb3-a5dd-d05e05586a96"}
@@ -132,7 +133,7 @@ alrg_df[alrg_df.allergytype == 'Non Drug'].drughiclseqno.value_counts()
 # + {"Collapsed": "false", "persistent_id": "32fd94b7-8ce1-4b2e-9309-4f3653be654d"}
 alrg_df[alrg_df.allergytype == 'Drug'].drughiclseqno.value_counts()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # As we can see, the drug features in this table only have data if the allergy derives from using the drug. As such, we don't need the `allergytype` feature. Also ignoring hospital staff related information and using just the drug codes instead of their names, as they're independent of the drug brand.
 
 # + {"Collapsed": "false", "persistent_id": "fce01df2-fdd7-42c3-8fa8-22794989df1a"}
@@ -141,7 +142,7 @@ alrg_df.allergynotetype.value_counts()
 # + {"Collapsed": "false", "persistent_id": "fce01df2-fdd7-42c3-8fa8-22794989df1a"}
 alrg_df.allergyname.value_counts()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Feature `allergynotetype` also doesn't seem very relevant, discarding it.
 
 # + {"Collapsed": "false", "persistent_id": "a090232b-049c-4386-90eb-6a68f6487a34"}
@@ -149,22 +150,22 @@ alrg_df = alrg_df[['patientunitstayid', 'allergyoffset',
                    'allergyname', 'drughiclseqno']]
 alrg_df.head()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Rename columns
 
 # + {"Collapsed": "false", "persistent_id": "d804e12b-79df-4a29-87ef-89c26d57b8e9"}
 alrg_df = alrg_df.rename(columns={'drughiclseqno': 'drugallergyhiclseqno'})
 alrg_df.head()
 
-# + {"Collapsed": "false", "toc-hr-collapsed": false, "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false", "toc-hr-collapsed": false}
 # ### Discretize categorical features
 #
 # Convert binary categorical features into one hot encode columns, which can later be embedded or used as is.
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # #### One hot encode features
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Update list of categorical features:
 
 # + {"Collapsed": "false", "persistent_id": "621e1414-6268-4641-818b-5f8b5d54a446"}
@@ -179,7 +180,7 @@ alrg_df[alrg_df.allergyname.str.contains('other')].allergyname.value_counts()
 # + {"Collapsed": "false"}
 alrg_df[alrg_df.allergyname.str.contains('unknown')].allergyname.value_counts()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Filter just to the most common categories:
 
 # + {"Collapsed": "false"}
@@ -187,7 +188,7 @@ for col in cat_feat:
     most_common_cat = list(alrg_df[col].value_counts().nlargest(MAX_CATEGORIES).index)
     alrg_df = alrg_df[alrg_df[col].isin(most_common_cat)]
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Apply one hot encoding:
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "9c0217cf-66d8-467b-b0df-b75441b1c0dc"}
@@ -197,7 +198,7 @@ alrg_df, new_columns = du.data_processing.one_hot_encoding_dataframe(alrg_df, co
                                                                      inplace=True)
 alrg_df
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Fill missing values of the drug and allergies data with 0, so as to prepare for embedding:
 
 # + {"Collapsed": "false", "persistent_id": "50a95412-7211-4780-b0da-aad5e166191e"}
@@ -212,7 +213,7 @@ alrg_df.head()
 # + {"Collapsed": "false", "persistent_id": "1b6e81c6-87ba-44dc-9c8d-73e168e946a6"}
 alrg_df.dtypes
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Save the association between the original categorical features and the new one hot encoded columns:
 
 # + {"Collapsed": "false", "persistent_id": "26eac7f3-9081-4a96-ae4a-40054c223fd7", "execution": {"iopub.status.busy": "2020-03-09T16:37:35.157248Z", "iopub.execute_input": "2020-03-09T16:37:35.157526Z", "iopub.status.idle": "2020-03-09T16:37:35.164656Z", "shell.execute_reply.started": "2020-03-09T16:37:35.157493Z", "shell.execute_reply": "2020-03-09T16:37:35.163771Z"}}
@@ -223,7 +224,7 @@ for orig_col in cat_feat:
 # + {"execution": {"iopub.status.busy": "2020-03-09T16:37:35.165864Z", "iopub.execute_input": "2020-03-09T16:37:35.166280Z", "iopub.status.idle": "2020-03-09T16:37:35.190294Z", "shell.execute_reply.started": "2020-03-09T16:37:35.166256Z", "shell.execute_reply": "2020-03-09T16:37:35.189358Z"}, "Collapsed": "false"}
 cat_feat_ohe
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # #### Save enumeration encoding mapping
 #
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
@@ -232,17 +233,17 @@ cat_feat_ohe
 stream = open(f'{data_path}/cleaned/cat_feat_ohe_alrg.yaml', 'w')
 yaml.dump(cat_feat_ohe, stream, default_flow_style=False)
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Create the timestamp feature and sort
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Create the timestamp (`ts`) feature:
 
 # + {"Collapsed": "false", "persistent_id": "2f698d25-5a2b-44be-9d82-2c7790ee489f"}
 alrg_df = alrg_df.rename(columns={'allergyoffset': 'ts'})
 alrg_df.head()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Remove duplicate rows:
 
 # + {"Collapsed": "false", "persistent_id": "815f11a7-7b0d-44eb-b0f1-9061157864ca"}
@@ -255,14 +256,14 @@ alrg_df.head()
 # + {"Collapsed": "false", "persistent_id": "4baae0fb-9777-4abe-bcfe-f7c254e7bfc7"}
 len(alrg_df)
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Sort by `ts` so as to be easier to merge with other dataframes later:
 
 # + {"Collapsed": "false", "persistent_id": "173d1236-0aad-49a4-a8fd-b25c99bc30bc"}
 alrg_df = alrg_df.sort_values('ts')
 alrg_df.head()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Check for possible multiple rows with the same unit stay ID and timestamp:
 
 # + {"Collapsed": "false", "persistent_id": "d2660024-2f7e-4d37-b312-2a69aea35f0a"}
@@ -271,20 +272,20 @@ alrg_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='allergyna
 # + {"Collapsed": "false", "persistent_id": "a49094b0-6f71-4f70-ae6c-223373294b50"}
 alrg_df[alrg_df.patientunitstayid == 3197554].head(10)
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # We can see that there are up to 47 categories per set of `patientunitstayid` and `ts`. As such, we must join them.
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Join rows that have the same IDs
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Even after removing duplicates rows, there are still some that have different information for the same ID and timestamp. We have to concatenate the categorical enumerations.
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Convert dataframe to Pandas, as the multi-column groupby operation in `join_repeated_rows` isn't working with Modin:
 
 # + {"Collapsed": "false"}
-alrg_df, pd = du.utils.convert_dataframe(alrg_df, to='pandas')
+alrg_df, pd = du.utils.convert_dataframe(alrg_df, to='pandas', dtypes=dict(alrg_df.dtypes))
 
 # + {"Collapsed": "false"}
 type(alrg_df)
@@ -293,7 +294,7 @@ type(alrg_df)
 alrg_df = du.embedding.join_repeated_rows(alrg_df, inplace=True)
 alrg_df.head()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Reconvert dataframe to Modin:
 
 # + {"Collapsed": "false"}
@@ -311,10 +312,10 @@ alrg_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='allergyna
 # + {"Collapsed": "false", "persistent_id": "7bb3f0b5-8f04-42f8-96aa-716762f65e5a"}
 alrg_df[alrg_df.patientunitstayid == 3197554].head(10)
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Comparing the output from the two previous cells with what we had before the `join_repeated_rows` method, we can see that all rows with duplicate IDs have been successfully joined.
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Clean column names
 #
 # Standardize all column names to be on lower case, have spaces replaced by underscores and remove comas.
@@ -323,31 +324,31 @@ alrg_df[alrg_df.patientunitstayid == 3197554].head(10)
 alrg_df.columns = du.data_processing.clean_naming(alrg_df.columns)
 alrg_df.head()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Save the dataframe
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Save the dataframe before normalizing:
 
 # + {"Collapsed": "false", "persistent_id": "58eeead0-9cdc-4095-9643-2009af44a9a3"}
 alrg_df.to_csv(f'{data_path}cleaned/unnormalized/ohe/allergy.csv')
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Save the dataframe after normalizing:
 
 # + {"Collapsed": "false", "persistent_id": "b89fd87e-1200-41ef-83dc-09e0e3309f09"}
 alrg_df.to_csv(f'{data_path}cleaned/normalized/ohe/allergy.csv')
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Confirm that everything is ok through the `describe` method:
 
 # + {"Collapsed": "false", "persistent_id": "2297202e-d250-430b-9ecd-23efc756cb25"}
 alrg_df.describe().transpose()
 
-# + {"toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"toc-hr-collapsed": true, "Collapsed": "false"}
 # ## Past history data
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Initialize variables
 
 # + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82"}
@@ -356,7 +357,7 @@ cat_feat = []
 # Dictionary of the one hot encoded columns originary from each categorical feature, that will be embedded
 cat_feat_ohe = dict()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Read the data
 
 # + {"Collapsed": "false", "persistent_id": "db086782-764c-4f63-b32f-6246f7c49a9b"}
@@ -369,7 +370,7 @@ len(past_hist_df)
 # + {"Collapsed": "false", "persistent_id": "c670ebb3-032d-496a-8973-f213e5b04b2d"}
 past_hist_df.patientunitstayid.nunique()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Get an overview of the dataframe through the `describe` method:
 
 # + {"Collapsed": "false", "persistent_id": "f65b8d4c-4832-4346-bf23-b87b2ec5c16f"}
@@ -381,13 +382,13 @@ past_hist_df.columns
 # + {"Collapsed": "false", "persistent_id": "60672930-c5c9-4482-a5de-919c9dff3f75"}
 past_hist_df.dtypes
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Check for missing values
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "a417ded5-02be-4fa6-9f63-3c0a79d7f512"}
 du.search_explore.dataframe_missing_values(past_hist_df)
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Remove unneeded features
 
 # + {"Collapsed": "false", "persistent_id": "156f2c4b-029d-483f-ae2f-efc88ee80b88"}
@@ -405,7 +406,7 @@ past_hist_df.pasthistorynotetype.value_counts()
 # + {"Collapsed": "false", "persistent_id": "c141a8e0-2af2-4d2c-aee8-60700ddc5301"}
 past_hist_df[past_hist_df.pasthistorypath == 'notes/Progress Notes/Past History/Past History Obtain Options/Performed'].pasthistoryvalue.value_counts()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # In this case, considering that it regards past diagnosis of the patients, the timestamp when that was observed probably isn't very reliable nor useful. As such, I'm going to remove the offset variables. Furthermore, `past_historyvaluetext` is redundant with `past_historyvalue`, while `past_historynotetype` and the past history path 'notes/Progress Notes/Past History/Past History Obtain Options/Performed' seem to be irrelevant.
 
 # + {"Collapsed": "false", "persistent_id": "cce8b969-b435-45e5-a3aa-2f646f816491"}
@@ -438,10 +439,10 @@ past_hist_df.pasthistorypath.value_counts().tail(20)
 # + {"Collapsed": "false", "persistent_id": "4f93d732-2641-4ded-83b0-fbb8eb7f2421"}
 past_hist_df.pasthistoryvalue.value_counts()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # There's still plenty of data left, affecting around 81.87% of the unit stays, even after removing several categories.
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Separate high level notes
 
 # + {"Collapsed": "false", "persistent_id": "e6f07ded-5aa3-4efc-9fc8-3c7a35eadb25"}
@@ -474,7 +475,7 @@ past_hist_df.pasthistorypath.apply(lambda x: du.search_explore.get_element_from_
 # + {"Collapsed": "false", "persistent_id": "954a240a-a4b1-4e5a-b2d0-1f1864040aac"}
 past_hist_df.pasthistorypath.apply(lambda x: du.search_explore.get_element_from_split(x, 6, separator='/')).value_counts()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # There are always at least 5 levels of the notes. As the first 4 ones are essentially always the same ("notes/Progress Notes/Past History/Organ Systems/") and the 5th one tends to not be very specific (only indicates which organ system it affected, when it isn't just a case of no health problems detected), it's best to preserve the 5th and isolate the remaining string as a new feature. This way, the split provides further insight to the model on similar notes.
 
 # + {"Collapsed": "false", "persistent_id": "abfe7998-c744-4653-96d4-752c3c7c62a8"}
@@ -482,20 +483,20 @@ past_hist_df['pasthistorytype'] = past_hist_df.pasthistorypath.apply(lambda x: d
 past_hist_df['pasthistorydetails'] = past_hist_df.pasthistorypath.apply(lambda x: du.search_explore.get_element_from_split(x, 5, separator='/', till_the_end=True))
 past_hist_df.head()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # `pasthistoryvalue` seems to correspond to the last element of `pasthistorydetails`. Let's confirm it:
 
 # + {"Collapsed": "false", "persistent_id": "d299e5c1-9355-4c3d-9af4-c54e24f289ad"}
 past_hist_df['pasthistorydetails_last'] = past_hist_df.pasthistorydetails.map(lambda x: x.split('/')[-1])
 past_hist_df.head()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Compare columns `past_historyvalue` and `past_historydetails`'s last element:
 
 # + {"Collapsed": "false", "persistent_id": "f62af377-9237-4005-80b8-47aa0c83570a"}
 past_hist_df[past_hist_df.pasthistoryvalue != past_hist_df.pasthistorydetails_last]
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # The previous output confirms that the newly created `pasthistorydetails` feature's last elememt (last string in the symbol separated lists) is almost exactly equal to the already existing `pasthistoryvalue` feature, with the differences that `pasthistoryvalue` takes into account the scenarios of no health problems detected and behaves correctly in strings that contain the separator symbol in them. So, we should remove `pasthistorydetails`'s last element:
 
 # + {"Collapsed": "false", "persistent_id": "40418862-5680-4dc5-9348-62e98599a638"}
@@ -506,7 +507,7 @@ past_hist_df.head()
 past_hist_df['pasthistorydetails'] = past_hist_df.pasthistorydetails.apply(lambda x: '/'.join(x.split('/')[:-1]))
 past_hist_df.head()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Remove irrelevant `Not Obtainable` and `Not Performed` values:
 
 # + {"Collapsed": "false", "persistent_id": "634e9588-7d76-46d5-a152-c1b73660d558"}
@@ -522,7 +523,7 @@ past_hist_df.head()
 # + {"Collapsed": "false", "persistent_id": "aa099682-9266-4567-8c7c-11043ca3d932"}
 past_hist_df.pasthistorytype.unique()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Replace blank `pasthistorydetails` values:
 
 # + {"Collapsed": "false", "persistent_id": "8a7f891f-2f84-45ac-a2d5-856531eba2bb"}
@@ -554,22 +555,22 @@ past_hist_df.pasthistoryvalue.nunique()
 # + {"Collapsed": "false"}
 past_hist_df.pasthistorydetails.nunique()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Remove the now redundant `pasthistorypath` column:
 
 # + {"Collapsed": "false", "persistent_id": "9268a24d-f3e7-407c-9c99-65020d7c17f0"}
 past_hist_df = past_hist_df.drop('pasthistorypath', axis=1)
 past_hist_df.head()
 
-# + {"Collapsed": "false", "toc-hr-collapsed": false, "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false", "toc-hr-collapsed": false}
 # ### Discretize categorical features
 #
 # Convert binary categorical features into one hot encode columns, which can later be embedded or used as is.
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # #### One hot encode features
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Update list of categorical features:
 
 # + {"Collapsed": "false", "persistent_id": "e6083094-1f99-408d-9b12-dfe4d88ee39a"}
@@ -578,7 +579,7 @@ cat_feat = ['pasthistoryvalue', 'pasthistorytype', 'pasthistorydetails']
 # + {"Collapsed": "false", "persistent_id": "aa911443-7f86-44ea-ab90-997fd38ba074"}
 past_hist_df[cat_feat].head()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Filter just to the most common categories:
 
 # + {"Collapsed": "false"}
@@ -586,7 +587,7 @@ for col in cat_feat:
     most_common_cat = list(past_hist_df[col].value_counts().nlargest(MAX_CATEGORIES).index)
     past_hist_df = past_hist_df[past_hist_df[col].isin(most_common_cat)]
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Apply one hot encoding:
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "58e7c624-cfc6-4df1-83dc-a8a22fe7ffc0"}
@@ -602,7 +603,7 @@ past_hist_df.head()
 # + {"Collapsed": "false", "persistent_id": "2b7dde92-fe4b-42ce-9705-9d505878a696"}
 past_hist_df.dtypes
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Save the association between the original categorical features and the new one hot encoded columns:
 
 # + {"Collapsed": "false", "persistent_id": "26eac7f3-9081-4a96-ae4a-40054c223fd7", "execution": {"iopub.status.busy": "2020-03-09T16:37:35.157248Z", "iopub.execute_input": "2020-03-09T16:37:35.157526Z", "iopub.status.idle": "2020-03-09T16:37:35.164656Z", "shell.execute_reply.started": "2020-03-09T16:37:35.157493Z", "shell.execute_reply": "2020-03-09T16:37:35.163771Z"}}
@@ -613,7 +614,7 @@ for orig_col in cat_feat:
 # + {"execution": {"iopub.status.busy": "2020-03-09T16:37:35.165864Z", "iopub.execute_input": "2020-03-09T16:37:35.166280Z", "iopub.status.idle": "2020-03-09T16:37:35.190294Z", "shell.execute_reply.started": "2020-03-09T16:37:35.166256Z", "shell.execute_reply": "2020-03-09T16:37:35.189358Z"}, "Collapsed": "false"}
 cat_feat_ohe
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # #### Save enumeration encoding mapping
 #
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
@@ -622,10 +623,10 @@ cat_feat_ohe
 stream = open(f'{data_path}/cleaned/cat_feat_ohe_past_hist.yaml', 'w')
 yaml.dump(cat_feat_ohe, stream, default_flow_style=False)
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Remove duplicate rows
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Remove duplicate rows:
 
 # + {"Collapsed": "false", "persistent_id": "1a99e9da-39a1-46ae-9d0d-68c3dd063d8f"}
@@ -638,7 +639,7 @@ past_hist_df.head()
 # + {"Collapsed": "false", "persistent_id": "b3483b1e-cced-4e2b-acc0-e95870a628b2"}
 len(past_hist_df)
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Check for possible multiple rows with the same unit stay ID and timestamp:
 
 # + {"Collapsed": "false", "persistent_id": "acae2295-6f7e-4290-b8a7-12d13042b65d"}
@@ -647,17 +648,17 @@ past_hist_df.groupby('patientunitstayid').count().nlargest(columns='pasthistoryv
 # + {"Collapsed": "false", "persistent_id": "1c71ea45-4026-43ac-8433-bd70d567bee9"}
 past_hist_df[past_hist_df.patientunitstayid == 1558102].head(10)
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # We can see that there are up to 20 categories per `patientunitstayid`. As such, we must join them.
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Join rows that have the same IDs
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Convert dataframe to Pandas, as the groupby operation in `join_repeated_rows` isn't working properly with Modin:
 
 # + {"Collapsed": "false"}
-past_hist_df, pd = du.utils.convert_dataframe(past_hist_df, to='pandas')
+past_hist_df, pd = du.utils.convert_dataframe(past_hist_df, to='pandas', dtypes=dict(past_hist_df.dtypes))
 
 # + {"Collapsed": "false"}
 type(past_hist_df)
@@ -678,10 +679,10 @@ past_hist_df.groupby(['patientunitstayid']).count().nlargest(columns='pasthistor
 # + {"Collapsed": "false", "persistent_id": "aa5f247a-8e4b-4527-a265-2af71b0f8e06"}
 past_hist_df[past_hist_df.patientunitstayid == 1558102].head(10)
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Comparing the output from the two previous cells with what we had before the `join_repeated_rows` method, we can see that all rows with duplicate IDs have been successfully joined.
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Clean column names
 #
 # Standardize all column names to be on lower case, have spaces replaced by underscores and remove comas.
@@ -690,45 +691,54 @@ past_hist_df[past_hist_df.patientunitstayid == 1558102].head(10)
 past_hist_df.columns = du.data_processing.clean_naming(past_hist_df.columns)
 past_hist_df.head()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Save the dataframe
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Save the dataframe before normalizing:
 
 # + {"Collapsed": "false", "persistent_id": "01cb3dd4-7afa-454b-b8c4-e473cb305367"}
 past_hist_df.to_csv(f'{data_path}cleaned/unnormalized/ohe/pastHistory.csv')
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Save the dataframe after normalizing:
 
 # + {"Collapsed": "false", "persistent_id": "5924e842-7b4f-4b3a-bddf-9b89952dfe26"}
 past_hist_df.to_csv(f'{data_path}cleaned/normalized/ohe/pastHistory.csv')
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Confirm that everything is ok through the `describe` method:
 
 # + {"Collapsed": "false", "persistent_id": "ee91beb5-1415-4960-9e84-8cbfbde07e15"}
 past_hist_df.describe().transpose()
 
-# + {"toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"toc-hr-collapsed": false, "Collapsed": "false"}
 # ## Diagnosis data
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Initialize variables
 
-# + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82"}
+# + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82", "execution": {"iopub.status.busy": "2020-03-13T01:33:21.105845Z", "iopub.execute_input": "2020-03-13T01:33:21.106162Z", "iopub.status.idle": "2020-03-13T01:33:21.110329Z", "shell.execute_reply.started": "2020-03-13T01:33:21.106113Z", "shell.execute_reply": "2020-03-13T01:33:21.109207Z"}}
 # List of categorical features
 cat_feat = []
 # Dictionary of the one hot encoded columns originary from each categorical feature, that will be embedded
 cat_feat_ohe = dict()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Read the data
 
-# + {"Collapsed": "false", "persistent_id": "8f98afc2-5613-4042-94e7-98e0b72867a1"}
+# + {"Collapsed": "false", "persistent_id": "8f98afc2-5613-4042-94e7-98e0b72867a1", "execution": {"iopub.status.busy": "2020-03-13T01:33:21.879737Z", "iopub.execute_input": "2020-03-13T01:33:21.880100Z", "iopub.status.idle": "2020-03-13T01:33:24.722820Z", "shell.execute_reply.started": "2020-03-13T01:33:21.880047Z", "shell.execute_reply": "2020-03-13T01:33:24.721854Z"}}
 diagn_df = pd.read_csv(f'{data_path}original/diagnosis.csv')
 diagn_df.head()
+
+# + [markdown] {"Collapsed": "false"}
+# Convert dataframe to Pandas, as the `one_hot_encoding_dataframe` isn't working properly with Modin:
+
+# + {"Collapsed": "false"}
+diagn_df, pd = du.utils.convert_dataframe(diagn_df, to='pandas', dtypes=dict(diagn_df.dtypes))
+
+# + {"Collapsed": "false"}
+type(diagn_df)
 
 # + {"Collapsed": "false", "persistent_id": "f2bd9f00-de58-48d9-a304-5e96ba6b392d"}
 len(diagn_df)
@@ -736,7 +746,7 @@ len(diagn_df)
 # + {"Collapsed": "false", "persistent_id": "a0b999fb-9767-43de-8ed7-59dc72f68635"}
 diagn_df.patientunitstayid.nunique()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Get an overview of the dataframe through the `describe` method:
 
 # + {"Collapsed": "false", "persistent_id": "3f42e4cb-0064-4b01-9f6e-496caafb08dd"}
@@ -748,23 +758,23 @@ diagn_df.columns
 # + {"Collapsed": "false", "persistent_id": "81262e48-301a-4230-aae0-b94bf3f584d8"}
 diagn_df.dtypes
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Check for missing values
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "a494abea-0f81-4ea8-8745-51ebfc306125"}
 du.search_explore.dataframe_missing_values(diagn_df)
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Remove unneeded features
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Besides the usual removal of row identifier, `diagnosisid`, I'm also removing apparently irrelevant (and subjective) `diagnosispriority`, redundant, with missing values and other issues `icd9code`, and `activeupondischarge`, as we don't have complete information as to when diagnosis end.
 
-# + {"Collapsed": "false", "persistent_id": "9073b0ba-7bc9-4b9c-aac7-ac1fd4802e63"}
+# + {"Collapsed": "false", "persistent_id": "9073b0ba-7bc9-4b9c-aac7-ac1fd4802e63", "execution": {"iopub.status.busy": "2020-03-13T01:33:25.374128Z", "iopub.execute_input": "2020-03-13T01:33:25.374400Z", "iopub.status.idle": "2020-03-13T01:33:25.422219Z", "shell.execute_reply.started": "2020-03-13T01:33:25.374360Z", "shell.execute_reply": "2020-03-13T01:33:25.421327Z"}}
 diagn_df = diagn_df.drop(['diagnosisid', 'diagnosispriority', 'icd9code', 'activeupondischarge'], axis=1)
 diagn_df.head()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Separate high level diagnosis
 
 # + {"Collapsed": "false", "persistent_id": "2318f39a-d909-49af-a13b-c4b1095bf161"}
@@ -779,10 +789,10 @@ diagn_df.diagnosisstring.map(lambda x: len(x.split('|'))).min()
 # + {"Collapsed": "false", "persistent_id": "08936a84-6640-4b15-bb1b-0192922d6daf"}
 diagn_df.diagnosisstring.map(lambda x: len(x.split('|'))).max()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # There are always at least 2 higher level diagnosis. It could be beneficial to extract those first 2 levels to separate features, so as to avoid the need for the model to learn similarities that are already known.
 
-# + {"Collapsed": "false", "persistent_id": "38475e5c-1260-4068-af50-5072366282ce"}
+# + {"Collapsed": "false", "persistent_id": "38475e5c-1260-4068-af50-5072366282ce", "execution": {"iopub.status.busy": "2020-03-13T01:33:28.234828Z", "iopub.execute_input": "2020-03-13T01:33:28.235237Z", "iopub.status.idle": "2020-03-13T01:33:37.304380Z", "shell.execute_reply.started": "2020-03-13T01:33:28.235188Z", "shell.execute_reply": "2020-03-13T01:33:37.303399Z"}}
 diagn_df['diagnosis_type_1'] = diagn_df.diagnosisstring.apply(lambda x: du.search_explore.get_element_from_split(x, 0, separator='|'))
 diagn_df['diagnosis_disorder_2'] = diagn_df.diagnosisstring.apply(lambda x: du.search_explore.get_element_from_split(x, 1, separator='|'))
 diagn_df['diagnosis_detailed_3'] = diagn_df.diagnosisstring.apply(lambda x: du.search_explore.get_element_from_split(x, 2, separator='|', till_the_end=True))
@@ -790,98 +800,95 @@ diagn_df['diagnosis_detailed_3'] = diagn_df.diagnosisstring.apply(lambda x: du.s
 diagn_df = diagn_df.drop('diagnosisstring', axis=1)
 diagn_df.head()
 
-# + {"Collapsed": "false", "toc-hr-collapsed": false, "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false", "toc-hr-collapsed": false}
 # ### Discretize categorical features
 #
 # Convert binary categorical features into one hot encode columns, which can later be embedded or used as is.
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # #### One hot encode features
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Update list of categorical features:
 
-# + {"Collapsed": "false", "persistent_id": "67f7e344-f016-4d85-a051-df96d07b5274"}
+# + {"Collapsed": "false", "persistent_id": "67f7e344-f016-4d85-a051-df96d07b5274", "execution": {"iopub.status.busy": "2020-03-13T01:33:37.305974Z", "iopub.execute_input": "2020-03-13T01:33:37.306217Z", "iopub.status.idle": "2020-03-13T01:33:37.309986Z", "shell.execute_reply.started": "2020-03-13T01:33:37.306172Z", "shell.execute_reply": "2020-03-13T01:33:37.309166Z"}}
 cat_feat = ['diagnosis_type_1', 'diagnosis_disorder_2', 'diagnosis_detailed_3']
 
-# + {"Collapsed": "false", "persistent_id": "72f3e710-08ef-4c9d-9876-c9d8cbaaf5f0"}
+# + {"Collapsed": "false", "persistent_id": "72f3e710-08ef-4c9d-9876-c9d8cbaaf5f0", "execution": {"iopub.status.busy": "2020-03-13T00:47:30.594493Z", "iopub.execute_input": "2020-03-13T00:47:30.595456Z", "iopub.status.idle": "2020-03-13T00:47:30.743517Z", "shell.execute_reply.started": "2020-03-13T00:47:30.595295Z", "shell.execute_reply": "2020-03-13T00:47:30.742797Z"}}
 diagn_df[cat_feat].head()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Filter just to the most common categories:
 
-# + {"Collapsed": "false"}
+# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-13T01:33:37.311818Z", "iopub.execute_input": "2020-03-13T01:33:37.312165Z", "iopub.status.idle": "2020-03-13T01:33:39.512953Z", "shell.execute_reply.started": "2020-03-13T01:33:37.312113Z", "shell.execute_reply": "2020-03-13T01:33:39.512118Z"}}
 for col in cat_feat:
     most_common_cat = list(diagn_df[col].value_counts().nlargest(MAX_CATEGORIES).index)
     diagn_df = diagn_df[diagn_df[col].isin(most_common_cat)]
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Apply one hot encoding:
 
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "bba23ddd-c1e5-49b7-9b7f-8fe5819ee7f9"}
+# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "bba23ddd-c1e5-49b7-9b7f-8fe5819ee7f9", "execution": {"iopub.status.busy": "2020-03-13T01:33:39.514439Z", "iopub.execute_input": "2020-03-13T01:33:39.514664Z", "iopub.status.idle": "2020-03-13T01:34:35.578835Z", "shell.execute_reply.started": "2020-03-13T01:33:39.514625Z", "shell.execute_reply": "2020-03-13T01:34:35.577856Z"}}
 diagn_df, new_columns = du.data_processing.one_hot_encoding_dataframe(diagn_df, columns=cat_feat,
                                                                       join_rows=False,
                                                                       get_new_column_names=True,
                                                                       inplace=True)
 diagn_df
 
-# + {"Collapsed": "false", "persistent_id": "64118894-5fb4-4e31-91cf-695d64a7e633"}
-diagn_df.head()
-
 # + {"Collapsed": "false", "persistent_id": "cbe8c721-69d6-4af1-ba27-ef8a6c166b19"}
 diagn_df.dtypes
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Save the association between the original categorical features and the new one hot encoded columns:
 
-# + {"Collapsed": "false", "persistent_id": "26eac7f3-9081-4a96-ae4a-40054c223fd7", "execution": {"iopub.status.busy": "2020-03-09T16:37:35.157248Z", "iopub.execute_input": "2020-03-09T16:37:35.157526Z", "iopub.status.idle": "2020-03-09T16:37:35.164656Z", "shell.execute_reply.started": "2020-03-09T16:37:35.157493Z", "shell.execute_reply": "2020-03-09T16:37:35.163771Z"}}
+# + {"Collapsed": "false", "persistent_id": "26eac7f3-9081-4a96-ae4a-40054c223fd7", "execution": {"iopub.status.busy": "2020-03-13T01:34:35.580225Z", "iopub.execute_input": "2020-03-13T01:34:35.580474Z", "iopub.status.idle": "2020-03-13T01:34:35.584799Z", "shell.execute_reply.started": "2020-03-13T01:34:35.580426Z", "shell.execute_reply": "2020-03-13T01:34:35.583824Z"}}
 for orig_col in cat_feat:
     cat_feat_ohe[orig_col] = [ohe_col for ohe_col in new_columns
                               if ohe_col.startswith(orig_col)]
 
-# + {"execution": {"iopub.status.busy": "2020-03-09T16:37:35.165864Z", "iopub.execute_input": "2020-03-09T16:37:35.166280Z", "iopub.status.idle": "2020-03-09T16:37:35.190294Z", "shell.execute_reply.started": "2020-03-09T16:37:35.166256Z", "shell.execute_reply": "2020-03-09T16:37:35.189358Z"}, "Collapsed": "false"}
+# + {"execution": {"iopub.status.busy": "2020-03-13T01:34:35.587342Z", "iopub.execute_input": "2020-03-13T01:34:35.587876Z", "iopub.status.idle": "2020-03-13T01:34:35.615729Z", "shell.execute_reply.started": "2020-03-13T01:34:35.587578Z", "shell.execute_reply": "2020-03-13T01:34:35.614673Z"}, "Collapsed": "false"}
 cat_feat_ohe
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # #### Save enumeration encoding mapping
 #
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
-# + {"Collapsed": "false", "persistent_id": "95ac0351-6a18-41b0-9937-37d255fa34ca"}
+# + {"Collapsed": "false", "persistent_id": "95ac0351-6a18-41b0-9937-37d255fa34ca", "execution": {"iopub.status.busy": "2020-03-13T01:34:35.617214Z", "iopub.execute_input": "2020-03-13T01:34:35.617453Z", "iopub.status.idle": "2020-03-13T01:34:35.654211Z", "shell.execute_reply.started": "2020-03-13T01:34:35.617408Z", "shell.execute_reply": "2020-03-13T01:34:35.653133Z"}}
 stream = open(f'{data_path}/cleaned/cat_feat_ohe_diag.yaml', 'w')
 yaml.dump(cat_feat_ohe, stream, default_flow_style=False)
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Create the timestamp feature and sort
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Create the timestamp (`ts`) feature:
 
-# + {"Collapsed": "false", "persistent_id": "8011a320-6066-416e-bb3e-280d97088afe"}
+# + {"Collapsed": "false", "persistent_id": "8011a320-6066-416e-bb3e-280d97088afe", "execution": {"iopub.status.busy": "2020-03-13T01:34:35.655365Z", "iopub.execute_input": "2020-03-13T01:34:35.655587Z", "iopub.status.idle": "2020-03-13T01:34:36.370946Z", "shell.execute_reply.started": "2020-03-13T01:34:35.655549Z", "shell.execute_reply": "2020-03-13T01:34:36.369920Z"}}
 diagn_df = diagn_df.rename(columns={'diagnosisoffset': 'ts'})
 diagn_df.head()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Remove duplicate rows:
 
-# + {"Collapsed": "false", "persistent_id": "2dfd1e82-de35-40b7-a67b-f57b14389787"}
+# + {"Collapsed": "false", "persistent_id": "2dfd1e82-de35-40b7-a67b-f57b14389787", "execution": {"iopub.status.busy": "2020-03-13T01:34:36.372033Z", "iopub.execute_input": "2020-03-13T01:34:36.372365Z", "iopub.status.idle": "2020-03-13T01:34:36.378401Z", "shell.execute_reply.started": "2020-03-13T01:34:36.372317Z", "shell.execute_reply": "2020-03-13T01:34:36.377469Z"}}
 len(diagn_df)
 
-# + {"Collapsed": "false", "persistent_id": "6c733c3e-26e8-4618-a849-cfab5e4065d8"}
+# + {"Collapsed": "false", "persistent_id": "6c733c3e-26e8-4618-a849-cfab5e4065d8", "execution": {"iopub.status.busy": "2020-03-13T01:34:36.379773Z", "iopub.execute_input": "2020-03-13T01:34:36.380125Z", "iopub.status.idle": "2020-03-13T01:34:56.614532Z", "shell.execute_reply.started": "2020-03-13T01:34:36.380054Z", "shell.execute_reply": "2020-03-13T01:34:56.613639Z"}}
 diagn_df = diagn_df.drop_duplicates()
 diagn_df.head()
 
-# + {"Collapsed": "false", "persistent_id": "710c6b32-3d96-427d-9d7f-e1ecc453ba7e"}
+# + {"Collapsed": "false", "persistent_id": "710c6b32-3d96-427d-9d7f-e1ecc453ba7e", "execution": {"iopub.status.busy": "2020-03-13T01:34:56.615686Z", "iopub.execute_input": "2020-03-13T01:34:56.615938Z", "iopub.status.idle": "2020-03-13T01:34:56.622001Z", "shell.execute_reply.started": "2020-03-13T01:34:56.615896Z", "shell.execute_reply": "2020-03-13T01:34:56.621020Z"}}
 len(diagn_df)
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Sort by `ts` so as to be easier to merge with other dataframes later:
 
-# + {"Collapsed": "false", "persistent_id": "e82d40c2-9e0c-411a-a2e2-acb1dd4f1d96"}
+# + {"Collapsed": "false", "persistent_id": "e82d40c2-9e0c-411a-a2e2-acb1dd4f1d96", "execution": {"iopub.status.busy": "2020-03-13T01:34:56.623232Z", "iopub.execute_input": "2020-03-13T01:34:56.623496Z", "iopub.status.idle": "2020-03-13T01:34:59.885673Z", "shell.execute_reply.started": "2020-03-13T01:34:56.623446Z", "shell.execute_reply": "2020-03-13T01:34:59.884569Z"}}
 diagn_df = diagn_df.sort_values('ts')
 diagn_df.head()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Check for possible multiple rows with the same unit stay ID and timestamp:
 
 # + {"Collapsed": "false", "persistent_id": "f28206fd-f1d0-4ca2-b006-653f60d05782"}
@@ -890,30 +897,30 @@ diagn_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='diagnosi
 # + {"Collapsed": "false", "persistent_id": "cac394e5-a6fa-4bc7-a496-1c97b49de381"}
 diagn_df[diagn_df.patientunitstayid == 3089982].head(10)
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # We can see that there are up to 69 categories per set of `patientunitstayid` and `ts`. As such, we must join them.
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Join rows that have the same IDs
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Convert dataframe to Pandas, as the groupby operation in `join_repeated_rows` isn't working properly with Modin:
 
 # + {"Collapsed": "false"}
-diagn_df, pd = du.utils.convert_dataframe(diagn_df, to='pandas')
+diagn_df, pd = du.utils.convert_dataframe(diagn_df, to='pandas', dtypes=dict(diagn_df.dtypes))
 
 # + {"Collapsed": "false"}
 type(diagn_df)
 
-# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023"}
+# + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "589931b8-fe11-439a-8b14-4857c168c023", "execution": {"iopub.status.busy": "2020-03-13T01:34:59.887004Z", "iopub.execute_input": "2020-03-13T01:34:59.887277Z", "iopub.status.idle": "2020-03-13T01:35:39.622442Z", "shell.execute_reply.started": "2020-03-13T01:34:59.887227Z", "shell.execute_reply": "2020-03-13T01:35:39.621552Z"}}
 diagn_df = du.embedding.join_repeated_rows(diagn_df, inplace=True)
 diagn_df.head()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Reconvert dataframe to Modin:
 
 # + {"Collapsed": "false"}
-diagn_df, pd = du.utils.convert_dataframe(diagn_df, to='modin')
+# diagn_df, pd = du.utils.convert_dataframe(diagn_df, to='modin')
 
 # + {"Collapsed": "false"}
 type(diagn_df)
@@ -927,37 +934,37 @@ diagn_df.groupby(['patientunitstayid', 'ts']).count().nlargest(columns='diagnosi
 # + {"Collapsed": "false", "persistent_id": "4dddda8f-daf1-4d2b-8782-8de20201ea7f"}
 diagn_df[diagn_df.patientunitstayid == 3089982].head(10)
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Comparing the output from the two previous cells with what we had before the `join_repeated_rows` method, we can see that all rows with duplicate IDs have been successfully joined.
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Clean column names
 #
 # Standardize all column names to be on lower case, have spaces replaced by underscores and remove comas.
 
-# + {"Collapsed": "false", "persistent_id": "0f06cc9f-f14f-4c96-afdd-030ac8975f0b"}
+# + {"Collapsed": "false", "persistent_id": "0f06cc9f-f14f-4c96-afdd-030ac8975f0b", "execution": {"iopub.status.busy": "2020-03-13T01:35:39.624193Z", "iopub.execute_input": "2020-03-13T01:35:39.624427Z", "iopub.status.idle": "2020-03-13T01:35:39.907047Z", "shell.execute_reply.started": "2020-03-13T01:35:39.624389Z", "shell.execute_reply": "2020-03-13T01:35:39.906081Z"}}
 diagn_df.columns = du.data_processing.clean_naming(diagn_df.columns)
 diagn_df.head()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Save the dataframe
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Save the dataframe before normalizing:
 
 # + {"Collapsed": "false", "persistent_id": "0c0cc6d4-56a9-40d4-a213-288b7080fb72"}
-diagn_df.to_csv(f'{data_path}cleaned/unnormalized/ohe/diagnosis.csv')
+# diagn_df.to_csv(f'{data_path}cleaned/unnormalized/ohe/diagnosis.csv')
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Save the dataframe after normalizing:
 
-# + {"Collapsed": "false", "persistent_id": "4c0def92-984f-4dd3-a807-be7188be38e8"}
+# + {"Collapsed": "false", "persistent_id": "4c0def92-984f-4dd3-a807-be7188be38e8", "execution": {"iopub.status.busy": "2020-03-13T01:35:39.908529Z", "iopub.execute_input": "2020-03-13T01:35:39.908823Z", "iopub.status.idle": "2020-03-13T01:37:14.758421Z", "shell.execute_reply.started": "2020-03-13T01:35:39.908774Z", "shell.execute_reply": "2020-03-13T01:37:14.757582Z"}}
 diagn_df.to_csv(f'{data_path}cleaned/normalized/ohe/diagnosis.csv')
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Confirm that everything is ok through the `describe` method:
 
-# + {"Collapsed": "false", "persistent_id": "0906c011-5d47-49e4-b8d0-bfb97b575f66"}
+# + {"Collapsed": "false", "persistent_id": "0906c011-5d47-49e4-b8d0-bfb97b575f66", "execution": {"iopub.status.busy": "2020-03-13T01:37:14.759579Z", "iopub.execute_input": "2020-03-13T01:37:14.759807Z"}}
 diagn_df.describe().transpose()
 
 # + {"Collapsed": "false"}

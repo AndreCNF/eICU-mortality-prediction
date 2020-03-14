@@ -162,13 +162,74 @@ dtype_dict = {'patientunitstayid': 'uint32',
               'lab_result': 'float32'}
 
 # + [markdown] {"Collapsed": "false"}
+# Load the lists of one hot encoded columns:
+
+# + {"Collapsed": "false"}
+stream_adms_drug = open(f'{data_path}cat_feat_ohe_adms_drug.yml', 'r')
+stream_inf_drug = open(f'{data_path}cat_feat_ohe_inf_drug.yml', 'r')
+stream_med = open(f'{data_path}cat_feat_ohe_med.yml', 'r')
+# stream_treat = open(f'{data_path}cat_feat_ohe_treat.yml', 'r')
+# stream_in_out = open(f'{data_path}cat_feat_ohe_in_out.yml', 'r')
+stream_diag = open(f'{data_path}cat_feat_ohe_diag.yml', 'r')
+stream_alrg = open(f'{data_path}cat_feat_ohe_alrg.yml', 'r')
+# stream_past_hist = open(f'{data_path}cat_feat_ohe_past_hist.yml', 'r')
+# stream_resp_care = open(f'{data_path}cat_feat_ohe_resp_care.yml', 'r')
+# # stream_nurse_care = open(f'{data_path}cat_feat_ohe_nurse_care.yml', 'r')
+# # stream_nurse_assess = open(f'{data_path}cat_feat_ohe_nurse_assess.yml', 'r')
+stream_lab = open(f'{data_path}cat_feat_ohe_lab.yml', 'r')
+# stream_patient = open(f'{data_path}cat_feat_ohe_patient.yml', 'r')
+# stream_notes = open(f'{data_path}cat_feat_ohe_notes.yml', 'r')
+
+# + {"Collapsed": "false"}
+cat_feat_ohe_adms_drug = yaml.load(stream_adms_drug, Loader=yaml.FullLoader)
+cat_feat_ohe_inf_drug = yaml.load(stream_inf_drug, Loader=yaml.FullLoader)
+cat_feat_ohe_med = yaml.load(stream_med, Loader=yaml.FullLoader)
+# cat_feat_ohe_treat = yaml.load(stream_treat, Loader=yaml.FullLoader)
+# cat_feat_ohe_in_out = yaml.load(stream_in_out, Loader=yaml.FullLoader)
+cat_feat_ohe_diag = yaml.load(stream_diag, Loader=yaml.FullLoader)
+cat_feat_ohe_alrg = yaml.load(stream_alrg, Loader=yaml.FullLoader)
+# cat_feat_ohe_past_hist = yaml.load(stream_past_hist, Loader=yaml.FullLoader)
+# cat_feat_ohe_resp_care = yaml.load(stream_resp_care, Loader=yaml.FullLoader)
+# # cat_feat_ohe_nurse_care = yaml.load(stream_nurse_care, Loader=yaml.FullLoader)
+# # cat_feat_ohe_nurse_assess = yaml.load(stream_nurse_assess, Loader=yaml.FullLoader)
+cat_feat_ohe_lab = yaml.load(stream_lab, Loader=yaml.FullLoader)
+# cat_feat_ohe_patient = yaml.load(stream_patient, Loader=yaml.FullLoader)
+# cat_feat_ohe_notes = yaml.load(stream_notes, Loader=yaml.FullLoader)
+
+# + {"Collapsed": "false"}
+cat_feat_ohe = du.utils.merge_dicts([cat_feat_ohe_adms_drug, cat_feat_ohe_inf_drug,
+                                     cat_feat_ohe_med,
+#                                      cat_feat_ohe_treat,
+#                                      cat_feat_ohe_in_out,
+                                     cat_feat_ohe_diag,
+                                     cat_feat_ohe_alrg,
+#                                      cat_feat_ohe_past_hist,
+#                                      cat_feat_ohe_resp_care,
+                                     cat_feat_ohe_lab,
+#                                      cat_feat_ohe_patient, cat_feat_ohe_notes,
+                                     ])
+
+# + {"Collapsed": "false"}
+ohe_columns = du.utils.merge_lists(list(cat_feat_ohe.values()))
+ohe_columns = du.data_processing.clean_naming(ohe_columns, lower_case=False)
+
+# + [markdown] {"Collapsed": "false"}
+# Add the one hot encoded columns to the dtypes dictionary, specifying them with type `UInt8`
+
+# + {"Collapsed": "false"}
+for col in ohe_columns:
+    dtype_dict[col] = 'UInt8'
+
+# + {"Collapsed": "false"}
+
+# + [markdown] {"Collapsed": "false"}
 # ## Loading the data
 
 # + [markdown] {"Collapsed": "false"}
 # ### Patient information
 
 # + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-26T16:59:46.211820Z", "iopub.execute_input": "2020-02-26T16:59:46.212044Z", "iopub.status.idle": "2020-02-26T16:59:46.856149Z", "shell.execute_reply.started": "2020-02-26T16:59:46.212002Z", "shell.execute_reply": "2020-02-26T16:59:46.855343Z"}}
-patient_df = pd.read_csv(f'{data_path}normalized/patient.csv')
+patient_df = pd.read_csv(f'{data_path}normalized/ohe/patient.csv')
 patient_df.head()
 
 # + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-26T16:59:46.857495Z", "iopub.status.idle": "2020-02-26T16:59:46.980426Z", "iopub.execute_input": "2020-02-26T16:59:46.857707Z", "shell.execute_reply.started": "2020-02-26T16:59:46.857668Z", "shell.execute_reply": "2020-02-26T16:59:46.979780Z"}}
@@ -189,7 +250,7 @@ patient_df.ts = patient_df.ts.astype(int)
 patient_df.dtypes
 
 # + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-26T16:59:47.341626Z", "iopub.status.idle": "2020-02-26T16:59:47.403437Z", "iopub.execute_input": "2020-02-26T16:59:47.341855Z", "shell.execute_reply.started": "2020-02-26T16:59:47.341801Z", "shell.execute_reply": "2020-02-26T16:59:47.402721Z"}}
-note_df = pd.read_csv(f'{data_path}normalized/note.csv')
+note_df = pd.read_csv(f'{data_path}normalized/ohe/note.csv')
 note_df.head()
 
 # + [markdown] {"Collapsed": "false"}
@@ -203,15 +264,15 @@ note_df = note_df.drop(columns='Unnamed: 0')
 # ### Diagnosis
 
 # + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-26T16:59:47.412341Z", "iopub.execute_input": "2020-02-26T16:59:47.412546Z", "iopub.status.idle": "2020-02-26T16:59:47.635581Z", "shell.execute_reply.started": "2020-02-26T16:59:47.412510Z", "shell.execute_reply": "2020-02-26T16:59:47.634774Z"}}
-diagns_df = pd.read_csv(f'{data_path}normalized/diagnosis.csv')
+diagns_df = pd.read_csv(f'{data_path}normalized/ohe/diagnosis.csv')
 diagns_df.head()
 
 # + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-26T16:59:47.636610Z", "iopub.execute_input": "2020-02-26T16:59:47.636829Z", "iopub.status.idle": "2020-02-26T16:59:47.715415Z", "shell.execute_reply.started": "2020-02-26T16:59:47.636789Z", "shell.execute_reply": "2020-02-26T16:59:47.714740Z"}}
-alrg_df = pd.read_csv(f'{data_path}normalized/allergy.csv')
+alrg_df = pd.read_csv(f'{data_path}normalized/ohe/allergy.csv')
 alrg_df.head()
 
 # + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-26T16:59:47.716398Z", "iopub.execute_input": "2020-02-26T16:59:47.716608Z", "iopub.status.idle": "2020-02-26T16:59:47.822680Z", "shell.execute_reply.started": "2020-02-26T16:59:47.716571Z", "shell.execute_reply": "2020-02-26T16:59:47.821486Z"}}
-past_hist_df = pd.read_csv(f'{data_path}normalized/pastHistory.csv')
+past_hist_df = pd.read_csv(f'{data_path}normalized/ohe/pastHistory.csv')
 past_hist_df.head()
 
 # + [markdown] {"Collapsed": "false"}
@@ -226,19 +287,19 @@ past_hist_df = past_hist_df.drop(columns='Unnamed: 0')
 # ### Treatments
 
 # + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-26T16:59:47.834369Z", "iopub.execute_input": "2020-02-26T16:59:47.834643Z", "iopub.status.idle": "2020-02-26T16:59:48.104487Z", "shell.execute_reply.started": "2020-02-26T16:59:47.834601Z", "shell.execute_reply": "2020-02-26T16:59:48.103450Z"}}
-treat_df = pd.read_csv(f'{data_path}normalized/treatment.csv')
+treat_df = pd.read_csv(f'{data_path}normalized/ohe/treatment.csv')
 treat_df.head()
 
 # + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-26T16:59:48.105474Z", "iopub.execute_input": "2020-02-26T16:59:48.105692Z", "iopub.status.idle": "2020-02-26T16:59:48.201610Z", "shell.execute_reply.started": "2020-02-26T16:59:48.105652Z", "shell.execute_reply": "2020-02-26T16:59:48.200678Z"}}
-adms_drug_df = pd.read_csv(f'{data_path}normalized/admissionDrug.csv')
+adms_drug_df = pd.read_csv(f'{data_path}normalized/ohe/admissionDrug.csv')
 adms_drug_df.head()
 
 # + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-26T16:59:48.202951Z", "iopub.execute_input": "2020-02-26T16:59:48.203294Z", "iopub.status.idle": "2020-02-26T16:59:48.659908Z", "shell.execute_reply.started": "2020-02-26T16:59:48.203240Z", "shell.execute_reply": "2020-02-26T16:59:48.658605Z"}}
-inf_drug_df = pd.read_csv(f'{data_path}normalized/infusionDrug.csv')
+inf_drug_df = pd.read_csv(f'{data_path}normalized/ohe/infusionDrug.csv')
 inf_drug_df.head()
 
 # + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-26T16:59:48.660925Z", "iopub.execute_input": "2020-02-26T16:59:48.661136Z", "iopub.status.idle": "2020-02-26T16:59:49.714974Z", "shell.execute_reply.started": "2020-02-26T16:59:48.661094Z", "shell.execute_reply": "2020-02-26T16:59:49.714159Z"}}
-med_df = pd.read_csv(f'{data_path}normalized/medication.csv')
+med_df = pd.read_csv(f'{data_path}normalized/ohe/medication.csv')
 med_df.head()
 
 # + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-26T16:59:49.718351Z", "iopub.execute_input": "2020-02-26T16:59:49.718595Z", "iopub.status.idle": "2020-02-26T16:59:51.137028Z", "shell.execute_reply.started": "2020-02-26T16:59:49.718556Z", "shell.execute_reply": "2020-02-26T16:59:51.136352Z"}}
@@ -259,11 +320,11 @@ in_out_df = in_out_df.drop(columns='Unnamed: 0')
 # ### Nursing data
 
 # + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-26T16:59:51.153813Z", "iopub.status.idle": "2020-02-26T16:59:51.157020Z", "iopub.execute_input": "2020-02-26T16:59:51.154014Z", "shell.execute_reply.started": "2020-02-26T16:59:51.153978Z", "shell.execute_reply": "2020-02-26T16:59:51.156340Z"}}
-# nurse_care_df = pd.read_csv(f'{data_path}normalized/nurseCare.csv')
+# nurse_care_df = pd.read_csv(f'{data_path}normalized/ohe/nurseCare.csv')
 # nurse_care_df.head()
 
 # + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-26T16:59:51.157864Z", "iopub.status.idle": "2020-02-26T16:59:51.161415Z", "iopub.execute_input": "2020-02-26T16:59:51.158061Z", "shell.execute_reply.started": "2020-02-26T16:59:51.158024Z", "shell.execute_reply": "2020-02-26T16:59:51.160771Z"}}
-# nurse_assess_df = pd.read_csv(f'{data_path}normalized/nurseAssessment.csv')
+# nurse_assess_df = pd.read_csv(f'{data_path}normalized/ohe/nurseAssessment.csv')
 # nurse_assess_df.head()
 
 # + [markdown] {"Collapsed": "false"}
@@ -277,7 +338,7 @@ in_out_df = in_out_df.drop(columns='Unnamed: 0')
 # ### Respiratory data
 
 # + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-26T16:59:51.166812Z", "iopub.status.idle": "2020-02-26T16:59:51.246979Z", "iopub.execute_input": "2020-02-26T16:59:51.167001Z", "shell.execute_reply.started": "2020-02-26T16:59:51.166968Z", "shell.execute_reply": "2020-02-26T16:59:51.246026Z"}}
-resp_care_df = pd.read_csv(f'{data_path}normalized/respiratoryCare.csv')
+resp_care_df = pd.read_csv(f'{data_path}normalized/ohe/respiratoryCare.csv')
 resp_care_df.head()
 
 # + [markdown] {"Collapsed": "false"}
@@ -308,7 +369,7 @@ vital_prdc_df = vital_prdc_df.drop(columns='Unnamed: 0')
 # ### Exams data
 
 # + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-27T00:57:21.533328Z", "iopub.status.idle": "2020-02-27T00:57:26.541843Z", "iopub.execute_input": "2020-02-27T00:57:21.533548Z", "shell.execute_reply.started": "2020-02-27T00:57:21.533505Z", "shell.execute_reply": "2020-02-27T00:57:26.541224Z"}}
-lab_df = pd.read_csv(f'{data_path}normalized/lab.csv')
+lab_df = pd.read_csv(f'{data_path}normalized/ohe/lab.csv')
 lab_df.head()
 
 # + [markdown] {"Collapsed": "false"}
@@ -800,7 +861,7 @@ eICU_df.to_csv(f'{data_path}normalized/eICU_before_joining_vital_prdc.csv')
 # Merge the dataframes:
 
 # + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-26T20:27:00.928018Z", "iopub.status.idle": "2020-02-26T20:27:30.650260Z", "iopub.execute_input": "2020-02-26T20:27:00.928261Z", "shell.execute_reply.started": "2020-02-26T20:27:00.928221Z", "shell.execute_reply": "2020-02-26T20:27:30.649669Z"}}
-eICU_df = pd.read_csv(f'{data_path}normalized/eICU_before_joining_vital_prdc.csv',
+eICU_df = pd.read_csv(f'{data_path}normalized/ohe/eICU_before_joining_vital_prdc.csv',
                       dtype=dtype_dict)
 eICU_df = eICU_df.drop(columns=['Unnamed: 0'])
 eICU_df.head()
@@ -816,7 +877,7 @@ eICU_df.head()
 eICU_df.to_csv(f'{data_path}normalized/eICU_post_joining_vital_prdc.csv')
 
 # + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-27T00:58:11.955786Z", "iopub.status.idle": "2020-02-27T01:10:36.152614Z", "iopub.execute_input": "2020-02-27T00:58:11.956018Z", "shell.execute_reply.started": "2020-02-27T00:58:11.955976Z", "shell.execute_reply": "2020-02-27T01:10:36.151782Z"}}
-eICU_df = pd.read_csv(f'{data_path}normalized/eICU_post_joining_vital_prdc.csv',
+eICU_df = pd.read_csv(f'{data_path}normalized/ohe/eICU_post_joining_vital_prdc.csv',
                       dtype=dtype_dict)
 eICU_df = eICU_df.drop(columns=['Unnamed: 0'])
 eICU_df.head()
@@ -853,7 +914,7 @@ eICU_df.head()
 eICU_df.to_csv(f'{data_path}normalized/eICU_post_joining.csv')
 
 # + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-02T02:16:36.275096Z", "iopub.status.idle": "2020-03-02T02:16:52.692400Z", "iopub.execute_input": "2020-03-02T02:16:36.275391Z", "shell.execute_reply.started": "2020-03-02T02:16:36.275334Z", "shell.execute_reply": "2020-03-02T02:16:52.691647Z"}}
-eICU_df = pd.read_csv(f'{data_path}normalized/eICU_post_joining_0.csv', dtype=dtype_dict)
+eICU_df = pd.read_csv(f'{data_path}normalized/ohe/eICU_post_joining_0.csv', dtype=dtype_dict)
 eICU_df = eICU_df.drop(columns=['Unnamed: 0'])
 eICU_df.head()
 # -
@@ -965,7 +1026,7 @@ eICU_df[eICU_df.index == 2564878][['drugdosage']]
 eICU_df.to_csv(f'{data_path}normalized/eICU_post_merge_continuous_cols.csv')
 
 # + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-02T04:30:00.844962Z", "iopub.status.idle": "2020-03-02T04:30:11.572222Z", "iopub.execute_input": "2020-03-02T04:30:00.845255Z", "shell.execute_reply.started": "2020-03-02T04:30:00.845203Z", "shell.execute_reply": "2020-03-02T04:30:11.571436Z"}}
-eICU_df = pd.read_csv(f'{data_path}normalized/eICU_post_merge_continuous_cols.csv', dtype=dtype_dict)
+eICU_df = pd.read_csv(f'{data_path}normalized/ohe/eICU_post_merge_continuous_cols.csv', dtype=dtype_dict)
 eICU_df = eICU_df.drop(columns=['Unnamed: 0'])
 eICU_df.head()
 
@@ -1040,7 +1101,7 @@ eICU_df[['drugadmitfrequency', 'drugunit', 'drughiclseqno']].head(20)
 eICU_df.to_csv(f'{data_path}normalized/eICU_post_merge_categorical_cols.csv')
 
 # + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-26T16:29:55.464340Z", "iopub.status.idle": "2020-02-26T16:29:55.464637Z"}}
-eICU_df = pd.read_csv(f'{data_path}normalized/eICU_post_merge_categorical_cols.csv')
+eICU_df = pd.read_csv(f'{data_path}normalized/ohe/eICU_post_merge_categorical_cols.csv')
 eICU_df = eICU_df.drop(columns=['Unnamed: 0'])
 eICU_df.head()
 

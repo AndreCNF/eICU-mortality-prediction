@@ -359,7 +359,7 @@ len(vital_prdc_df)
 # Convert dataframe to Pandas, as the next cells aren't working properly with Modin:
 
 # + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-23T22:45:50.619836Z", "iopub.execute_input": "2020-02-23T22:45:50.620222Z", "iopub.status.idle": "2020-02-23T22:46:19.041074Z", "shell.execute_reply.started": "2020-02-23T22:45:50.620173Z", "shell.execute_reply": "2020-02-23T22:46:19.040127Z"}}
-vital_prdc_df, pd = du.utils.convert_dataframe(vital_prdc_df, to='pandas')
+vital_prdc_df, pd = du.utils.convert_dataframe(vital_prdc_df, to='pandas', dtypes=dict(vital_prdc_df.dtypes))
 
 # + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-02-23T22:46:19.042045Z", "iopub.execute_input": "2020-02-23T22:46:19.042245Z", "iopub.status.idle": "2020-02-23T22:46:19.046129Z", "shell.execute_reply.started": "2020-02-23T22:46:19.042209Z", "shell.execute_reply": "2020-02-23T22:46:19.045596Z"}}
 type(vital_prdc_df)

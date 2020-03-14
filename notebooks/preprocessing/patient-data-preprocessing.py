@@ -1,19 +1,20 @@
 # ---
 # jupyter:
 #   jupytext:
+#     cell_metadata_json: true
 #     formats: ipynb,py:light
 #     text_representation:
 #       extension: .py
 #       format_name: light
-#       format_version: '1.4'
-#       jupytext_version: 1.2.1
+#       format_version: '1.5'
+#       jupytext_version: 1.3.2
 #   kernelspec:
-#     display_name: eicu-mortality-prediction
+#     display_name: Python 3
 #     language: python
-#     name: eicu-mortality-prediction
+#     name: python3
 # ---
 
-# + {"toc-hr-collapsed": false, "Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"toc-hr-collapsed": false, "Collapsed": "false"}
 # # Patient Data Preprocessing
 # ---
 #
@@ -23,7 +24,7 @@
 # * patient
 # * note
 
-# + {"colab_type": "text", "id": "KOdmFzXqF7nq", "toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"colab_type": "text", "id": "KOdmFzXqF7nq", "toc-hr-collapsed": true, "Collapsed": "false"}
 # ## Importing the necessary packages
 
 # + {"colab": {}, "colab_type": "code", "id": "G5RrWE9R_Nkl", "Collapsed": "false", "persistent_id": "522745b5-b5bf-479f-b697-5c7e9e12fc33", "last_executed_text": "import os                                  # os handles directory/workspace changes\nimport numpy as np                         # NumPy to handle numeric and NaN operations\nimport yaml                                # Save and load YAML files", "execution_event_id": "897396d2-3f1a-416c-bd55-24da2aad1e55"}
@@ -61,16 +62,16 @@ import data_utils as du                    # Data science and machine learning r
 pd.set_option('display.max_columns', 1000)
 pd.set_option('display.max_rows', 1000)
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Set the random seed for reproducibility
 
 # + {"Collapsed": "false", "persistent_id": "39b552cd-6948-4ec8-ac04-42f850c1e05a", "last_executed_text": "du.set_random_seed(42)", "execution_event_id": "9f0e32aa-08d7-4d35-bde8-7855e1788d5e"}
 du.set_random_seed(42)
 
-# + {"toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"toc-hr-collapsed": true, "Collapsed": "false"}
 # ## Patient data
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Initialize variables
 
 # + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82"}
@@ -79,12 +80,24 @@ cat_feat = []
 # Dictionary of the one hot encoded columns originary from each categorical feature, that will be embedded
 cat_feat_ohe = dict()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Read the data
 
 # + {"Collapsed": "false", "persistent_id": "9ee194e5-c316-4fe5-8cd8-cc4188be9447", "last_executed_text": "patient_df = pd.read_csv(f'{data_path}original/patient.csv')\npatient_df.head()", "execution_event_id": "28c41b31-f70e-4de0-a16a-ad04b572ecf1"}
 patient_df = pd.read_csv(f'{data_path}original/patient.csv')
 patient_df.head()
+# -
+
+patient_df.dtypes
+
+# + [markdown] {"Collapsed": "false"}
+# Convert dataframe to Pandas, as the `one_hot_encoding_dataframe` isn't working properly with Modin:
+
+# + {"Collapsed": "false"}
+patient_df, pd = du.utils.convert_dataframe(patient_df, to='pandas', dtypes=dict(patient_df.dtypes))
+# -
+
+patient_df.dtypes
 
 # + {"Collapsed": "false", "persistent_id": "8a040368-7c65-4d72-a4a7-622b63378c3e", "last_executed_text": "len(patient_df)", "execution_event_id": "3e769f41-3675-4ef5-bd30-491cec9fd3bb"}
 len(patient_df)
@@ -95,7 +108,7 @@ patient_df.patientunitstayid.nunique()
 # + {"Collapsed": "false", "persistent_id": "7022c0ab-2847-4b14-914b-69fcf3d3ca07", "last_executed_text": "patient_df.patientunitstayid.value_counts()", "execution_event_id": "a72e876f-562d-482c-b256-5f5bdf7d1463"}
 patient_df.patientunitstayid.value_counts()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Get an overview of the dataframe through the `describe` method:
 
 # + {"Collapsed": "false", "persistent_id": "d4aa2831-2d82-47d2-8538-11d1257f3891", "last_executed_text": "patient_df.describe().transpose()", "execution_event_id": "f42f4420-5088-4096-b8e4-dd77dd1cb2d5"}
@@ -103,17 +116,17 @@ patient_df.describe().transpose()
 
 # + {"Collapsed": "false", "persistent_id": "4678d828-e15a-43f1-bc52-80b13a2b7c7e", "last_executed_text": "patient_df.columns", "execution_event_id": "a40cfc9a-9936-4e65-b89d-a8cc11c43913"}
 patient_df.columns
+# -
 
-# + {"Collapsed": "false", "persistent_id": "e4e91c37-750a-490a-887b-3fcb133adef2", "last_executed_text": "patient_df.dtypes", "execution_event_id": "98a87f3d-8e32-481a-b3d6-fcf8142bc8f2"}
 patient_df.dtypes
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Check for missing values
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "9e6a1829-a25a-44a6-a1b8-074ccd5664c4", "last_executed_text": "du.search_explore.dataframe_missing_values(patient_df)", "execution_event_id": "ea095970-5dbe-4425-8c18-ea7ae79b2e04"}
 du.search_explore.dataframe_missing_values(patient_df)
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Remove unneeded features
 #
 # Besides removing unneeded hospital and time information, I'm also removing the admission diagnosis (`apacheadmissiondx`) as it doesn't follow the same structure as the remaining diagnosis data (which is categorized in increasingly specific categories, separated by "|").
@@ -124,7 +137,7 @@ patient_df = patient_df[['patientunitstayid', 'gender', 'age', 'ethnicity',  'ad
                          'admissionweight']]
 patient_df.head()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Make the age feature numeric
 #
 # In the eICU dataset, ages above 89 years old are not specified. Instead, we just receive the indication "> 89". In order to be able to work with the age feature numerically, we'll just replace the "> 89" values with "90", as if the patient is 90 years old. It might not always be the case, but it shouldn't be very different and it probably doesn't affect too much the model's logic.
@@ -143,15 +156,15 @@ patient_df.age.value_counts().head()
 # Make the age feature numeric
 patient_df.age = patient_df.age.astype(float)
 
-# + {"Collapsed": "false", "toc-hr-collapsed": false, "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false", "toc-hr-collapsed": false}
 # ### Discretize categorical features
 #
 # Convert binary categorical features into one hot encode columns, which can later be embedded or used as is.
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # #### One hot encode features
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Update list of categorical features:
 
 # + {"Collapsed": "false", "persistent_id": "825d7d09-34df-43ef-a914-2a68f33723f2", "last_executed_text": "patient_df.gender.value_counts()", "execution_event_id": "a5b9f20c-a2c1-4a75-ace1-6656ab4cdc5f"}
@@ -163,13 +176,13 @@ patient_df.gender = patient_df.gender.map(lambda x: 1 if x == 'Male' else 0 if x
 # + {"Collapsed": "false", "persistent_id": "cb548210-9b6c-47dc-a094-47872216500d", "last_executed_text": "patient_df.gender.value_counts()", "execution_event_id": "063a69b8-5cea-4add-b11c-3225c8eedb78"}
 patient_df.gender.value_counts()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # #### Separate and prepare features for embedding
 #
 # Identify categorical features that have more than 5 unique categories, which will go through an embedding layer afterwards, and enumerate them.
 #
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Update list of categorical features and add those that will need embedding (features with more than 5 unique values):
 
 # + {"Collapsed": "false", "persistent_id": "9fdc9b59-d7e5-47e6-8d32-f3ac7fbb582d", "last_executed_text": "cat_feat = ['ethnicity']\n[cat_feat.append(col) for col in cat_feat]", "execution_event_id": "6cb657da-f34c-4a83-a358-65adf97f4a5d"}
@@ -178,7 +191,7 @@ cat_feat = ['ethnicity']
 # + {"Collapsed": "false", "persistent_id": "99d08bce-69f1-4a19-8e1d-ab2a49574506", "last_executed_text": "patient_df[cat_feat].head()", "execution_event_id": "1a89c528-9de1-4250-a6e6-2a29c6045770"}
 patient_df[cat_feat].head()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Apply one hot encoding:
 
 # + {"Collapsed": "false", "persistent_id": "32a0ca8b-24f4-41d6-8565-038e39497c7e", "last_executed_text": "for i in range(len(new_cat_embed_feat)):\n    feature = new_cat_embed_feat[i]\n    # Prepare for embedding, i.e. enumerate categories\n    patient_df[feature], cat_feat_ohe[feature] = du.embedding.enum_categorical_feature(patient_df, feature)", "execution_event_id": "9152d797-82f8-46cb-9822-36e46b66b3ac"}
@@ -191,7 +204,7 @@ patient_df
 # + {"Collapsed": "false", "persistent_id": "2d79bb26-bb3f-4d3e-beac-0e809c504bdb", "last_executed_text": "patient_df[cat_feat].dtypes", "execution_event_id": "56578e03-6482-46bb-91fa-271c875f77f2"}
 patient_df.dtypes
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Save the association between the original categorical features and the new one hot encoded columns:
 
 # + {"Collapsed": "false", "persistent_id": "26eac7f3-9081-4a96-ae4a-40054c223fd7", "execution": {"iopub.status.busy": "2020-03-09T16:37:35.157248Z", "iopub.execute_input": "2020-03-09T16:37:35.157526Z", "iopub.status.idle": "2020-03-09T16:37:35.164656Z", "shell.execute_reply.started": "2020-03-09T16:37:35.157493Z", "shell.execute_reply": "2020-03-09T16:37:35.163771Z"}}
@@ -202,7 +215,7 @@ for orig_col in cat_feat:
 # + {"execution": {"iopub.status.busy": "2020-03-09T16:37:35.165864Z", "iopub.execute_input": "2020-03-09T16:37:35.166280Z", "iopub.status.idle": "2020-03-09T16:37:35.190294Z", "shell.execute_reply.started": "2020-03-09T16:37:35.166256Z", "shell.execute_reply": "2020-03-09T16:37:35.189358Z"}, "Collapsed": "false"}
 cat_feat_ohe
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # #### Save enumeration encoding mapping
 #
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
@@ -211,7 +224,7 @@ cat_feat_ohe
 stream = open(f'{data_path}/cleaned/cat_feat_ohe_patient.yaml', 'w')
 yaml.dump(cat_feat_ohe, stream, default_flow_style=False)
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Create mortality label
 #
 # Combine info from discharge location and discharge status. Using the hospital discharge data, instead of the unit, as it has a longer perspective on the patient's status. I then save a feature called "deathOffset", which has a number if the patient is dead on hospital discharge or is NaN if the patient is still alive/unknown (presumed alive if unknown). Based on this, a label can be made later on, when all the tables are combined in a single dataframe, indicating if a patient dies in the following X time, according to how faraway we want to predict.
@@ -257,7 +270,7 @@ tmp_col[0][100783]
 len(patient_df)
 
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Something's wrong with this `apply` line, as it's creating duplicate and fake (in rows where there is a value) NaN rows. Moving on to a more complex solution, where we can filter out the fake NaNs and remove the duplicate NaNs.
 
 # + {"Collapsed": "false", "persistent_id": "8527fbdc-1731-45bb-9a68-e8b04a3ed4d2", "last_executed_text": "def get_death_ts(df):\n    if df['hospitaldischargestatus'] == 'Expired':\n        df['death_ts'] = df['hospitaldischargeoffset']\n    else:\n        df['death_ts'] = np.nan\n    return df", "execution_event_id": "6821f025-536a-45dd-b299-4f4a97d14196"}
@@ -300,24 +313,24 @@ tmp_col.index.value_counts()
 patient_df['death_ts'] = tmp_col
 patient_df.head()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Remove the now unneeded hospital discharge features:
 
 # + {"Collapsed": "false", "persistent_id": "b30bb22f-f470-4132-92e7-bed1f058f4a8", "last_executed_text": "patient_df = patient_df.drop(['hospitaldischargeoffset', 'hospitaldischargestatus', 'hospitaldischargelocation'], axis=1)\npatient_df.head(6)", "execution_event_id": "e81a2ecc-aa82-4434-b79d-f9416658dc52"}
 patient_df = patient_df.drop(['hospitaldischargeoffset', 'hospitaldischargestatus', 'hospitaldischargelocation'], axis=1)
 patient_df.head(6)
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Create the timestamp feature and sort
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Create the timestamp (`ts`) feature:
 
 # + {"Collapsed": "false", "persistent_id": "dfab2799-af6c-4475-8341-ec3f40546ed1", "last_executed_text": "patient_df['ts'] = 0\npatient_df.head()", "execution_event_id": "0fe48344-f367-4402-a310-93d06ec954bb"}
 patient_df['ts'] = 0
 patient_df.head()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Sort by `ts` so as to be easier to merge with other dataframes later:
 
 # + {"Collapsed": "false", "persistent_id": "a03573d9-f345-4ff4-84b9-2b2a3f73ce27", "last_executed_text": "# Index setting is failing on modin, so we're just going to skip this part for now\n# patient_df = patient_df.set_index('ts')\n# patient_df.head()", "execution_event_id": "306946d8-9fb1-46c8-8e76-d5a09e288a3b"}
@@ -325,25 +338,22 @@ patient_df.head()
 # patient_df = patient_df.set_index('ts')
 # patient_df.head()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Normalize data
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Save the dataframe before normalizing:
 
 # + {"Collapsed": "false", "persistent_id": "8d66425b-0aae-42d5-ac47-9a0456a080b8", "last_executed_text": "patient_df.to_csv(f'{data_path}cleaned/unnormalized/ohe/patient.csv')", "execution_event_id": "e1e9c146-1b0e-4659-969e-22838a05b5a5"}
 patient_df.to_csv(f'{data_path}cleaned/unnormalized/ohe/patient.csv')
 
-# + {"Collapsed": "false", "persistent_id": "68e8080e-5cda-4459-ac38-b0eb59e79fac", "last_executed_text": "cat_feat", "execution_event_id": "b850941b-dc91-46cc-b03f-9cb3950ab5b6"}
-cat_feat
-
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "d5ad6017-ad4a-419c-badb-9454add7752d", "last_executed_text": "patient_df_norm = du.data_processing.normalize_data(patient_df, categ_columns=cat_feat,\n                                                    id_columns=['patientunitstayid', 'ts', 'death_ts'])\npatient_df_norm.head(6)", "execution_event_id": "3d6d0a5c-9160-4ffc-87d4-85632a968a1d"}
-patient_df_norm, mean, std = du.data_processing.normalize_data(patient_df, categ_columns=cat_feat,
+patient_df_norm, mean, std = du.data_processing.normalize_data(patient_df,
                                                                id_columns=['patientunitstayid', 'ts', 'death_ts'],
                                                                get_stats=True, inplace=True)
 patient_df_norm.head(6)
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Save a dictionary with the mean and standard deviation values of each column that was normalized:
 
 # + {"Collapsed": "false"}
@@ -361,7 +371,7 @@ yaml.dump(norm_stats, stream, default_flow_style=False)
 # + {"Collapsed": "false", "persistent_id": "64492d9f-df5d-4940-b931-cbb4c3af2949", "last_executed_text": "patient_df_norm.to_csv(f'{data_path}cleaned/normalized/ohe/patient.csv')", "execution_event_id": "3eed71a9-b6b3-4f0f-99b3-0b80313faf98"}
 patient_df_norm.to_csv(f'{data_path}cleaned/normalized/ohe/patient.csv')
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Confirm that everything is ok through the `describe` method:
 
 # + {"Collapsed": "false", "persistent_id": "68c630e8-151b-495f-b652-c00a55d92e78", "last_executed_text": "patient_df_norm.describe().transpose()", "execution_event_id": "08f10c87-1a59-4890-9af4-32c93f0cba7a"}
@@ -370,10 +380,10 @@ patient_df_norm.describe().transpose()
 # + {"persistent_id": "826b9069-c468-47a7-aa00-a92edc829e13", "Collapsed": "false", "last_executed_text": "# [TODO] Remove the rows with ts = 0 if there are no matching rows in other tables", "execution_event_id": "3146d2bf-b3f7-410b-95a0-5e1b52b40f8a"}
 # [TODO] Remove the rows with ts = 0 if there are no matching rows in other tables
 
-# + {"toc-hr-collapsed": true, "Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"toc-hr-collapsed": true, "Collapsed": "false"}
 # ## Notes data
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Initialize variables
 
 # + {"Collapsed": "false", "persistent_id": "754a96f8-d389-4968-8c13-52e5e9d0bf82"}
@@ -382,7 +392,7 @@ cat_feat = []
 # Dictionary of the one hot encoded columns originary from each categorical feature, that will be embedded
 cat_feat_ohe = dict()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Read the data
 
 # + {"Collapsed": "false", "persistent_id": "51197f67-95e2-4184-a73f-7885cb975084", "last_executed_text": "note_df = pd.read_csv(f'{data_path}original/note.csv')\nnote_df.head()", "execution_event_id": "bf6e34cd-7ae9-4636-a9b9-27d404b49610"}
@@ -395,7 +405,7 @@ len(note_df)
 # + {"Collapsed": "false", "persistent_id": "17c46962-79a6-48a6-b67a-4863028ed897", "last_executed_text": "note_df.patientunitstayid.nunique()", "execution_event_id": "e7d22357-65a7-4573-bd2e-42fc3794e931"}
 note_df.patientunitstayid.nunique()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Get an overview of the dataframe through the `describe` method:
 
 # + {"Collapsed": "false", "persistent_id": "6e745ae7-a0ea-4169-96de-d49e9f510ed9", "last_executed_text": "note_df.describe().transpose()", "execution_event_id": "546023f0-9a90-47da-a108-5f59f57fa5af"}
@@ -407,13 +417,13 @@ note_df.columns
 # + {"Collapsed": "false", "persistent_id": "8e30eac6-9424-4ce6-801e-5e013a964863", "last_executed_text": "note_df.dtypes", "execution_event_id": "ab10d0e5-46be-4824-92ac-b1939b57792d"}
 note_df.dtypes
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Check for missing values
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "c4e967db-7ace-41df-8678-7cd11d1e002b", "last_executed_text": "du.search_explore.dataframe_missing_values(note_df)", "execution_event_id": "a04c5f38-289a-4569-8c57-89eddcda2b0d"}
 du.search_explore.dataframe_missing_values(note_df)
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Remove unneeded features
 
 # + {"Collapsed": "false", "persistent_id": "9f3b85d0-8480-4f30-8455-fde084ba7c69", "last_executed_text": "note_df.notetype.value_counts().head(20)", "execution_event_id": "39bf557e-d53a-4ecd-8118-a9719aa49188"}
@@ -434,7 +444,7 @@ note_df[note_df.notepath.str.contains('notes/Progress Notes/Social History')].no
 # + {"Collapsed": "false", "persistent_id": "3261378f-0eee-477f-bdfd-01cb1af45334", "last_executed_text": "note_df[note_df.notepath.str.contains('notes/Progress Notes/Social History')].notevalue.value_counts().head(20)", "execution_event_id": "45af80ba-5e5a-424d-a5d1-cc83a54a8ca3"}
 note_df[note_df.notepath.str.contains('notes/Progress Notes/Social History')].notevalue.value_counts().head(20)
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Out of all the possible notes, only those addressing the patient's social history seem to be interesting and containing information not found in other tables. As such, we'll only keep the note paths that mention social history:
 
 # + {"Collapsed": "false", "persistent_id": "d3a0e8a8-68d6-4c90-aded-0f5940c3936b", "last_executed_text": "note_df = note_df[note_df.notepath.str.contains('notes/Progress Notes/Social History')]\nnote_df.head()", "execution_event_id": "58f39665-bca9-4c38-b6ce-1b8177332e40"}
@@ -444,7 +454,7 @@ note_df.head()
 # + {"Collapsed": "false", "persistent_id": "8409525f-e11f-4cf5-acd7-56fcdcf6c130", "last_executed_text": "len(note_df)", "execution_event_id": "ae4aa363-8c1c-46ec-a3ed-2a89c95acd21"}
 len(note_df)
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # There are still rows that seem to contain irrelevant data. Let's remove them by finding rows that contain specific words, like "obtain" and "print", that only appear in said irrelevant rows:
 
 # + {"Collapsed": "false", "persistent_id": "2eefd7ee-b1af-4bcc-aece-7813b4ed2b29", "last_executed_text": "category_types_to_remove = ['obtain', 'print', 'copies', 'options']", "execution_event_id": "47ec5a85-7a34-42d5-ab38-80d338ae3bbb"}
@@ -466,17 +476,17 @@ note_df.patientunitstayid.nunique()
 # + {"Collapsed": "false", "persistent_id": "47ec86ae-999d-4678-889a-1653ca1a8bfb", "last_executed_text": "note_df.notetype.value_counts().head(20)", "execution_event_id": "16cfc6a4-d5a3-4a00-9215-3f210db8a340"}
 note_df.notetype.value_counts().head(20)
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Filtering just for interesting social history data greatly reduced the data volume of the notes table, now only present in around 20.5% of the unit stays. Still, it might be useful to include.
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Besides the usual removal of row identifier, `noteid`, I'm also removing apparently irrelevant (`noteenteredoffset`, `notetype`) and redundant (`notetext`) columns:
 
 # + {"Collapsed": "false", "persistent_id": "5beb1b97-7a5b-446c-934d-74b99556151f", "last_executed_text": "note_df = note_df.drop(['noteid', 'noteenteredoffset', 'notetype', 'notetext'], axis=1)\nnote_df.head()", "execution_event_id": "2e499a1a-e9a0-42cf-b351-98273b224c15"}
 note_df = note_df.drop(['noteid', 'noteenteredoffset', 'notetype', 'notetext'], axis=1)
 note_df.head()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Separate high level notes
 
 # + {"Collapsed": "false", "persistent_id": "4bc9189b-e06f-49a6-8613-d9d46f4ac4f7", "last_executed_text": "note_df.notepath.value_counts().head(20)", "execution_event_id": "86ed6fec-5a95-403d-b0fb-741624d37089"}
@@ -515,7 +525,7 @@ note_df.notepath.apply(lambda x: du.search_explore.get_element_from_split(x, 7, 
 # + {"Collapsed": "false", "persistent_id": "d85d05c9-21b3-4ecf-9e02-be0904f549dc", "last_executed_text": "note_df.notevalue.value_counts()", "execution_event_id": "035d026b-094f-41db-a4da-54bbdef838fe"}
 note_df.notevalue.value_counts()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # There are always 8 levels of the notes. As the first 6 ones are essentially always the same ("notes/Progress Notes/Social History / Family History/Social History/Social History/"), it's best to just preserve the 7th one and isolate the 8th in a new feature. This way, the split provides further insight to the model on similar notes. However, it's also worth taking note that the 8th level of `notepath` seems to be identical to the feature `notevalue`. We'll look more into it later.
 
 # + {"Collapsed": "false", "persistent_id": "a84d611a-871e-44ab-83ac-bbda639710cf", "last_executed_text": "note_df['notetopic'] = note_df.notepath.apply(lambda x: du.search_explore.get_element_from_split(x, 6, separator='/'))\nnote_df['notedetails'] = note_df.notepath.apply(lambda x: du.search_explore.get_element_from_split(x, 7, separator='/'))\nnote_df.head()", "execution_event_id": "086df1e1-073d-4907-a8e3-e390fa773047"}
@@ -523,20 +533,20 @@ note_df['notetopic'] = note_df.notepath.apply(lambda x: du.search_explore.get_el
 note_df['notedetails'] = note_df.notepath.apply(lambda x: du.search_explore.get_element_from_split(x, 7, separator='/'))
 note_df.head()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Remove the now redundant `notepath` column:
 
 # + {"Collapsed": "false", "persistent_id": "3b6b3f09-7a5f-4f3a-bf17-baffb1ac975b", "last_executed_text": "note_df = note_df.drop('notepath', axis=1)\nnote_df.head()", "execution_event_id": "9587e482-17b8-44c1-a90a-d28e5e6a9fcc"}
 note_df = note_df.drop('notepath', axis=1)
 note_df.head()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Compare columns `notevalue` and `notedetails`:
 
 # + {"Collapsed": "false", "persistent_id": "5e4b5f52-a9f6-411d-87e5-c4a524942fe1", "last_executed_text": "note_df[note_df.notevalue != note_df.notedetails]", "execution_event_id": "64c5f440-21d1-48c9-acbf-88d2bbd0007f"}
 note_df[note_df.notevalue != note_df.notedetails]
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # The previous blank output confirms that the newly created `notedetails` feature is exactly equal to the already existing `notevalue` feature. So, we should remove one of them:
 
 # + {"Collapsed": "false", "persistent_id": "c73dcd18-e561-44ac-b3c5-3aabac45217a", "last_executed_text": "note_df = note_df.drop('notedetails', axis=1)\nnote_df.head()", "execution_event_id": "f292b84b-167a-41fc-aa27-9edb54153eda"}
@@ -561,20 +571,20 @@ note_df[note_df.notetopic == 'Recent Travel'].notevalue.value_counts()
 # + {"Collapsed": "false", "persistent_id": "c70bbd0c-b46c-4fd6-9ba3-c68f94c9e71f", "last_executed_text": "note_df[note_df.notetopic == 'Bleeding Disorders'].notevalue.value_counts()", "execution_event_id": "4245a20a-23bc-4366-86ce-e0ed37ffc4a6"}
 note_df[note_df.notetopic == 'Bleeding Disorders'].notevalue.value_counts()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Considering how only the categories of "Smoking Status" and "Ethanol Use" in `notetopic` have more than one possible `notevalue` category, with the remaining being only 2 useful ones (categories "Recent Travel" and "Bleeding Disorders" have too little samples), it's probably best to just turn them into features, instead of packing in the same embedded feature.
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Convert categories to features
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Make the `notetopic` and `notevalue` columns of type categorical:
 
 # + {"Collapsed": "false", "persistent_id": "5b887ae0-4d27-4ef0-aaa5-b84e65d27fd5", "last_executed_text": "# Only needed while using Dask, not with Modin or Pandas\n# note_df = note_df.categorize(columns=['notetopic', 'notevalue'])", "execution_event_id": "728243f3-1e45-4a9b-aeee-3b2945bd920c"}
 # Only needed while using Dask, not with Modin or Pandas
 # note_df = note_df.categorize(columns=['notetopic', 'notevalue'])
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Transform the `notetopic` categories and `notevalue` values into separate features:
 
 # + {"Collapsed": "false", "persistent_id": "80f2910a-7d8d-4bac-8afe-fa4fd54c7b84", "last_executed_text": "note_df = du.data_processing.category_to_feature(note_df, categories_feature='notetopic', \n                                                 values_feature='notevalue', min_len=1000, inplace=True)\nnote_df.head()", "execution_event_id": "531b8a3f-58ec-4acc-b25e-e0b44ab6cedf"}
@@ -582,17 +592,17 @@ note_df = du.data_processing.category_to_feature(note_df, categories_feature='no
                                                  values_feature='notevalue', min_len=1000, inplace=True)
 note_df.head()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Now we have the categories separated into their own features, as desired. Notice also how categories `Bleeding Disorders` and `Recent Travel` weren't added, as they appeared in less than the specified minimum of 1000 rows.
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Remove the old `notevalue` and `notetopic` columns:
 
 # + {"Collapsed": "false", "persistent_id": "01dbc119-9a63-4561-acff-0835a88048a3", "last_executed_text": "note_df = note_df.drop(['notevalue', 'notetopic'], axis=1)\nnote_df.head()", "execution_event_id": "25cd8dc4-9494-49a5-8245-0217b397a9bc"}
 note_df = note_df.drop(['notevalue', 'notetopic'], axis=1)
 note_df.head()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # While `Ethanol Use` and `Smoking Status` have several unique values, `CAD` and `Cancer` only have 1, indicating when that characteristic is present. As such,we should turn `CAD` and `Cancer` into binary features:
 
 # + {"Collapsed": "false", "persistent_id": "c9bb3585-dfab-40cd-b71b-e5fb95d3218d", "last_executed_text": "note_df['CAD'] = note_df['CAD'].apply(lambda x: 1 if x == 'CAD' else 0)\nnote_df['Cancer'] = note_df['Cancer'].apply(lambda x: 1 if x == 'Cancer' else 0)\nnote_df.head()", "execution_event_id": "a81c6b64-03d4-47e6-9b52-3f00963c2577"}
@@ -606,41 +616,49 @@ note_df['CAD'].value_counts()
 # + {"Collapsed": "false", "persistent_id": "67b46f3d-d5bc-4cda-9c2d-4db10304f268"}
 note_df['Cancer'].value_counts()
 
-# + {"Collapsed": "false", "toc-hr-collapsed": false, "cell_type": "markdown"}
+# + {"Collapsed": "false", "persistent_id": "ad342024-94c5-4f9e-a9b2-82bfd6353db2"}
+note_df['Smoking Status'].value_counts()
+
+# + {"Collapsed": "false", "persistent_id": "67b46f3d-d5bc-4cda-9c2d-4db10304f268"}
+note_df['Ethanol Use'].value_counts()
+
+# + [markdown] {"Collapsed": "false", "toc-hr-collapsed": false}
 # ### Discretize categorical features
 #
 # Convert binary categorical features into one hot encode columns, which can later be embedded or used as is.
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # #### One hot encode features
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Update list of categorical features:
 
 # + {"Collapsed": "false", "persistent_id": "0ea70c94-33a9-46b0-b987-dac01e78ec21"}
-cat_feat = ['Smoking Status', 'Ethanol Use', 'CAD', 'Cancer']
+cat_feat = ['Smoking Status', 'Ethanol Use']
 
 # + {"Collapsed": "false", "persistent_id": "a4a2b9a5-0f9b-442c-9042-ed940501b71e"}
 note_df[cat_feat].head()
 
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:36:38.933807Z", "iopub.execute_input": "2020-03-09T16:36:38.934065Z", "iopub.status.idle": "2020-03-09T16:36:38.937828Z", "shell.execute_reply.started": "2020-03-09T16:36:38.934035Z", "shell.execute_reply": "2020-03-09T16:36:38.936941Z"}}
-old_columns = note_df.columns
+# + [markdown] {"Collapsed": "false"}
+# Convert dataframe to Pandas, as the `one_hot_encoding_dataframe` isn't working properly with Modin:
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + {"Collapsed": "false"}
+note_df, pd = du.utils.convert_dataframe(note_df, to='pandas', dtypes=dict(note_df.dtypes))
+
+# + [markdown] {"Collapsed": "false"}
 # Apply one hot encoding:
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "318dc10d-8369-45f1-9deb-5acc83616c04"}
-note_df = du.data_processing.(note_df, columns=cat_feat, join_rows=False,
-                                                        join_by=['patientunitstayid', 'drugoffset'])
+note_df, new_columns = du.data_processing.one_hot_encoding_dataframe(note_df, columns=cat_feat,
+                                                                     join_rows=False,
+                                                                     get_new_column_names=True,
+                                                                     inplace=True)
 note_df
-
-# + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-09T16:37:27.392359Z", "iopub.status.idle": "2020-03-09T16:37:27.399976Z", "iopub.execute_input": "2020-03-09T16:37:27.392616Z", "shell.execute_reply.started": "2020-03-09T16:37:27.392582Z", "shell.execute_reply": "2020-03-09T16:37:27.399076Z"}}
-new_columns = set(note_df.columns) - set(old_columns)
 
 # + {"Collapsed": "false", "persistent_id": "c7a413ec-d61e-49ba-a7ae-13949fc6f092"}
 note_df.dtypes
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Save the association between the original categorical features and the new one hot encoded columns:
 
 # + {"Collapsed": "false", "persistent_id": "26eac7f3-9081-4a96-ae4a-40054c223fd7", "execution": {"iopub.status.busy": "2020-03-09T16:37:35.157248Z", "iopub.execute_input": "2020-03-09T16:37:35.157526Z", "iopub.status.idle": "2020-03-09T16:37:35.164656Z", "shell.execute_reply.started": "2020-03-09T16:37:35.157493Z", "shell.execute_reply": "2020-03-09T16:37:35.163771Z"}}
@@ -651,7 +669,7 @@ for orig_col in cat_feat:
 # + {"execution": {"iopub.status.busy": "2020-03-09T16:37:35.165864Z", "iopub.execute_input": "2020-03-09T16:37:35.166280Z", "iopub.status.idle": "2020-03-09T16:37:35.190294Z", "shell.execute_reply.started": "2020-03-09T16:37:35.166256Z", "shell.execute_reply": "2020-03-09T16:37:35.189358Z"}, "Collapsed": "false"}
 cat_feat_ohe
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # #### Save enumeration encoding mapping
 #
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
@@ -660,17 +678,17 @@ cat_feat_ohe
 stream = open(f'{data_path}/cleaned/cat_feat_ohe_note.yaml', 'w')
 yaml.dump(cat_feat_ohe, stream, default_flow_style=False)
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Create the timestamp feature and sort
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Create the timestamp (`ts`) feature:
 
 # + {"Collapsed": "false", "persistent_id": "dfab2799-af6c-4475-8341-ec3f40546ed1"}
 note_df = note_df.rename(columns={'noteoffset': 'ts'})
 note_df.head()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Remove duplicate rows:
 
 # + {"Collapsed": "false", "persistent_id": "8af4dd26-9eb8-4edf-8bcf-361b10c94979"}
@@ -683,14 +701,14 @@ note_df.head()
 # + {"Collapsed": "false", "persistent_id": "bb6efd0a-aa95-40d6-84b2-8916705a4cf4", "last_executed_text": "len(note_df)", "execution_event_id": "0f6fb1fb-5d50-4f2c-acd1-804100222250"}
 len(note_df)
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Sort by `ts` so as to be easier to merge with other dataframes later:
 
 # + {"Collapsed": "false", "persistent_id": "a03573d9-f345-4ff4-84b9-2b2a3f73ce27"}
 note_df = note_df.sort_values('ts')
 note_df.head()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Check for possible multiple rows with the same unit stay ID and timestamp:
 
 # + {"Collapsed": "false", "persistent_id": "c94e7b7b-dc34-478b-842b-c34c926c934d"}
@@ -702,14 +720,14 @@ note_df[note_df.patientunitstayid == 3091883].head(10)
 # + {"Collapsed": "false", "persistent_id": "a63112fe-a224-4b36-810f-f0d087be43b0"}
 note_df[note_df.patientunitstayid == 3052175].head(10)
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # We can see that there are up to 5 categories per set of `patientunitstayid` and `ts`. As such, we must join them. However, this is a different scenario than in the other cases. Since we created the features from one categorical column, it doesn't have repeated values, only different rows to indicate each of the new features' values. As such, we just need to sum the features.
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Join rows that have the same IDs
 
 # + {"pixiedust": {"displayParams": {}}, "Collapsed": "false", "persistent_id": "591b2ccd-fa5c-4eb2-bec1-8ac21de1c890", "last_executed_text": "note_df = du.embedding.join_repeated_rows(note_df, cont_join_method='max')\nnote_df.head()", "execution_event_id": "c6c89c91-ec15-4636-99d0-6ed07bcc921c"}
-note_df = du.embedding.join_repeated_rows(note_df, cont_join_method='max', inplace=True)
+note_df = du.embedding.join_repeated_rows(note_df, inplace=True)
 note_df.head()
 
 # + {"Collapsed": "false", "persistent_id": "d3040cd3-4500-4129-ae90-23f3753045f8", "last_executed_text": "note_df.dtypes", "execution_event_id": "22163577-ad6a-4eed-8b09-c87d5c740199"}
@@ -724,10 +742,10 @@ note_df[note_df.patientunitstayid == 3091883].head(10)
 # + {"Collapsed": "false", "persistent_id": "d25a8707-20d0-40d7-ad0b-6efd2306686d"}
 note_df[note_df.patientunitstayid == 3052175].head(10)
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Comparing the output from the two previous cells with what we had before the `join_repeated_rows` method, we can see that all rows with duplicate IDs have been successfully joined.
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Clean column names
 #
 # Standardize all column names to be on lower case, have spaces replaced by underscores and remove comas.
@@ -736,25 +754,26 @@ note_df[note_df.patientunitstayid == 3052175].head(10)
 note_df.columns = du.data_processing.clean_naming(note_df.columns)
 note_df.head()
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # ### Save the dataframe
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Save the dataframe before normalizing:
 
 # + {"Collapsed": "false", "persistent_id": "e42f577a-db00-4ecf-9e3c-433007a3bdaf"}
-note_df.to_csv(f'{data_path}cleaned/unnormalized/ohe/note.csv')
+# note_df.to_csv(f'{data_path}cleaned/unnormalized/ohe/note.csv')
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Save the dataframe after normalizing:
 
 # + {"Collapsed": "false", "persistent_id": "812e7eb1-ff92-4a26-a970-2f40fc5bbdb1"}
 note_df.to_csv(f'{data_path}cleaned/normalized/ohe/note.csv')
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Confirm that everything is ok through the `describe` method:
 
 # + {"Collapsed": "false", "persistent_id": "eebc356f-507e-4872-be9d-a1d774f2fd7a"}
 note_df.describe().transpose()
 
 # + {"Collapsed": "false"}
+

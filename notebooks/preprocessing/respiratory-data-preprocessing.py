@@ -192,7 +192,7 @@ resp_care_df[resp_care_df.patientunitstayid == 1113084].head(20)
 # Convert dataframe to Pandas, as the next cells aren't working properly with Modin:
 
 # + {"Collapsed": "false"}
-resp_care_df, pd = du.utils.convert_dataframe(resp_care_df, to='pandas')
+resp_care_df, pd = du.utils.convert_dataframe(resp_care_df, to='pandas', dtypes=dict(resp_care_df.dtypes))
 
 # + {"Collapsed": "false"}
 type(resp_care_df)
@@ -585,7 +585,7 @@ resp_chart_df[resp_chart_df.patientunitstayid == 2553254].head(10)
 # Convert dataframe to Pandas, as the groupby operation in `join_repeated_rows` isn't working properly with Modin:
 
 # + {"Collapsed": "false"}
-resp_chart_df, pd = du.utils.convert_dataframe(resp_chart_df, to='pandas')
+resp_chart_df, pd = du.utils.convert_dataframe(resp_chart_df, to='pandas', dtypes=dict(resp_chart_df.dtypes))
 
 # + {"Collapsed": "false"}
 type(resp_chart_df)
