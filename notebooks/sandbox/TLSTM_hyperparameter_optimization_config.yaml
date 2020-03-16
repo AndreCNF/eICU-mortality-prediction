@@ -1,0 +1,30 @@
+algorithm: bayes
+spec:
+  metric: val_loss
+  objective: minimize
+  maxCombo: 100
+  seed: 42
+  retryLimit: 20
+parameters:
+  n_hidden:
+    type: integer
+    min: 3
+    max: 15
+    scalingType: uniform
+  n_rnn_layers:
+    type: integer
+    min: 1
+    max: 3
+    scalingType: uniform
+  embedding_dim:
+    type: integer
+    min: 2
+    max: 5
+  p_dropout:
+    type: float
+    mu: 0.3
+    sigma: 0.1
+    scalingType: normal
+  elapsed_time:
+    type: categorical
+    values: ['small', 'long']

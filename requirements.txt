@@ -2,7 +2,9 @@ alabaster==0.7.12
 appnope==0.1.0
 astroid==2.3.3
 astunparse==1.6.3
+atomicwrites==1.3.0
 attrs==19.3.0
+autopep8==1.5
 Babel==2.8.0
 backcall==0.1.0
 bleach==3.1.1
@@ -14,11 +16,11 @@ colorama==0.4.3
 colorlover==0.3.0
 colour==0.1.5
 comet-git-pure==0.19.15
-comet-ml==3.1.0
+comet-ml==3.1.2
 configobj==5.0.6
 cycler==0.10.0
 dask==2.11.0
--e git+https://github.com/AndreCNF/data-utils.git@f9808268b5fc48204265aff3d918062a0f87681e#egg=data_utils
+-e git+https://github.com/AndreCNF/data-utils.git@d73c60cbe6753584ba3c25478bfe982cc9f6ae8c#egg=data_utils
 DateTime==4.3
 decorator==4.4.1
 defusedxml==0.6.0
@@ -34,9 +36,11 @@ funcsigs==1.0.2
 future==0.18.2
 geojson==2.5.0
 gitdb==4.0.2
+gitdb2==2.0.6
 GitPython==3.1.0
 graphviz==0.11.1
 HeapDict==1.0.1
+htmlmin==0.1.12
 hug==2.6.1
 idna==2.9
 imagesize==1.2.0
@@ -49,6 +53,7 @@ isort==4.3.21
 jedi==0.16.0
 Jinja2==2.11.1
 joblib==0.14.1
+jsmin==2.2.2
 jsonschema==3.0.2
 jupyter-client==6.0.0
 jupyter-core==4.6.3
@@ -60,7 +65,7 @@ livereload==2.6.1
 llvmlite==0.31.0
 lunr==0.5.6
 lxml==4.5.0
-Mako==1.1.1
+Mako==1.1.2
 Markdown==3.2.1
 MarkupSafe==1.1.1
 matplotlib==3.1.3
@@ -68,8 +73,9 @@ mccabe==0.6.1
 mistune==0.8.4
 mkdocs==1.1
 mkdocs-material==4.6.3
--e git+https://github.com/AndreCNF/model-interpreter.git@04b85450aaaa58f20093962f3a05621327906c15#egg=model_interpreter
-modin==0.7.1
+mkdocs-minify-plugin==0.2.1
+-e git+https://github.com/AndreCNF/model-interpreter.git@2d29a0ef47d486f31e57c14f6666e1f23c9236a7#egg=model_interpreter
+modin==0.7.2
 more-itertools==8.2.0
 mpld3==0.3
 msgpack==1.0.0
@@ -82,10 +88,10 @@ numba==0.48.0
 numpy==1.18.1
 nvidia-ml-py3==7.352.0
 packaging==20.1
-pandas==0.25.3
+pandas==1.0.1
 pandocfilters==1.4.2
 parso==0.6.1
-pdoc3==0.7.4
+pdoc3==0.7.5
 pdocs==1.0.1
 pexpect==4.8.0
 pickleshare==0.7.5
@@ -100,6 +106,7 @@ protobuf==3.11.3
 psutil==5.7.0
 ptyprocess==0.6.0
 py==1.8.1
+pycodestyle==2.5.0
 Pygments==2.5.2
 pylint==2.4.4
 pymdown-extensions==6.3
@@ -123,15 +130,16 @@ Send2Trash==1.5.0
 six==1.14.0
 sklearn==0.0
 smmap==3.0.1
+smmap2==2.0.5
 snowballstemmer==2.0.0
 sortedcontainers==2.1.0
-Sphinx==2.4.3
-sphinxcontrib-applehelp==1.0.1
-sphinxcontrib-devhelp==1.0.1
+Sphinx==2.4.4
+sphinxcontrib-applehelp==1.0.2
+sphinxcontrib-devhelp==1.0.2
 sphinxcontrib-htmlhelp==1.0.3
 sphinxcontrib-jsmath==1.0.1
-sphinxcontrib-qthelp==1.0.2
-sphinxcontrib-serializinghtml==1.1.3
+sphinxcontrib-qthelp==1.0.3
+sphinxcontrib-serializinghtml==1.1.4
 tblib==1.6.0
 terminado==0.8.3
 testpath==0.4.4

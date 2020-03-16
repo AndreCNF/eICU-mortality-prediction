@@ -558,7 +558,7 @@ class TLSTM(BaseRNN):
                 # we only need one set of hidden state
                 hidden_state = (self.hidden[0][0], self.hidden[1][0])
             # Run the RNN layer on the data
-            rnn_output, self.hidden = self.rnn_layer(x, hidden_state)
+            rnn_output, self.hidden = self.rnn_layer(x, hidden_state, delta_ts=delta_ts)
         else:
             # List[RNNState]: One state per layer
             # output_states = jit.annotate(List[Tuple[Tensor, Tensor]], [])
