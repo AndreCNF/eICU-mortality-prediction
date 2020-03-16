@@ -35,6 +35,7 @@ pillow = "^7.0.0"
 ipywidgets = "^7.5.1"
 model-interpreter = {git = "https://github.com/AndreCNF/model-interpreter.git"}
 data-utils = {git = "https://github.com/AndreCNF/data-utils.git"}
+pyarrow = "^0.16.0"
 
 [tool.poetry.dev-dependencies]
 pylint = "^2.3"
