@@ -42,8 +42,8 @@ import pixiedust                           # Debugging in Jupyter Notebook cells
 # + {"Collapsed": "false", "execution_event_id": "baeb346a-1c34-42d1-a501-7ae37369255e", "last_executed_text": "# Change to parent directory (presumably \"Documents\")\nos.chdir(\"../../..\")\n\n# Path to the CSV dataset files\ndata_path = 'Documents/Datasets/Thesis/eICU/uncompressed/'\n\n# Path to the code files\nproject_path = 'Documents/GitHub/eICU-mortality-prediction/'", "persistent_id": "a1f6ee7f-36d4-489d-b2dd-ec2a38f15d11", "execution": {"iopub.status.busy": "2020-03-11T17:32:27.731080Z", "iopub.execute_input": "2020-03-11T17:32:27.731290Z", "iopub.status.idle": "2020-03-11T17:32:27.734807Z", "shell.execute_reply.started": "2020-03-11T17:32:27.731252Z", "shell.execute_reply": "2020-03-11T17:32:27.734088Z"}}
 # Change to parent directory (presumably "Documents")
 os.chdir("../../../..")
-# Path to the CSV dataset files
-data_path = 'data/eICU/uncompressed/'
+# Path to the parquet dataset files
+data_path = 'data/eICU/'
 # Path to the code files
 project_path = 'code/eICU-mortality-prediction/'
 

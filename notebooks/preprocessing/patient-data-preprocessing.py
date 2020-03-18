@@ -9,9 +9,9 @@
 #       format_version: '1.4'
 #       jupytext_version: 1.2.1
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: eicu-mortality-prediction
 #     language: python
-#     name: python3
+#     name: eicu-mortality-prediction
 # ---
 
 # + {"Collapsed": "false", "toc-hr-collapsed": false, "cell_type": "markdown"}
@@ -39,16 +39,16 @@ import pixiedust                           # Debugging in Jupyter Notebook cells
 # + {"Collapsed": "false", "execution": {"iopub.execute_input": "2020-03-11T02:55:21.503271Z", "iopub.status.busy": "2020-03-11T02:55:21.503003Z", "iopub.status.idle": "2020-03-11T02:55:21.507321Z", "shell.execute_reply": "2020-03-11T02:55:21.506626Z", "shell.execute_reply.started": "2020-03-11T02:55:21.503228Z"}, "execution_event_id": "baeb346a-1c34-42d1-a501-7ae37369255e", "last_executed_text": "# Change to parent directory (presumably \"Documents\")\nos.chdir(\"../../..\")\n\n# Path to the CSV dataset files\ndata_path = 'Documents/Datasets/Thesis/eICU/uncompressed/'\n\n# Path to the code files\nproject_path = 'Documents/GitHub/eICU-mortality-prediction/'", "persistent_id": "a1f6ee7f-36d4-489d-b2dd-ec2a38f15d11"}
 # Change to parent directory (presumably "Documents")
 os.chdir("../../../..")
-# Path to the CSV dataset files
-data_path = 'data/eICU/uncompressed/'
+# Path to the parquet dataset files
+data_path = 'data/eICU/'
 # Path to the code files
 project_path = 'code/eICU-mortality-prediction/'
 
 # + {"Collapsed": "false", "execution": {"iopub.execute_input": "2020-03-06T02:39:14.256033Z", "iopub.status.busy": "2020-03-06T02:39:14.255803Z", "iopub.status.idle": "2020-03-06T02:39:14.509317Z", "shell.execute_reply": "2020-03-06T02:39:14.508277Z", "shell.execute_reply.started": "2020-03-06T02:39:14.255994Z"}}
-# Make sure that every large operation can be handled, by using the disk as an overflow for the memory
-# !export MODIN_OUT_OF_CORE=true
-# Another trick to do with Pandas so as to be able to allocate bigger objects to memory
-# !sudo bash -c 'echo 1 > /proc/sys/vm/overcommit_memory'
+# # Make sure that every large operation can be handled, by using the disk as an overflow for the memory
+# # !export MODIN_OUT_OF_CORE=true
+# # Another trick to do with Pandas so as to be able to allocate bigger objects to memory
+# # !sudo bash -c 'echo 1 > /proc/sys/vm/overcommit_memory'
 
 # + {"Collapsed": "false", "execution": {"iopub.execute_input": "2020-03-11T02:55:21.508881Z", "iopub.status.busy": "2020-03-11T02:55:21.508636Z", "iopub.status.idle": "2020-03-11T02:55:23.475317Z", "shell.execute_reply": "2020-03-11T02:55:23.473880Z", "shell.execute_reply.started": "2020-03-11T02:55:21.508828Z"}, "execution_event_id": "82ef68be-443a-4bb8-8abd-7457a7005b4d", "last_executed_text": "import modin.pandas as pd                  # Optimized distributed version of Pandas\nimport data_utils as du                    # Data science and machine learning relevant methods", "persistent_id": "c0c2e356-d4f4-4a9d-bec2-88bdf9eb6a38"}
 import modin.pandas as pd                  # Optimized distributed version of Pandas
@@ -380,7 +380,7 @@ patient_df_norm.describe().transpose()
 # + {"Collapsed": "false", "execution_event_id": "3146d2bf-b3f7-410b-95a0-5e1b52b40f8a", "last_executed_text": "# [TODO] Remove the rows with ts = 0 if there are no matching rows in other tables", "persistent_id": "826b9069-c468-47a7-aa00-a92edc829e13"}
 # [TODO] Remove the rows with ts = 0 if there are no matching rows in other tables
 
-# + {"Collapsed": "false", "toc-hr-collapsed": true, "cell_type": "markdown"}
+# + {"Collapsed": "false", "toc-hr-collapsed": false, "cell_type": "markdown"}
 # ## Notes data
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -751,7 +751,7 @@ note_df[note_df.patientunitstayid == 3052175].head(10)
 # Standardize all column names to be on lower case, have spaces replaced by underscores and remove comas.
 
 # + {"Collapsed": "false", "persistent_id": "32450572-639e-4539-b35a-181078ed3335"}
-note_df.columns = du.data_processing.clean_naming(note_df.columns)
+note_df.columns = du.data_processing.clean_naming(note_df.columns, lower_case=False)
 note_df.head()
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -776,4 +776,3 @@ note_df.to_csv(f'{data_path}cleaned/normalized/ohe/note.csv')
 note_df.describe().transpose()
 
 # + {"Collapsed": "false"}
-

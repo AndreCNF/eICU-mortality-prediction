@@ -20,7 +20,7 @@ comet-ml==3.1.2
 configobj==5.0.6
 cycler==0.10.0
 dask==2.11.0
--e git+https://github.com/AndreCNF/data-utils.git@d73c60cbe6753584ba3c25478bfe982cc9f6ae8c#egg=data_utils
+-e git+https://github.com/AndreCNF/data-utils.git@85bee78e852402ecfcb11c280e68127aaa422668#egg=data_utils
 DateTime==4.3
 decorator==4.4.1
 defusedxml==0.6.0
@@ -106,6 +106,7 @@ protobuf==3.11.3
 psutil==5.7.0
 ptyprocess==0.6.0
 py==1.8.1
+pyarrow==0.16.0
 pycodestyle==2.5.0
 Pygments==2.5.2
 pylint==2.4.4

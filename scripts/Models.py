@@ -703,16 +703,120 @@ class TLSTMCell(jit.ScriptModule):
         return hy, (hy, cy)
 
 
-# [TODO]
-# class MF1LSTMCell(jit.ScriptModule):
+class MF1LSTMCell(jit.ScriptModule):
+    def __init__(self, input_size, hidden_size, delta_ts_col=-1, elapsed_time='small',
+                 no_small_delta=True):
+        super(TLSTMCell, self).__init__()
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.delta_ts_col = delta_ts_col
+        self.elapsed_time = elapsed_time.lower()
+        self.no_small_delta = no_small_delta
+        if self.elapsed_time != 'small' and self.elapsed_time != 'long':
+            raise Exception(f'ERROR: The parameter `elapsed_time` must either be set to "small" or "long". Received "{elapsed_time}" instead.')
+        self.weight_ih = nn.Parameter(torch.randn(4 * hidden_size, input_size))
+        self.weight_hh = nn.Parameter(torch.randn(4 * hidden_size, hidden_size))
+        self.bias_ih = nn.Parameter(torch.randn(4 * hidden_size))
+        self.bias_hh = nn.Parameter(torch.randn(4 * hidden_size))
+
+    @jit.script_method
+    def forward(self, input, state, delta_ts=torch.tensor(np.nan)):
+        # type: (Tensor, Tuple[Tensor, Tensor], Tensor) -> Tuple[Tensor, Tuple[Tensor, Tensor]]
+        # Separate the elapsed time from the remaining features
+        if torch.all(delta_ts.eq(torch.tensor(np.nan))):
+            delta_ts = input[:, self.delta_ts_col].clone()
+            left_to_delta = input[:, :self.delta_ts_col]
+            right_to_delta = input[:, self.delta_ts_col+1:]
+            input = torch.cat([left_to_delta, right_to_delta], 1)
+        # Get the hidden state and cell memory from the state variable
+        hx, cx = state
+        # Perform the LSTM gates operations
+        gates = (torch.mm(input, self.weight_ih.t()) + self.bias_ih +
+                 torch.mm(hx, self.weight_hh.t()) + self.bias_hh)
+        in_gate, forget_gate, cell_gate, out_gate = gates.chunk(4, 1)
+        if self.no_small_delta is True:
+            # Set the elapsed time to have a minimum normalized value of 1, so
+            # as to prevent smaller than average time differences to increase
+            # hidden state values to excessively large numbers
+            delta_ts = torch.max(delta_ts, torch.ones(delta_ts.shape))
+        # Calculate the time decay value
+        if self.elapsed_time == 'small':
+            g = 1 / delta_ts
+        else:
+            g = 1 / torch.log(math.e * delta_ts)
+        # Apply each gate's activation function
+        in_gate = torch.sigmoid(in_gate)
+        forget_gate = torch.sigmoid(forget_gate)
+        cell_gate = torch.tanh(cell_gate)
+        out_gate = torch.sigmoid(out_gate)
+        # Apply MF1-LSTM's time decay
+        forget_gate = (g * forget_gate.t()).t()
+        # Calculate the new cell memory
+        cy = (forget_gate * cx) + (in_gate * cell_gate)
+        # Calculate the new hidden state
+        hy = out_gate * torch.tanh(cy)
+        # Return the new output and state
+        return hy, (hy, cy)
 
 
+class MF2LSTMCell(jit.ScriptModule):
+    def __init__(self, input_size, hidden_size, delta_ts_col=-1, elapsed_time='small',
+                 no_small_delta=True):
+        super(TLSTMCell, self).__init__()
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.delta_ts_col = delta_ts_col
+        self.elapsed_time = elapsed_time.lower()
+        self.no_small_delta = no_small_delta
+        if self.elapsed_time != 'small' and self.elapsed_time != 'long':
+            raise Exception(f'ERROR: The parameter `elapsed_time` must either be set to "small" or "long". Received "{elapsed_time}" instead.')
+        self.weight_ih = nn.Parameter(torch.randn(3 * hidden_size, input_size))
+        self.weight_hh = nn.Parameter(torch.randn(3 * hidden_size, hidden_size))
+        self.weight_fih = nn.Parameter(torch.randn(hidden_size, input_size))
+        self.weight_fhh = nn.Parameter(torch.randn(hidden_size, hidden_size))
+        self.bias_ih = nn.Parameter(torch.randn(3 * hidden_size))
+        self.bias_hh = nn.Parameter(torch.randn(3 * hidden_size))
+        self.bias_fih = nn.Parameter(torch.randn(hidden_size))
+        self.bias_fhh = nn.Parameter(torch.randn(hidden_size))
 
-
-# [TODO]
-# class MF2LSTMCell(jit.ScriptModule):
-
-
+    @jit.script_method
+    def forward(self, input, state, delta_ts=torch.tensor(np.nan)):
+        # type: (Tensor, Tuple[Tensor, Tensor], Tensor) -> Tuple[Tensor, Tuple[Tensor, Tensor]]
+        # Separate the elapsed time from the remaining features
+        if torch.all(delta_ts.eq(torch.tensor(np.nan))):
+            delta_ts = input[:, self.delta_ts_col].clone()
+            left_to_delta = input[:, :self.delta_ts_col]
+            right_to_delta = input[:, self.delta_ts_col+1:]
+            input = torch.cat([left_to_delta, right_to_delta], 1)
+        # Get the hidden state and cell memory from the state variable
+        hx, cx = state
+        # Perform the LSTM gates operations
+        gates = (torch.mm(input, self.weight_ih.t()) + self.bias_ih +
+                 torch.mm(hx, self.weight_hh.t()) + self.bias_hh)
+        in_gate, forget_gate, cell_gate, out_gate = gates.chunk(4, 1)
+        if self.no_small_delta is True:
+            # Set the elapsed time to have a minimum normalized value of 1, so
+            # as to prevent smaller than average time differences to increase
+            # hidden state values to excessively large numbers
+            delta_ts = torch.max(delta_ts, torch.ones(delta_ts.shape))
+        # Calculate the time decay value
+        if self.elapsed_time == 'small':
+            g = 1 / delta_ts
+        else:
+            g = 1 / torch.log(math.e * delta_ts)
+        # Apply each gate's activation function
+        in_gate = torch.sigmoid(in_gate)
+        forget_gate = torch.sigmoid(forget_gate)
+        cell_gate = torch.tanh(cell_gate)
+        out_gate = torch.sigmoid(out_gate)
+        # Apply MF2-LSTM's parametric time
+        forget_gate =
+        # Calculate the new cell memory
+        cy = (forget_gate * cx) + (in_gate * cell_gate)
+        # Calculate the new hidden state
+        hy = out_gate * torch.tanh(cy)
+        # Return the new output and state
+        return hy, (hy, cy)
 
 
 class LSTMLayer(jit.ScriptModule):
