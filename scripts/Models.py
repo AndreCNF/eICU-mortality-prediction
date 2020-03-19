@@ -599,15 +599,242 @@ class TLSTM(BaseRNN):
             return output
 
 
-# [TODO]
-# class MF1LSTM(BaseRNN):
+class MF1LSTM(BaseRNN):
+    def __init__(self, n_inputs, n_hidden, n_outputs, n_rnn_layers=1, p_dropout=0,
+                 embed_features=None, n_embeddings=None, embedding_dim=None,
+                 bidir=False, padding_value=999999,
+                 delta_ts_col=None, elapsed_time='small', no_small_delta=True):
+        if delta_ts_col is None:
+            if embed_features is None:
+                self.delta_ts_col = n_inputs
+            else:
+                # Have into account the new embedding columns that will be added,
+                # as well as the removal of the originating categorical columns
+                # NOTE: This only works assuming that the delta_ts column is the
+                # last one on the dataframe, standing to the left of all the
+                # embedding features
+                if all([isinstance(feature, int) for feature in embed_features]):
+                    self.delta_ts_col = n_inputs - len(embed_features)
+                elif (all([isinstance(feat_list, list) for feat_list in embed_features])
+                and all([isinstance(feature, int) for feature in feat_list
+                        for feat_list in embed_features])):
+                    self.delta_ts_col = n_inputs
+                    for i in range(len(embed_features)):
+                        self.delta_ts_col = rnn_n_inputs - len(embed_features[i])
+
+        else:
+            self.delta_ts_col = delta_ts_col
+        self.elapsed_time = elapsed_time
+        self.no_small_delta = no_small_delta
+        MF1LSTMCell_prtl = partial(MF1LSTMCell, delta_ts_col=self.delta_ts_col,
+                                 elapsed_time=self.elapsed_time,
+                                 no_small_delta=self.no_small_delta)
+        if bidir is True:
+            rnn_module = lambda *cell_args: BidirTLSTMLayer(MF1LSTMCell_prtl, *cell_args)
+        else:
+            rnn_module = lambda *cell_args: TLSTMLayer(MF1LSTMCell_prtl, *cell_args)
+        super(MF1LSTM, self).__init__(rnn_module=rnn_module, n_inputs=n_inputs,
+                                      n_hidden=n_hidden, n_outputs=n_outputs,
+                                      n_rnn_layers=n_rnn_layers,
+                                      p_dropout=p_dropout,
+                                      embed_features=embed_features,
+                                      n_embeddings=n_embeddings,
+                                      embedding_dim=embedding_dim,
+                                      bidir=bidir, is_lstm=True,
+                                      padding_value=padding_value)
+
+    def forward(self, x, get_hidden_state=False,
+                hidden_state=None, prob_output=True, already_embedded=True):
+        if self.embed_features is not None and already_embedded is False:
+            # Run each embedding layer on each respective feature, adding the
+            # resulting embedding values to the tensor and removing the original,
+            # categorical encoded columns
+            x = du.embedding.embedding_bag_pipeline(x, self.embed_layers, self.embed_features,
+                                                    model_forward=True, inplace=True)
+        # Make sure that the input data is of type float
+        x = x.float()
+        # Get the batch size (might not be always the same)
+        batch_size = x.shape[0]
+        # Isolate the delta_ts feature
+        delta_ts = x[:, :, self.delta_ts_col].clone()
+        left_to_delta = x[:, :, :self.delta_ts_col]
+        right_to_delta = x[:, :, self.delta_ts_col+1:]
+        x = torch.cat([left_to_delta, right_to_delta], 2)
+        if hidden_state is None:
+            # Reset the LSTM hidden state. Must be done before you run a new
+            # batch. Otherwise the LSTM will treat a new batch as a continuation
+            # of a sequence.
+            self.hidden = self.init_hidden(batch_size)
+        else:
+            # Use the specified hidden state
+            self.hidden = hidden_state
+        # Make sure that the data is input in the format of (timestamp x sample x features)
+        x = x.permute(1, 0, 2)
+        # Get the outputs and hidden states from the RNN layer(s)
+        if self.n_rnn_layers == 1:
+            if self.bidir is False:
+                # Since there's only one layer and the model is not bidirectional,
+                # we only need one set of hidden state
+                hidden_state = (self.hidden[0][0], self.hidden[1][0])
+            # Run the RNN layer on the data
+            rnn_output, self.hidden = self.rnn_layer(x, hidden_state, delta_ts=delta_ts)
+        else:
+            # List[RNNState]: One state per layer
+            # output_states = jit.annotate(List[Tuple[Tensor, Tensor]], [])
+            output_states = []
+            i = 0
+            # The first RNN layer's input is the original input;
+            # the following layers will use their respective previous layer's
+            # output as input
+            rnn_output = x
+            for rnn_layer in self.rnn_layers:
+                hidden_state = (self.hidden[0][i], self.hidden[1][i])
+                # Run the RNN layer on the data
+                rnn_output, out_state = rnn_layer(rnn_output, hidden_state, delta_ts=delta_ts)
+                # Apply the dropout layer except the last layer
+                if i < self.n_rnn_layers - 1:
+                    rnn_output = self.dropout(rnn_output)
+                output_states += [out_state]
+                i += 1
+            # Update the hidden states variable
+            self.hidden = output_states
+        # Apply dropout to the last RNN layer
+        # [TODO] Consider if it makes sense to add dropout to the last RNN layer
+        # rnn_output = self.dropout(rnn_output)
+        # Flatten RNN output to fit into the fully connected layer
+        flat_rnn_output = rnn_output.contiguous().view(-1, self.n_hidden)
+        # Apply the final fully connected layer
+        output = self.fc(flat_rnn_output)
+        if prob_output is True:
+            # Get the outputs in the form of probabilities
+            if self.n_outputs == 1:
+                output = self.activation(output)
+            else:
+                # Normalize outputs on their last dimension
+                output = self.activation(output, dim=len(output.shape)-1)
+        if get_hidden_state is True:
+            return output, self.hidden
+        else:
+            return output
 
 
+class MF2LSTM(BaseRNN):
+    def __init__(self, n_inputs, n_hidden, n_outputs, n_rnn_layers=1, p_dropout=0,
+                 embed_features=None, n_embeddings=None, embedding_dim=None,
+                 bidir=False, padding_value=999999,
+                 delta_ts_col=None, elapsed_time='small', no_small_delta=True):
+        if delta_ts_col is None:
+            if embed_features is None:
+                self.delta_ts_col = n_inputs
+            else:
+                # Have into account the new embedding columns that will be added,
+                # as well as the removal of the originating categorical columns
+                # NOTE: This only works assuming that the delta_ts column is the
+                # last one on the dataframe, standing to the left of all the
+                # embedding features
+                if all([isinstance(feature, int) for feature in embed_features]):
+                    self.delta_ts_col = n_inputs - len(embed_features)
+                elif (all([isinstance(feat_list, list) for feat_list in embed_features])
+                and all([isinstance(feature, int) for feature in feat_list
+                        for feat_list in embed_features])):
+                    self.delta_ts_col = n_inputs
+                    for i in range(len(embed_features)):
+                        self.delta_ts_col = rnn_n_inputs - len(embed_features[i])
 
-# [TODO]
-# class MF2LSTM(BaseRNN):
+        else:
+            self.delta_ts_col = delta_ts_col
+        self.elapsed_time = elapsed_time
+        self.no_small_delta = no_small_delta
+        MF2LSTMCell_prtl = partial(MF2LSTMCell, delta_ts_col=self.delta_ts_col,
+                                 elapsed_time=self.elapsed_time,
+                                 no_small_delta=self.no_small_delta)
+        if bidir is True:
+            rnn_module = lambda *cell_args: BidirTLSTMLayer(MF2LSTMCell_prtl, *cell_args)
+        else:
+            rnn_module = lambda *cell_args: TLSTMLayer(MF2LSTMCell_prtl, *cell_args)
+        super(MF2LSTM, self).__init__(rnn_module=rnn_module, n_inputs=n_inputs,
+                                      n_hidden=n_hidden, n_outputs=n_outputs,
+                                      n_rnn_layers=n_rnn_layers,
+                                      p_dropout=p_dropout,
+                                      embed_features=embed_features,
+                                      n_embeddings=n_embeddings,
+                                      embedding_dim=embedding_dim,
+                                      bidir=bidir, is_lstm=True,
+                                      padding_value=padding_value)
 
-
+    def forward(self, x, get_hidden_state=False,
+                hidden_state=None, prob_output=True, already_embedded=True):
+        if self.embed_features is not None and already_embedded is False:
+            # Run each embedding layer on each respective feature, adding the
+            # resulting embedding values to the tensor and removing the original,
+            # categorical encoded columns
+            x = du.embedding.embedding_bag_pipeline(x, self.embed_layers, self.embed_features,
+                                                    model_forward=True, inplace=True)
+        # Make sure that the input data is of type float
+        x = x.float()
+        # Get the batch size (might not be always the same)
+        batch_size = x.shape[0]
+        # Isolate the delta_ts feature
+        delta_ts = x[:, :, self.delta_ts_col].clone()
+        left_to_delta = x[:, :, :self.delta_ts_col]
+        right_to_delta = x[:, :, self.delta_ts_col+1:]
+        x = torch.cat([left_to_delta, right_to_delta], 2)
+        if hidden_state is None:
+            # Reset the LSTM hidden state. Must be done before you run a new
+            # batch. Otherwise the LSTM will treat a new batch as a continuation
+            # of a sequence.
+            self.hidden = self.init_hidden(batch_size)
+        else:
+            # Use the specified hidden state
+            self.hidden = hidden_state
+        # Make sure that the data is input in the format of (timestamp x sample x features)
+        x = x.permute(1, 0, 2)
+        # Get the outputs and hidden states from the RNN layer(s)
+        if self.n_rnn_layers == 1:
+            if self.bidir is False:
+                # Since there's only one layer and the model is not bidirectional,
+                # we only need one set of hidden state
+                hidden_state = (self.hidden[0][0], self.hidden[1][0])
+            # Run the RNN layer on the data
+            rnn_output, self.hidden = self.rnn_layer(x, hidden_state, delta_ts=delta_ts)
+        else:
+            # List[RNNState]: One state per layer
+            # output_states = jit.annotate(List[Tuple[Tensor, Tensor]], [])
+            output_states = []
+            i = 0
+            # The first RNN layer's input is the original input;
+            # the following layers will use their respective previous layer's
+            # output as input
+            rnn_output = x
+            for rnn_layer in self.rnn_layers:
+                hidden_state = (self.hidden[0][i], self.hidden[1][i])
+                # Run the RNN layer on the data
+                rnn_output, out_state = rnn_layer(rnn_output, hidden_state, delta_ts=delta_ts)
+                # Apply the dropout layer except the last layer
+                if i < self.n_rnn_layers - 1:
+                    rnn_output = self.dropout(rnn_output)
+                output_states += [out_state]
+                i += 1
+            # Update the hidden states variable
+            self.hidden = output_states
+        # Apply dropout to the last RNN layer
+        # [TODO] Consider if it makes sense to add dropout to the last RNN layer
+        # rnn_output = self.dropout(rnn_output)
+        # Flatten RNN output to fit into the fully connected layer
+        flat_rnn_output = rnn_output.contiguous().view(-1, self.n_hidden)
+        # Apply the final fully connected layer
+        output = self.fc(flat_rnn_output)
+        if prob_output is True:
+            # Get the outputs in the form of probabilities
+            if self.n_outputs == 1:
+                output = self.activation(output)
+            else:
+                # Normalize outputs on their last dimension
+                output = self.activation(output, dim=len(output.shape)-1)
+        if get_hidden_state is True:
+            return output, self.hidden
+        else:
+            return output
 
 
 class LSTMCell(jit.ScriptModule):
@@ -706,7 +933,7 @@ class TLSTMCell(jit.ScriptModule):
 class MF1LSTMCell(jit.ScriptModule):
     def __init__(self, input_size, hidden_size, delta_ts_col=-1, elapsed_time='small',
                  no_small_delta=True):
-        super(TLSTMCell, self).__init__()
+        super(MF1LSTMCell, self).__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.delta_ts_col = delta_ts_col
@@ -762,7 +989,7 @@ class MF1LSTMCell(jit.ScriptModule):
 class MF2LSTMCell(jit.ScriptModule):
     def __init__(self, input_size, hidden_size, delta_ts_col=-1, elapsed_time='small',
                  no_small_delta=True):
-        super(TLSTMCell, self).__init__()
+        super(MF2LSTMCell, self).__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.delta_ts_col = delta_ts_col
@@ -770,14 +997,12 @@ class MF2LSTMCell(jit.ScriptModule):
         self.no_small_delta = no_small_delta
         if self.elapsed_time != 'small' and self.elapsed_time != 'long':
             raise Exception(f'ERROR: The parameter `elapsed_time` must either be set to "small" or "long". Received "{elapsed_time}" instead.')
-        self.weight_ih = nn.Parameter(torch.randn(3 * hidden_size, input_size))
-        self.weight_hh = nn.Parameter(torch.randn(3 * hidden_size, hidden_size))
-        self.weight_fih = nn.Parameter(torch.randn(hidden_size, input_size))
-        self.weight_fhh = nn.Parameter(torch.randn(hidden_size, hidden_size))
-        self.bias_ih = nn.Parameter(torch.randn(3 * hidden_size))
-        self.bias_hh = nn.Parameter(torch.randn(3 * hidden_size))
-        self.bias_fih = nn.Parameter(torch.randn(hidden_size))
-        self.bias_fhh = nn.Parameter(torch.randn(hidden_size))
+        self.weight_ih = nn.Parameter(torch.randn(4 * hidden_size, input_size))
+        self.weight_hh = nn.Parameter(torch.randn(4 * hidden_size, hidden_size))
+        self.weight_fq = nn.Parameter(torch.randn(hidden_size, 3))
+        self.bias_ih = nn.Parameter(torch.randn(4 * hidden_size))
+        self.bias_hh = nn.Parameter(torch.randn(4 * hidden_size))
+        self.bias_fq = nn.Parameter(torch.randn(hidden_size))
 
     @jit.script_method
     def forward(self, input, state, delta_ts=torch.tensor(np.nan)):
@@ -804,13 +1029,14 @@ class MF2LSTMCell(jit.ScriptModule):
             g = 1 / delta_ts
         else:
             g = 1 / torch.log(math.e * delta_ts)
+        # Apply MF2-LSTM's parametric time
+        q = torch.cat((g / 60), (g / 720) ** 2, (g / 1440) ** 3)
+        forget_gate = forget_gate + torch.mm(q, self.weight_fq.t()) + self.bias_fq
         # Apply each gate's activation function
         in_gate = torch.sigmoid(in_gate)
         forget_gate = torch.sigmoid(forget_gate)
         cell_gate = torch.tanh(cell_gate)
         out_gate = torch.sigmoid(out_gate)
-        # Apply MF2-LSTM's parametric time
-        forget_gate =
         # Calculate the new cell memory
         cy = (forget_gate * cx) + (in_gate * cell_gate)
         # Calculate the new hidden state
