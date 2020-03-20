@@ -78,10 +78,17 @@ class BaseRNN(nn.Module):
                 else:
                     raise Exception(f'ERROR: The embedding features must be indicated in `embed_features` as either a single, integer index or a list of indices. The provided argument has type {type(embed_features)}.')
             else:
-                if isinstance(self.n_embeddings, int):
-                    self.n_embeddings = [self.n_embeddings]
-                if len(self.n_embeddings) != len(self.embed_features):
-                    raise Exception(f'ERROR: The list of the number of embeddings `n_embeddings` and the embedding features `embed_features` must have the same length. The provided `n_embeddings` has length {len(self.n_embeddings)} while `embed_features` has length {len(self.embed_features)}.')
+                if all([isinstance(feature, int) for feature in self.embed_features]):
+                    if self.n_embeddings != len(self.embed_features)+1:
+                        raise Exception(f'ERROR: The number of embeddings `n_embeddings` must equal the length of its corresponding embedding features `embed_features`. The provided `n_embeddings` is {self.n_embeddings} while `embed_features` has length {len(self.embed_features)}.')
+                elif (all([isinstance(feat_list, list) for feat_list in self.embed_features])
+                and all([isinstance(feature, int) for feature in feat_list
+                        for feat_list in self.embed_features])):
+                    if len(self.n_embeddings) != len(self.embed_features):
+                        raise Exception(f'ERROR: The list of the number of embeddings `n_embeddings` and the embedding features `embed_features` must have the same length. The provided `n_embeddings` has length {len(self.n_embeddings)} while `embed_features` has length {len(self.embed_features)}.')
+                    for i in range(self.n_embeddings):
+                        if self.n_embeddings[i] != len(self.embed_features[i]):
+                            raise Exception(f'ERROR: The number of embeddings `n_embeddings` must equal the length of its corresponding embedding features `embed_features`. The provided `n_embeddings` is {self.n_embeddings[i]} while `embed_features` has length {len(self.embed_features[i])}, in embedding features set {i}.')
             if all([isinstance(feature, int) for feature in self.embed_features]):
                 if embedding_dim is None:
                     # Calculate a reasonable embedding dimension for the
@@ -320,8 +327,17 @@ class VanillaLSTM(nn.Module):
             else:
                 if isinstance(self.n_embeddings, int):
                     self.n_embeddings = [self.n_embeddings]
-                if len(self.n_embeddings) != len(self.embed_features):
-                    raise Exception(f'ERROR: The list of the number of embeddings `n_embeddings` and the embedding features `embed_features` must have the same length. The provided `n_embeddings` has length {len(self.n_embeddings)} while `embed_features` has length {len(self.embed_features)}.')
+                if all([isinstance(feature, int) for feature in self.embed_features]):
+                    if self.n_embeddings != len(self.embed_features)+1:
+                        raise Exception(f'ERROR: The number of embeddings `n_embeddings` must equal the length of its corresponding embedding features `embed_features`. The provided `n_embeddings` is {self.n_embeddings} while `embed_features` has length {len(self.embed_features)}.')
+                elif (all([isinstance(feat_list, list) for feat_list in self.embed_features])
+                and all([isinstance(feature, int) for feature in feat_list
+                        for feat_list in self.embed_features])):
+                    if len(self.n_embeddings) != len(self.embed_features):
+                        raise Exception(f'ERROR: The list of the number of embeddings `n_embeddings` and the embedding features `embed_features` must have the same length. The provided `n_embeddings` has length {len(self.n_embeddings)} while `embed_features` has length {len(self.embed_features)}.')
+                    for i in range(self.n_embeddings):
+                        if self.n_embeddings[i] != len(self.embed_features[i]):
+                            raise Exception(f'ERROR: The number of embeddings `n_embeddings` must equal the length of its corresponding embedding features `embed_features`. The provided `n_embeddings` is {self.n_embeddings[i]} while `embed_features` has length {len(self.embed_features[i])}, in embedding features set {i}.')
             if all([isinstance(feature, int) for feature in self.embed_features]):
                 if embedding_dim is None:
                     # Calculate a reasonable embedding dimension for the
@@ -723,6 +739,8 @@ class MF2LSTM(BaseRNN):
                  embed_features=None, n_embeddings=None, embedding_dim=None,
                  bidir=False, padding_value=999999,
                  delta_ts_col=None, elapsed_time='small', no_small_delta=True):
+        # NOTE: In the case of MF2-LSTM models, delta_ts must be in an unormalized
+        # version, with each value representing time in minutes
         if delta_ts_col is None:
             if embed_features is None:
                 self.delta_ts_col = n_inputs
@@ -1030,7 +1048,8 @@ class MF2LSTMCell(jit.ScriptModule):
         else:
             g = 1 / torch.log(math.e * delta_ts)
         # Apply MF2-LSTM's parametric time
-        q = torch.cat((g / 60), (g / 720) ** 2, (g / 1440) ** 3)
+        g = g.view(input.shape[0], -1)
+        q = torch.cat([(g / 60), (g / 720) ** 2, (g / 1440) ** 3], axis=1)
         forget_gate = forget_gate + torch.mm(q, self.weight_fq.t()) + self.bias_fq
         # Apply each gate's activation function
         in_gate = torch.sigmoid(in_gate)
