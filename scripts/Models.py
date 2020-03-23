@@ -1049,7 +1049,7 @@ class MF2LSTMCell(jit.ScriptModule):
             g = 1 / torch.log(math.e * delta_ts)
         # Apply MF2-LSTM's parametric time
         g = g.view(input.shape[0], -1)
-        q = torch.cat([(g / 60), (g / 720) ** 2, (g / 1440) ** 3], axis=1)
+        q = torch.cat([(g / 60), (g / 720) ** 2, (g / 1440) ** 3], dim=1)
         forget_gate = forget_gate + torch.mm(q, self.weight_fq.t()) + self.bias_fq
         # Apply each gate's activation function
         in_gate = torch.sigmoid(in_gate)
