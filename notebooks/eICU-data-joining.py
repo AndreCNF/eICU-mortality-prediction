@@ -30,7 +30,9 @@ import modin.pandas as mpd                  # Optimized distributed version of P
 import pandas as pd
 import data_utils as du                    # Data science and machine learning relevant methods
 
-du.set_pandas_library('pandas')
+# +
+# du.set_pandas_library('pandas')
+# -
 
 # Allow pandas to show more columns:
 
@@ -43,132 +45,9 @@ du.set_random_seed(42)
 
 # ## Initializing variables
 
-dtype_dict = {'patientunitstayid': 'uint32',
-              'gender': 'UInt8',
-              'age': 'float32',
-              'admissionheight': 'float32',
-              'admissionweight': 'float32',
-              'death_ts': 'Int32',
-              'ts': 'int32',
-              'cad': 'UInt8',
-              'cancer': 'UInt8',
-              # 'diagnosis_type_1': 'UInt64',
-              # 'diagnosis_disorder_2': 'UInt64',
-              # 'diagnosis_detailed_3': 'UInt64',
-              # 'allergyname': 'UInt64',
-              # 'drugallergyhiclseqno': 'UInt64',
-              # 'pasthistoryvalue': 'UInt64',
-              # 'pasthistorytype': 'UInt64',
-              # 'pasthistorydetails': 'UInt64',
-              # 'treatmenttype': 'UInt64',
-              # 'treatmenttherapy': 'UInt64',
-              # 'treatmentdetails': 'UInt64',
-              # 'drugunit_x': 'UInt64',
-              # 'drugadmitfrequency_x': 'UInt64',
-              # 'drughiclseqno_x': 'UInt64',
-              'drugdosage_x': 'float32',
-              # 'drugadmitfrequency_y': 'UInt64',
-              # 'drughiclseqno_y': 'UInt64',
-              'drugdosage_y': 'float32',
-              # 'drugunit_y': 'UInt64',
-              'bodyweight_(kg)': 'float32',
-              'oral_intake': 'float32',
-              'urine_output': 'float32',
-              'i.v._intake	': 'float32',
-              'saline_flush_(ml)_intake': 'float32',
-              'volume_given_ml': 'float32',
-              'stool_output': 'float32',
-              'prbcs_intake': 'float32',
-              'gastric_(ng)_output': 'float32',
-              'dialysis_output': 'float32',
-              'propofol_intake': 'float32',
-              'lr_intake': 'float32',
-              'indwellingcatheter_output': 'float32',
-              'feeding_tube_flush_ml': 'float32',
-              'patient_fluid_removal': 'float32',
-              'fentanyl_intake': 'float32',
-              'norepinephrine_intake': 'float32',
-              'crystalloids_intake': 'float32',
-              'voided_amount': 'float32',
-              'nutrition_total_intake': 'float32',
-              # 'nutrition': 'UInt64',
-              # 'nurse_treatments': 'UInt64',
-              # 'hygiene/adls': 'UInt64',
-              # 'activity': 'UInt64',
-              # 'pupils': 'UInt64',
-              # 'neurologic': 'UInt64',
-              # 'secretions': 'UInt64',
-              # 'cough': 'UInt64',
-              'priorvent': 'UInt8',
-              'onvent': 'UInt8',
-              'noninvasivesystolic': 'float32',
-              'noninvasivediastolic': 'float32',
-              'noninvasivemean': 'float32',
-              'paop': 'float32',
-              'cardiacoutput': 'float32',
-              'cardiacinput': 'float32',
-              'svr': 'float32',
-              'svri': 'float32',
-              'pvr': 'float32',
-              'pvri': 'float32',
-              'temperature': 'float32',
-              'sao2': 'float32',
-              'heartrate': 'float32',
-              'respiration': 'float32',
-              'cvp': 'float32',
-              'etco2': 'float32',
-              'systemicsystolic': 'float32',
-              'systemicdiastolic': 'float32',
-              'systemicmean': 'float32',
-              'pasystolic': 'float32',
-              'padiastolic': 'float32',
-              'pamean': 'float32',
-              'st1': 'float32',
-              'st2': 'float32',
-              'st3': 'float32',
-              'icp': 'float32',
-              # 'labtypeid': 'UInt64',
-              # 'labname': 'UInt64',
-              # 'lab_units': 'UInt64',
-              'lab_result': 'float32'}
+stream_dtypes = open(f'{data_path}eICU_dtype_dict.yml', 'r')
 
-# Load the lists of one hot encoded columns:
-
-# stream_adms_drug = open(f'{data_path}cat_feat_ohe_adms_drug.yaml', 'r')
-# stream_inf_drug = open(f'{data_path}cat_feat_ohe_inf_drug.yaml', 'r')
-stream_med = open(f'{data_path}cat_feat_ohe_med.yml', 'r')
-stream_treat = open(f'{data_path}cat_feat_ohe_treat.yml', 'r')
-stream_diag = open(f'{data_path}cat_feat_ohe_diag.yml', 'r')
-# stream_alrg = open(f'{data_path}cat_feat_ohe_alrg.yml', 'r')
-stream_past_hist = open(f'{data_path}cat_feat_ohe_past_hist.yml', 'r')
-stream_lab = open(f'{data_path}cat_feat_ohe_lab.yml', 'r')
-stream_patient = open(f'{data_path}cat_feat_ohe_patient.yml', 'r')
-stream_notes = open(f'{data_path}cat_feat_ohe_note.yml', 'r')
-
-# cat_feat_ohe_adms_drug = yaml.load(stream_adms_drug, Loader=yaml.FullLoader)
-# cat_feat_ohe_inf_drug = yaml.load(stream_inf_drug, Loader=yaml.FullLoader)
-cat_feat_ohe_med = yaml.load(stream_med, Loader=yaml.FullLoader)
-cat_feat_ohe_treat = yaml.load(stream_treat, Loader=yaml.FullLoader)
-cat_feat_ohe_diag = yaml.load(stream_diag, Loader=yaml.FullLoader)
-# cat_feat_ohe_alrg = yaml.load(stream_alrg, Loader=yaml.FullLoader)
-cat_feat_ohe_past_hist = yaml.load(stream_past_hist, Loader=yaml.FullLoader)
-cat_feat_ohe_lab = yaml.load(stream_lab, Loader=yaml.FullLoader)
-cat_feat_ohe_patient = yaml.load(stream_patient, Loader=yaml.FullLoader)
-cat_feat_ohe_notes = yaml.load(stream_notes, Loader=yaml.FullLoader)
-
-cat_feat_ohe = du.utils.merge_dicts([cat_feat_ohe_med, cat_feat_ohe_treat,
-                                     cat_feat_ohe_diag,
-                                     cat_feat_ohe_past_hist, cat_feat_ohe_lab,
-                                     cat_feat_ohe_patient, cat_feat_ohe_notes])
-
-ohe_columns = du.utils.merge_lists(list(cat_feat_ohe.values()))
-ohe_columns = du.data_processing.clean_naming(ohe_columns, lower_case=False)
-
-# Add the one hot encoded columns to the dtypes dictionary, specifying them with type `UInt8`
-
-for col in ohe_columns:
-    dtype_dict[col] = 'UInt8'
-
+dtype_dict = yaml.load(stream_dtypes, Loader=yaml.FullLoader)
 dtype_dict
 
 # ## Loading the data
@@ -192,13 +71,6 @@ diagns_df = du.utils.convert_dataframe(diagns_df, to='pandas', return_library=Fa
 diagns_df = diagns_df.drop(columns='Unnamed: 0')
 diagns_df.head()
 
-# +
-# alrg_df = mpd.read_csv(f'{data_path}normalized/ohe/allergy.csv', dtype=dtype_dict)
-# alrg_df = du.utils.convert_dataframe(alrg_df, to='pandas', return_library=False, dtypes=dtype_dict)
-# alrg_df = alrg_df.drop(columns='Unnamed: 0')
-# alrg_df.head()
-# -
-
 past_hist_df = mpd.read_csv(f'{data_path}normalized/ohe/pastHistory.csv', dtype=dtype_dict)
 past_hist_df = du.utils.convert_dataframe(past_hist_df, to='pandas', return_library=False, dtypes=dtype_dict)
 past_hist_df = past_hist_df.drop(columns='Unnamed: 0')
@@ -216,42 +88,14 @@ adms_drug_df = du.utils.convert_dataframe(adms_drug_df, to='pandas', return_libr
 adms_drug_df = adms_drug_df.drop(columns='Unnamed: 0')
 adms_drug_df.head()
 
-# +
-# inf_drug_df = mpd.read_csv(f'{data_path}normalized/ohe/infusionDrug.csv', dtype=dtype_dict)
-# inf_drug_df = du.utils.convert_dataframe(inf_drug_df, to='pandas', return_library=False, dtypes=dtype_dict)
-# inf_drug_df = inf_drug_df.drop(columns='Unnamed: 0')
-# inf_drug_df.head()
-# -
+adms_drug_df.dtypes
 
 med_df = mpd.read_csv(f'{data_path}normalized/ohe/medication.csv', dtype=dtype_dict)
 med_df = du.utils.convert_dataframe(med_df, to='pandas', return_library=False, dtypes=dtype_dict)
 med_df = med_df.drop(columns='Unnamed: 0')
 med_df.head()
 
-# +
-# in_out_df = mpd.read_csv(f'{data_path}normalized/intakeOutput.csv', dtype=dtype_dict)
-# in_out_df = du.utils.convert_dataframe(in_out_df, to='pandas', return_library=False, dtypes=dtype_dict)
-# in_out_df = in_out_df.drop(columns='Unnamed: 0')
-# in_out_df.head()
-# -
-
-# ### Nursing data
-
-# +
-# nurse_care_df = mpd.read_csv(f'{data_path}normalized/ohe/nurseCare.csv')
-# nurse_care_df.head()
-
-# +
-# nurse_assess_df = mpd.read_csv(f'{data_path}normalized/ohe/nurseAssessment.csv')
-# nurse_assess_df.head()
-# -
-
-# Remove the uneeded 'Unnamed: 0' column:
-
-# +
-# nurse_care_df = nurse_care_df.drop(columns='Unnamed: 0')
-# nurse_assess_df = nurse_assess_df.drop(columns='Unnamed: 0')
-# -
+med_df.dtypes
 
 # ### Respiratory data
 
@@ -458,6 +302,8 @@ eICU_df.dtypes
 
 eICU_df.to_feather(f'{data_path}normalized/ohe/eICU_before_joining_diagns.ftr')
 
+eICU_df.dtypes.value_counts()
+
 # ### Joining with diagnosis data
 
 eICU_df = pd.read_feather(f'{data_path}normalized/ohe/eICU_before_joining_diagns.ftr')
@@ -500,6 +346,8 @@ eICU_df.reset_index(inplace=True)
 eICU_df.head()
 
 eICU_df.to_feather(f'{data_path}normalized/ohe/eICU_before_joining_past_hist.ftr')
+
+eICU_df.dtypes.value_counts()
 
 # ### Joining with past history data
 
@@ -548,6 +396,10 @@ eICU_df.head()
 
 eICU_df.to_feather(f'{data_path}normalized/ohe/eICU_before_joining_treat.ftr')
 
+eICU_df.dtypes
+
+eICU_df.dtypes.value_counts()
+
 # ### Joining with treatment data
 
 eICU_df = pd.read_feather(f'{data_path}normalized/ohe/eICU_before_joining_treat.ftr')
@@ -589,11 +441,9 @@ eICU_df.head()
 eICU_df.reset_index(inplace=True)
 eICU_df.head()
 
-# +
-# eICU_df = du.utils.convert_pyarrow_dtypes(eICU_df, inplace=True)
-# -
-
 eICU_df.to_feather(f'{data_path}normalized/ohe/eICU_before_joining_med.ftr')
+
+eICU_df.dtypes.value_counts()
 
 # ### Joining with medication data
 
@@ -616,6 +466,8 @@ set([col.split('_x')[0].split('_y')[0] for col in med_df.columns if col.endswith
 med_df[['drugadmitfrequency_twice_a_day_x', 'drugadmitfrequency_twice_a_day_y',
         'drughiclseqno_10321_x', 'drughiclseqno_10321_y']].head(20)
 
+med_df.dtypes.value_counts()
+
 med_df = du.data_processing.merge_columns(med_df, inplace=True)
 med_df.sample(20)
 
@@ -630,11 +482,15 @@ med_df.head()
 
 med_df.to_feather(f'{data_path}normalized/ohe/med_and_adms_drug.ftr')
 
+med_df.dtypes.value_counts()
+
 # #### Joining with the rest of the eICU data
 
 med_drug_df = pd.read_feather(f'{data_path}normalized/ohe/med_and_adms_drug.ftr')
 med_drug_df = du.utils.convert_dtypes(med_drug_df, dtypes=dtype_dict, inplace=True)
 med_drug_df.head()
+
+med_drug_df.dtypes.value_counts()
 
 eICU_df = pd.read_feather(f'{data_path}normalized/ohe/eICU_before_joining_med.ftr')
 eICU_df = du.utils.convert_dtypes(eICU_df, dtypes=dtype_dict, inplace=True)
@@ -681,6 +537,8 @@ eICU_df.head()
 
 eICU_df.to_feather(f'{data_path}normalized/ohe/eICU_before_joining_resp_care.ftr')
 
+eICU_df.dtypes.value_counts()
+
 # ### Joining with respiratory care data
 
 eICU_df = pd.read_feather(f'{data_path}normalized/ohe/eICU_before_joining_resp_care.ftr')
@@ -707,6 +565,8 @@ eICU_df.reset_index(inplace=True)
 eICU_df.head()
 
 eICU_df.to_feather(f'{data_path}normalized/ohe/eICU_before_joining_vital_aprdc.ftr')
+
+eICU_df.dtypes.value_counts()
 
 # ### Joining with aperiodic vital signals data
 
@@ -782,6 +642,8 @@ eICU_df.patientunitstayid.nunique()
 du.data_processing.save_chunked_data(eICU_df, file_name='eICU_before_joining_vital_prdc', n_chunks=8, 
                                      data_path=f'{data_path}normalized/ohe/')
 
+eICU_df.dtypes.value_counts()
+
 # ### Joining with periodic vital signals data
 
 eICU_df = du.data_processing.load_chunked_data(file_name='eICU_before_joining_vital_prdc', n_chunks=8, 
@@ -825,6 +687,8 @@ eICU_df.head()
 
 du.data_processing.save_chunked_data(eICU_df, file_name='eICU_before_joining_lab', n_chunks=8, 
                                      data_path=f'{data_path}normalized/ohe/')
+
+eICU_df.dtypes.value_counts()
 
 # ### Joining with lab data
 
@@ -870,11 +734,15 @@ eICU_df.head()
 du.data_processing.save_chunked_data(eICU_df, file_name='eICU_post_joining', n_chunks=8, 
                                      data_path=f'{data_path}normalized/ohe/')
 
+eICU_df.dtypes.value_counts()
+
 # ## Cleaning the joined data
 
 eICU_df = du.data_processing.load_chunked_data(file_name='eICU_post_joining', n_chunks=8, 
                                                data_path=f'{data_path}normalized/ohe/', dtypes=dtype_dict)
 eICU_df.head()
+
+eICU_df.dtypes.value_counts()
 
 # +
 # eICU_df.info(memory_usage='deep')
@@ -1059,82 +927,3 @@ time_window_h = 24
 
 eICU_df['label'] = eICU_df[eICU_df.death_ts - eICU_df.ts <= time_window_h * 60]
 eICU_df.head()
-
-# ## Creating a single encoding dictionary for the complete dataframe
-#
-# Combine the one hot encoding dictionaries of all tables, having in account the converged ones, into a single dictionary representative of all the categorical features in the resulting dataframe.
-
-stream_adms_drug = open(f'{data_path}cat_feat_ohe_adms_drug.yaml', 'r')
-stream_inf_drug = open(f'{data_path}cat_feat_ohe_inf_drug.yaml', 'r')
-stream_med = open(f'{data_path}cat_feat_ohe_med.yaml', 'r')
-stream_treat = open(f'{data_path}cat_feat_ohe_treat.yaml', 'r')
-stream_diag = open(f'{data_path}cat_feat_ohe_diag.yaml', 'r')
-stream_alrg = open(f'{data_path}cat_feat_ohe_alrg.yaml', 'r')
-stream_past_hist = open(f'{data_path}cat_feat_ohe_past_hist.yaml', 'r')
-stream_lab = open(f'{data_path}cat_feat_ohe_lab.yaml', 'r')
-stream_patient = open(f'{data_path}cat_feat_ohe_patient.yaml', 'r')
-stream_notes = open(f'{data_path}cat_feat_ohe_note.yaml', 'r')
-
-cat_feat_ohe_adms_drug = yaml.load(stream_adms_drug, Loader=yaml.FullLoader)
-cat_feat_ohe_inf_drug = yaml.load(stream_inf_drug, Loader=yaml.FullLoader)
-cat_feat_ohe_med = yaml.load(stream_med, Loader=yaml.FullLoader)
-cat_feat_ohe_treat = yaml.load(stream_treat, Loader=yaml.FullLoader)
-cat_feat_ohe_diag = yaml.load(stream_diag, Loader=yaml.FullLoader)
-cat_feat_ohe_alrg = yaml.load(stream_alrg, Loader=yaml.FullLoader)
-cat_feat_ohe_past_hist = yaml.load(stream_past_hist, Loader=yaml.FullLoader)
-cat_feat_ohe_lab = yaml.load(stream_lab, Loader=yaml.FullLoader)
-cat_feat_ohe_patient = yaml.load(stream_patient, Loader=yaml.FullLoader)
-cat_feat_ohe_notes = yaml.load(stream_notes, Loader=yaml.FullLoader)
-
-cat_feat_ohe = du.utils.merge_dicts([cat_feat_ohe_adms_drug, cat_feat_ohe_inf_drug,
-                                     cat_feat_ohe_med, cat_feat_ohe_treat,
-                                     cat_feat_ohe_diag, cat_feat_ohe_alrg,
-                                     cat_feat_ohe_past_hist, cat_feat_ohe_lab,
-                                     cat_feat_ohe_patient, cat_feat_ohe_notes])
-
-list(cat_feat_ohe.keys())
-
-# Clean the one hot encoded column names, as they are in the final dataframe:
-
-for key, val in cat_feat_ohe.items():
-    cat_feat_ohe[key] = du.data_processing.clean_naming(cat_feat_ohe[key], lower_case=False)
-
-# Save the final encoding dictionary:
-
-stream = open(f'{data_path}/cleaned/cat_feat_ohe_eICU.yaml', 'w')
-yaml.dump(cat_feat_ohe, stream, default_flow_style=False)
-
-# ## Creating a single normalization dictionary for the complete dataframe
-#
-# Combine the normalization stats dictionaries of all tables into a single dictionary representative of all the continuous features in the resulting dataframe.
-
-stream_adms_drug = open(f'{data_path}admissionDrug_norm_stats.yaml', 'r')
-stream_inf_drug = open(f'{data_path}infusionDrug_norm_stats.yaml', 'r')
-stream_med = open(f'{data_path}medication_norm_stats.yaml', 'r')
-# stream_in_out = open(f'{data_path}cat_embed_feat_enum_in_out.yaml', 'r')
-stream_lab = open(f'{data_path}lab_norm_stats.yaml', 'r')
-stream_patient = open(f'{data_path}patient_norm_stats.yaml', 'r')
-# stream_vital_aprdc = open(f'{data_path}vitalAperiodic_norm_stats.yaml', 'r')
-# stream_vital_prdc = open(f'{data_path}vitalPeriodic_norm_stats.yaml', 'r')
-
-norm_stats_adms_drug = yaml.load(stream_adms_drug, Loader=yaml.FullLoader)
-norm_stats_inf_drug = yaml.load(stream_inf_drug, Loader=yaml.FullLoader)
-norm_stats_med = yaml.load(stream_med, Loader=yaml.FullLoader)
-# norm_stats__in_out = yaml.load(stream_in_out, Loader=yaml.FullLoader)
-norm_stats_lab = yaml.load(stream_lab, Loader=yaml.FullLoader)
-norm_stats_patient = yaml.load(stream_patient, Loader=yaml.FullLoader)
-# norm_stats_vital_aprdc = yaml.load(stream_vital_aprdc, Loader=yaml.FullLoader)
-# norm_stats_vital_prdc = yaml.load(stream_vital_prdc, Loader=yaml.FullLoader)
-
-norm_stats = du.utils.merge_dicts([norm_stats_adms_drug, norm_stats_inf_drug,
-                                   norm_stats_med,
-#                                    norm_stats_in_out,
-                                   norm_stats_lab, norm_stats_patient,
-                                   norm_stats_vital_aprdc, norm_stats_vital_prdc])
-
-list(norm_stats.keys())
-
-# Save the final encoding dictionary:
-
-stream = open(f'{data_path}/cleaned/eICU_norm_stats.yaml', 'w')
-yaml.dump(norm_stats, stream, default_flow_style=False)

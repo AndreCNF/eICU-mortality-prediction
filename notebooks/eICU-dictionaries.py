@@ -13,9 +13,9 @@ import pixiedust                           # Debugging in Jupyter Notebook cells
 # Change to parent directory (presumably "Documents")
 os.chdir("../../..")
 # Path to the parquet dataset files
-data_path = 'Datasets/Thesis/eICU/cleaned/'
+data_path = 'data/eICU/cleaned/'
 # Path to the code files
-project_path = 'GitHub/eICU-mortality-prediction/'
+project_path = 'code/eICU-mortality-prediction/'
 
 import data_utils as du                    # Data science and machine learning relevant methods
 
@@ -28,22 +28,18 @@ du.set_random_seed(42)
 # Combine the one hot encoding dictionaries of all tables, having in account the converged ones, into a single dictionary representative of all the categorical features in the resulting dataframe.
 
 stream_adms_drug = open(f'{data_path}cat_feat_ohe_adms_drug.yml', 'r')
-stream_inf_drug = open(f'{data_path}cat_feat_ohe_inf_drug.yml', 'r')
 stream_med = open(f'{data_path}cat_feat_ohe_med.yml', 'r')
 stream_treat = open(f'{data_path}cat_feat_ohe_treat.yml', 'r')
 stream_diag = open(f'{data_path}cat_feat_ohe_diag.yml', 'r')
-stream_alrg = open(f'{data_path}cat_feat_ohe_alrg.yml', 'r')
 stream_past_hist = open(f'{data_path}cat_feat_ohe_past_hist.yml', 'r')
 stream_lab = open(f'{data_path}cat_feat_ohe_lab.yml', 'r')
 stream_patient = open(f'{data_path}cat_feat_ohe_patient.yml', 'r')
 stream_notes = open(f'{data_path}cat_feat_ohe_note.yml', 'r')
 
 cat_feat_ohe_adms_drug = yaml.load(stream_adms_drug, Loader=yaml.FullLoader)
-cat_feat_ohe_inf_drug = yaml.load(stream_inf_drug, Loader=yaml.FullLoader)
 cat_feat_ohe_med = yaml.load(stream_med, Loader=yaml.FullLoader)
 cat_feat_ohe_treat = yaml.load(stream_treat, Loader=yaml.FullLoader)
 cat_feat_ohe_diag = yaml.load(stream_diag, Loader=yaml.FullLoader)
-cat_feat_ohe_alrg = yaml.load(stream_alrg, Loader=yaml.FullLoader)
 cat_feat_ohe_past_hist = yaml.load(stream_past_hist, Loader=yaml.FullLoader)
 cat_feat_ohe_lab = yaml.load(stream_lab, Loader=yaml.FullLoader)
 cat_feat_ohe_patient = yaml.load(stream_patient, Loader=yaml.FullLoader)
@@ -63,13 +59,10 @@ len(cat_feat_ohe_med['drughiclseqno'])
 
 len(set(cat_feat_ohe_adms_drug['drughiclseqno']) | set(cat_feat_ohe_med['drughiclseqno']))
 
-cat_feat_ohe = du.utils.merge_dicts([cat_feat_ohe_adms_drug, cat_feat_ohe_inf_drug,
-                                     cat_feat_ohe_med, cat_feat_ohe_treat,
-                                     cat_feat_ohe_diag, cat_feat_ohe_alrg,
+cat_feat_ohe = du.utils.merge_dicts([cat_feat_ohe_adms_drug, cat_feat_ohe_med, 
+                                     cat_feat_ohe_treat, cat_feat_ohe_diag,
                                      cat_feat_ohe_past_hist, cat_feat_ohe_lab,
                                      cat_feat_ohe_patient, cat_feat_ohe_notes])
-
-len(set(cat_feat_ohe_adms_drug['drughiclseqno'] + cat_feat_ohe_med['drughiclseqno']))
 
 len(cat_feat_ohe['drughiclseqno'])
 
@@ -80,13 +73,11 @@ list(cat_feat_ohe.keys())
 for key, val in cat_feat_ohe.items():
     cat_feat_ohe[key] = du.data_processing.clean_naming(cat_feat_ohe[key], lower_case=False)
 
-list(cat_feat_ohe.keys())
-
 cat_feat_ohe
 
 # Save the final encoding dictionary:
 
-stream = open(f'{data_path}eICU_cat_feat_ohe.yaml', 'w')
+stream = open(f'{data_path}eICU_cat_feat_ohe.yml', 'w')
 yaml.dump(cat_feat_ohe, stream, default_flow_style=False)
 
 # ## Data types
@@ -98,8 +89,8 @@ dtype_dict = {'patientunitstayid': 'uint32',
               'admissionweight': 'float32',
               'death_ts': 'Int32',
               'ts': 'int32',
-              'cad': 'UInt8',
-              'cancer': 'UInt8',
+              'CAD': 'UInt8',
+              'Cancer': 'UInt8',
               # 'diagnosis_type_1': 'UInt64',
               # 'diagnosis_disorder_2': 'UInt64',
               # 'diagnosis_detailed_3': 'UInt64',
@@ -192,37 +183,37 @@ dtype_dict
 
 # Save the data types dictionary:
 
-stream = open(f'{data_path}eICU_dtype_dict.yaml', 'w')
+stream = open(f'{data_path}eICU_dtype_dict.yml', 'w')
 yaml.dump(dtype_dict, stream, default_flow_style=False)
 
 # ## Normalization stats
 #
 # Combine the normalization stats dictionaries of all tables into a single dictionary representative of all the continuous features in the resulting dataframe.
 
-stream_adms_drug = open(f'{data_path}admissionDrug_norm_stats.yaml', 'r')
-stream_inf_drug = open(f'{data_path}infusionDrug_norm_stats.yaml', 'r')
-stream_med = open(f'{data_path}medication_norm_stats.yaml', 'r')
-stream_lab = open(f'{data_path}lab_norm_stats.yaml', 'r')
-stream_patient = open(f'{data_path}patient_norm_stats.yaml', 'r')
-# stream_vital_aprdc = open(f'{data_path}vitalAperiodic_norm_stats.yaml', 'r')
-# stream_vital_prdc = open(f'{data_path}vitalPeriodic_norm_stats.yaml', 'r')
+stream_adms_drug = open(f'{data_path}admissionDrug_norm_stats.yml', 'r')
+stream_med = open(f'{data_path}medication_norm_stats.yml', 'r')
+# stream_lab = open(f'{data_path}lab_norm_stats.yml', 'r')
+# stream_patient = open(f'{data_path}patient_norm_stats.yml', 'r')
+# stream_vital_aprdc = open(f'{data_path}vitalAperiodic_norm_stats.yml', 'r')
+stream_vital_prdc = open(f'{data_path}vitalPeriodic_norm_stats.yml', 'r')
 
 norm_stats_adms_drug = yaml.load(stream_adms_drug, Loader=yaml.FullLoader)
-norm_stats_inf_drug = yaml.load(stream_inf_drug, Loader=yaml.FullLoader)
 norm_stats_med = yaml.load(stream_med, Loader=yaml.FullLoader)
-norm_stats_lab = yaml.load(stream_lab, Loader=yaml.FullLoader)
-norm_stats_patient = yaml.load(stream_patient, Loader=yaml.FullLoader)
+# norm_stats_lab = yaml.load(stream_lab, Loader=yaml.FullLoader)
+# norm_stats_patient = yaml.load(stream_patient, Loader=yaml.FullLoader)
 # norm_stats_vital_aprdc = yaml.load(stream_vital_aprdc, Loader=yaml.FullLoader)
-# norm_stats_vital_prdc = yaml.load(stream_vital_prdc, Loader=yaml.FullLoader)
+norm_stats_vital_prdc = yaml.load(stream_vital_prdc, Loader=yaml.FullLoader)
 
-norm_stats = du.utils.merge_dicts([norm_stats_adms_drug, norm_stats_inf_drug,
-                                   norm_stats_med,
-                                   norm_stats_lab, norm_stats_patient,
-                                   norm_stats_vital_aprdc, norm_stats_vital_prdc])
+norm_stats = du.utils.merge_dicts([norm_stats_adms_drug, norm_stats_med,
+#                                    norm_stats_lab, norm_stats_patient,
+#                                    norm_stats_vital_aprdc, 
+                                   norm_stats_vital_prdc])
 
 list(norm_stats.keys())
 
 # Save the normalization stats dictionary:
 
-stream = open(f'{data_path}/cleaned/eICU_norm_stats.yaml', 'w')
+stream = open(f'{data_path}eICU_norm_stats.yml', 'w')
 yaml.dump(norm_stats, stream, default_flow_style=False)
+
+

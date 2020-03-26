@@ -163,8 +163,8 @@ class BaseRNN(nn.Module):
             # Use the binary cross entropy function
             self.criterion = nn.CrossEntropyLoss()
 
-    def forward(self, x, get_hidden_state=False,
-                hidden_state=None, prob_output=True, already_embedded=True):
+    def forward(self, x, hidden_state=None, get_hidden_state=False,
+                prob_output=True, already_embedded=False):
         if self.embed_features is not None and already_embedded is False:
             # Run each embedding layer on each respective feature, adding the
             # resulting embedding values to the tensor and removing the original,
@@ -196,6 +196,10 @@ class BaseRNN(nn.Module):
         else:
             # List[RNNState]: One state per layer
             # output_states = jit.annotate(List[Tuple[Tensor, Tensor]], [])
+            if self.is_lstm is True:
+                output_states = (torch.zeros(self.hidden[0].shape), torch.zeros(self.hidden[1].shape))
+            else:
+                output_states = torch.zeros(self.hidden.shape)
             i = 0
             # The first RNN layer's input is the original input;
             # the following layers will use their respective previous layer's
@@ -210,9 +214,15 @@ class BaseRNN(nn.Module):
                 # Apply the dropout layer except the last layer
                 if i < self.n_rnn_layers - 1:
                     rnn_output = self.dropout(rnn_output)
-                output_states += [out_state]
+                if self.is_lstm is True:
+                    output_states[0][i] = out_state[0]
+                    output_states[1][i] = out_state[1]
+                else:
+                    output_states[i] = [out_state]
                 i += 1
             # Update the hidden states variable
+            # [TODO] Change the hidden state' shape so as to be (2 x [n_rnn_layers * (1 + self.bidir), batch_size, self.n_hidden])
+            # when the model is LSTM based (has two hidden state variables)
             self.hidden = output_states
         # Apply dropout to the last RNN layer
         # [TODO] Consider if it makes sense to add dropout to the last RNN layer
@@ -400,8 +410,8 @@ class VanillaLSTM(nn.Module):
             # Use the binary cross entropy function
             self.criterion = nn.CrossEntropyLoss()
 
-    def forward(self, x, x_lengths=None, get_hidden_state=False,
-                hidden_state=None, prob_output=True, already_embedded=True):
+    def forward(self, x, hidden_state=None, x_lengths=None, get_hidden_state=False,
+                prob_output=True, already_embedded=False):
         if self.embed_features is not None and already_embedded is False:
             # Run each embedding layer on each respective feature, adding the
             # resulting embedding values to the tensor and removing the original,
@@ -540,8 +550,8 @@ class TLSTM(BaseRNN):
                                     bidir=bidir, is_lstm=True,
                                     padding_value=padding_value)
 
-    def forward(self, x, get_hidden_state=False,
-                hidden_state=None, prob_output=True, already_embedded=True):
+    def forward(self, x, hidden_state=None, get_hidden_state=False,
+                prob_output=True, already_embedded=False):
         if self.embed_features is not None and already_embedded is False:
             # Run each embedding layer on each respective feature, adding the
             # resulting embedding values to the tensor and removing the original,
@@ -578,7 +588,7 @@ class TLSTM(BaseRNN):
         else:
             # List[RNNState]: One state per layer
             # output_states = jit.annotate(List[Tuple[Tensor, Tensor]], [])
-            output_states = []
+            output_states = (torch.zeros(self.hidden[0].shape), torch.zeros(self.hidden[1].shape))
             i = 0
             # The first RNN layer's input is the original input;
             # the following layers will use their respective previous layer's
@@ -591,9 +601,11 @@ class TLSTM(BaseRNN):
                 # Apply the dropout layer except the last layer
                 if i < self.n_rnn_layers - 1:
                     rnn_output = self.dropout(rnn_output)
-                output_states += [out_state]
+                output_states[0][i] = out_state[0]
+                output_states[1][i] = out_state[1]
                 i += 1
             # Update the hidden states variable
+            # [TODO] Change the hidden state' shape so as to be (2 x [n_rnn_layers * (1 + self.bidir), batch_size, self.n_hidden])
             self.hidden = output_states
         # Apply dropout to the last RNN layer
         # [TODO] Consider if it makes sense to add dropout to the last RNN layer
@@ -659,8 +671,8 @@ class MF1LSTM(BaseRNN):
                                       bidir=bidir, is_lstm=True,
                                       padding_value=padding_value)
 
-    def forward(self, x, get_hidden_state=False,
-                hidden_state=None, prob_output=True, already_embedded=True):
+    def forward(self, x, hidden_state=None, get_hidden_state=False,
+                prob_output=True, already_embedded=False):
         if self.embed_features is not None and already_embedded is False:
             # Run each embedding layer on each respective feature, adding the
             # resulting embedding values to the tensor and removing the original,
@@ -697,7 +709,7 @@ class MF1LSTM(BaseRNN):
         else:
             # List[RNNState]: One state per layer
             # output_states = jit.annotate(List[Tuple[Tensor, Tensor]], [])
-            output_states = []
+            output_states = (torch.zeros(self.hidden[0].shape), torch.zeros(self.hidden[1].shape))
             i = 0
             # The first RNN layer's input is the original input;
             # the following layers will use their respective previous layer's
@@ -710,9 +722,11 @@ class MF1LSTM(BaseRNN):
                 # Apply the dropout layer except the last layer
                 if i < self.n_rnn_layers - 1:
                     rnn_output = self.dropout(rnn_output)
-                output_states += [out_state]
+                output_states[0][i] = out_state[0]
+                output_states[1][i] = out_state[1]
                 i += 1
             # Update the hidden states variable
+            # [TODO] Change the hidden state' shape so as to be (2 x [n_rnn_layers * (1 + self.bidir), batch_size, self.n_hidden])
             self.hidden = output_states
         # Apply dropout to the last RNN layer
         # [TODO] Consider if it makes sense to add dropout to the last RNN layer
@@ -780,8 +794,8 @@ class MF2LSTM(BaseRNN):
                                       bidir=bidir, is_lstm=True,
                                       padding_value=padding_value)
 
-    def forward(self, x, get_hidden_state=False,
-                hidden_state=None, prob_output=True, already_embedded=True):
+    def forward(self, x, hidden_state=None, get_hidden_state=False,
+                prob_output=True, already_embedded=False):
         if self.embed_features is not None and already_embedded is False:
             # Run each embedding layer on each respective feature, adding the
             # resulting embedding values to the tensor and removing the original,
@@ -818,7 +832,7 @@ class MF2LSTM(BaseRNN):
         else:
             # List[RNNState]: One state per layer
             # output_states = jit.annotate(List[Tuple[Tensor, Tensor]], [])
-            output_states = []
+            output_states = (torch.zeros(self.hidden[0].shape), torch.zeros(self.hidden[1].shape))
             i = 0
             # The first RNN layer's input is the original input;
             # the following layers will use their respective previous layer's
@@ -831,9 +845,11 @@ class MF2LSTM(BaseRNN):
                 # Apply the dropout layer except the last layer
                 if i < self.n_rnn_layers - 1:
                     rnn_output = self.dropout(rnn_output)
-                output_states += [out_state]
+                output_states[0][i] = out_state[0]
+                output_states[1][i] = out_state[1]
                 i += 1
             # Update the hidden states variable
+            # [TODO] Change the hidden state' shape so as to be (2 x [n_rnn_layers * (1 + self.bidir), batch_size, self.n_hidden])
             self.hidden = output_states
         # Apply dropout to the last RNN layer
         # [TODO] Consider if it makes sense to add dropout to the last RNN layer
