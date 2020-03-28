@@ -1304,7 +1304,7 @@ description = "An open-source, interactive graphing library for Python"
 name = "plotly"
 optional = false
 python-versions = "*"
-version = "4.5.1"
+version = "4.5.4"
 
 [package.dependencies]
 retrying = ">=1.3.3"
@@ -2092,7 +2092,7 @@ test = ["zope.event"]
 testing = ["coverage", "nose", "zope.event"]
 
 [metadata]
-content-hash = "fba90f25eb02dbef21f6c9fcd2fbb89452eaf773f832a5b7884ff26deb82a6a6"
+content-hash = "3bf0853207ffa57ea4794f0f16364c7686d0eb0b94fe8421624df619a7c432ea"
 python-versions = "^3.6.1"
 
 [metadata.files]
@@ -2743,8 +2743,8 @@ pixiedust = [
     {file = "pixiedust-1.1.18.tar.gz", hash = "sha256:d2252c1fdb58ac0cd754bcd4c42f389864a4eacaba5ee2719552c1bcc2663662"},
 ]
 plotly = [
-    {file = "plotly-4.5.1-py2.py3-none-any.whl", hash = "sha256:d1a7641bd74db1519cd709e0998327e7f691f749422a64fbe608ec8d7ffa4b71"},
-    {file = "plotly-4.5.1.tar.gz", hash = "sha256:75c95c0eacdeb260fd2dc21dbe8583721c3e229bdf176a41d11092f74171d8bc"},
+    {file = "plotly-4.5.4-py2.py3-none-any.whl", hash = "sha256:b6b1e13e7f04dc9a9f714ab8ecc63d00a4207a736c9835912c96b6884002be1e"},
+    {file = "plotly-4.5.4.tar.gz", hash = "sha256:e6eab2b6010921f5fb998860125b90748e581de66ebc6107b686829417d98fc4"},
 ]
 pluggy = [
     {file = "pluggy-0.13.1-py2.py3-none-any.whl", hash = "sha256:966c145cd83c96502c3c3868f50408687b38434af77734af1e9ca461a4081d2d"},
