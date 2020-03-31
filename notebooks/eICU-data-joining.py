@@ -28,16 +28,14 @@ project_path = 'code/eICU-mortality-prediction/'
 
 import modin.pandas as mpd                  # Optimized distributed version of Pandas
 import pandas as pd
-import data_utils as du                    # Data science and machine learning relevant methods
+import data_utils as du                     # Data science and machine learning relevant methods
 
-# +
-# du.set_pandas_library('pandas')
-# -
+du.set_pandas_library('pandas')
 
 # Allow pandas to show more columns:
 
-pd.set_option('display.max_columns', 1000)
-pd.set_option('display.max_rows', 1000)
+pd.set_option('display.max_columns', 3000)
+pd.set_option('display.max_rows', 3000)
 
 # Set the random seed for reproducibility
 
@@ -46,9 +44,13 @@ du.set_random_seed(42)
 # ## Initializing variables
 
 stream_dtypes = open(f'{data_path}eICU_dtype_dict.yml', 'r')
+stream_const_columns = open(f'{data_path}eICU_const_columns.yml', 'r')
 
 dtype_dict = yaml.load(stream_dtypes, Loader=yaml.FullLoader)
 dtype_dict
+
+const_columns = yaml.load(stream_const_columns, Loader=yaml.FullLoader)
+const_columns
 
 # ## Loading the data
 
@@ -58,6 +60,18 @@ patient_df = mpd.read_csv(f'{data_path}normalized/ohe/patient.csv', dtype=dtype_
 patient_df = du.utils.convert_dataframe(patient_df, to='pandas', return_library=False, dtypes=dtype_dict)
 patient_df = patient_df.drop(columns='Unnamed: 0')
 patient_df.head()
+
+patient_df.to_numpy()
+
+type(patient_df.to_numpy())
+
+import sys
+
+sys.getsizeof(patient_df)
+
+sys.getsizeof(patient_df.values)
+
+patient_df.values.nbytes
 
 note_df = mpd.read_csv(f'{data_path}normalized/ohe/note.csv', dtype=dtype_dict)
 note_df = du.utils.convert_dataframe(note_df, to='pandas', return_library=False, dtypes=dtype_dict)
@@ -124,6 +138,8 @@ lab_df = mpd.read_csv(f'{data_path}normalized/ohe/lab.csv', dtype=dtype_dict)
 lab_df = du.utils.convert_dataframe(lab_df, to='pandas', return_library=False, dtypes=dtype_dict)
 lab_df = lab_df.drop(columns='Unnamed: 0')
 lab_df.head()
+
+lab_df.dtypes.value_counts()
 
 # ## Joining dataframes
 
@@ -611,6 +627,10 @@ eICU_df.head()
 eICU_df.reset_index(inplace=True)
 eICU_df.head()
 
+eICU_df = du.data_processing.load_chunked_data(file_name='eICU_before_joining_vital_prdc_full', n_chunks=8, 
+                                               data_path=f'{data_path}normalized/ohe/', dtypes=dtype_dict)
+eICU_df.head()
+
 # Get the 10k lengthiest unit stays:
 
 unit_stay_len = eICU_df.groupby('patientunitstayid').patientunitstayid.count().sort_values(ascending=False)
@@ -700,21 +720,29 @@ eICU_df.head()
 
 lab_df = lab_df[lab_df.patientunitstayid.isin(eICU_df.patientunitstayid.unique())]
 
-patient_dies = ~(eICU_df.groupby('patientunitstayid').death_ts.max().isna())
-patient_dies
+# +
+# patient_dies = ~(eICU_df.groupby('patientunitstayid').death_ts.max().isna())
+# patient_dies
 
-unit_stay_patient_dies = set(patient_dies[patient_dies == True].index)
-unit_stay_patient_dies
+# +
+# unit_stay_patient_dies = set(patient_dies[patient_dies == True].index)
+# unit_stay_patient_dies
 
-len(unit_stay_patient_dies)
+# +
+# len(unit_stay_patient_dies)
+# -
 
 # Also filter only to the unit stays that have data in this new table, considering its importance:
 
-eICU_df.patientunitstayid.nunique()
+# +
+# eICU_df.patientunitstayid.nunique()
 
-eICU_df = eICU_df[eICU_df.patientunitstayid.isin(set(lab_df.patientunitstayid.unique()) | unit_stay_patient_dies)]
+# +
+# eICU_df = eICU_df[eICU_df.patientunitstayid.isin(set(lab_df.patientunitstayid.unique()) | unit_stay_patient_dies)]
 
-eICU_df.patientunitstayid.nunique()
+# +
+# eICU_df.patientunitstayid.nunique()
+# -
 
 # Set `patientunitstayid` and `ts` as indeces, for faster data merging:
 
@@ -731,10 +759,14 @@ eICU_df.head()
 eICU_df.reset_index(inplace=True)
 eICU_df.head()
 
+len(eICU_df)
+
 du.data_processing.save_chunked_data(eICU_df, file_name='eICU_post_joining', n_chunks=8, 
                                      data_path=f'{data_path}normalized/ohe/')
 
 eICU_df.dtypes.value_counts()
+
+eICU_df.dtypes[eICU_df.dtypes=='float64']
 
 # ## Cleaning the joined data
 
@@ -773,6 +805,8 @@ unit_stay_patient_dies
 
 len(unit_stay_patient_dies)
 
+len(unit_stay_long | unit_stay_patient_dies)
+
 eICU_df.patientunitstayid.nunique()
 
 eICU_df = eICU_df[eICU_df.patientunitstayid.isin(unit_stay_long | unit_stay_patient_dies)]
@@ -789,10 +823,6 @@ du.data_processing.save_chunked_data(eICU_df, file_name='eICU_post_short_stay_re
 eICU_df = du.data_processing.load_chunked_data(file_name='eICU_post_short_stay_removal', n_chunks=8, 
                                                data_path=f'{data_path}normalized/ohe/', dtypes=dtype_dict)
 eICU_df.head()
-
-# Reconvert dataframe to Modin:
-
-eICU_df = du.utils.convert_dataframe(vital_prdc_df, to='modin', return_library=False, dtypes=dtype_dict)
 
 n_features = len(eICU_df.columns)
 n_features
@@ -818,16 +848,30 @@ msng_val_prct
 
 msng_val_prct.describe()
 
-# Remove unit stays that have too many missing values (>70% of their respective data points):
+# Remove unit stays that have too many missing values (>99% of their respective data points):
 
-unit_stay_high_msgn = set(msng_val_prct[msng_val_prct > 70].index)
-unit_stay_high_msgn
+unit_stay_low_msgn = set(msng_val_prct[msng_val_prct < 99].index)
+unit_stay_low_msgn
+
+len(unit_stay_low_msgn)
+
+patient_dies = ~(eICU_df.groupby('patientunitstayid').death_ts.max().isna())
+patient_dies
+
+unit_stay_patient_dies = set(patient_dies[patient_dies == True].index)
+unit_stay_patient_dies
+
+len(unit_stay_patient_dies)
+
+len(unit_stay_low_msgn | unit_stay_patient_dies)
 
 eICU_df.patientunitstayid.nunique()
 
-eICU_df = eICU_df[~eICU_df.patientunitstayid.isin(unit_stay_high_msgn)]
+eICU_df = eICU_df[eICU_df.patientunitstayid.isin(unit_stay_low_msgn | unit_stay_patient_dies)]
 
 eICU_df.patientunitstayid.nunique()
+
+eICU_df.drop(columns='row_msng_val', inplace=True)
 
 du.data_processing.save_chunked_data(eICU_df, file_name='eICU_post_high_missing_stay_removal', n_chunks=8, 
                                      data_path=f'{data_path}normalized/ohe/')
@@ -835,6 +879,50 @@ du.data_processing.save_chunked_data(eICU_df, file_name='eICU_post_high_missing_
 # ### Removing columns with too many missing values
 #
 # We should remove features that have too many missing values (in this case, those that have more than 40% of missing values). Without enough data, it's even risky to do imputation, as it's unlikely for the imputation to correctly model the missing feature.
+#
+# Actually, it doesn't seem to be worth it, as most columns have around 98% missing data points.
+
+# +
+# eICU_df = du.data_processing.load_chunked_data(file_name='eICU_post_high_missing_stay_removal', n_chunks=8, 
+#                                                data_path=f'{data_path}normalized/ohe/', dtypes=dtype_dict)
+# eICU_df.head()
+
+# +
+# missing_values = du.search_explore.dataframe_missing_values(eICU_df)
+# missing_values
+
+# +
+# len(eICU_df)
+
+# +
+# missing_values.percent_missing.describe()
+
+# +
+# prev_features = eICU_df.columns
+# len(prev_features)
+
+# +
+# eICU_df = du.data_processing.remove_cols_with_many_nans(eICU_df, nan_percent_thrsh=99, inplace=True)
+
+# +
+# features = eICU_df.columns
+# len(features)
+# -
+
+# Removed features:
+
+# +
+# set(prev_features) - set(features)
+
+# +
+# eICU_df.head()
+
+# +
+# du.data_processing.save_chunked_data(eICU_df, file_name='eICU_post_high_missing_cols_removal', n_chunks=8, 
+#                                      data_path=f'{data_path}normalized/ohe/')
+# -
+
+# ### Performing imputation
 
 eICU_df = du.data_processing.load_chunked_data(file_name='eICU_post_high_missing_stay_removal', n_chunks=8, 
                                                data_path=f'{data_path}normalized/ohe/', dtypes=dtype_dict)
@@ -842,59 +930,126 @@ eICU_df.head()
 
 du.search_explore.dataframe_missing_values(eICU_df)
 
-prev_features = eICU_df.columns
-len(prev_features)
+# #### Constant columns
+#
+# Imputate patient and past history features separately, as they should remain the same regardless of time.
 
-eICU_df = du.data_processing.remove_cols_with_many_nans(eICU_df, nan_percent_thrsh=70, inplace=True)
+eICU_df.reset_index(drop=True, inplace=True)
 
-features = eICU_df.columns
-len(features)
+# +
+# eICU_df.loc[0, const_columns]
 
-# Removed features:
+# +
+# # Trying to imputate data of just one unit stay
+# id_const_columns = ['patientunitstayid'] + const_columns
+# # Forward fill and backward fill
+# eICU_df[eICU_df.patientunitstayid == 2385766][id_const_columns].groupby('patientunitstayid').apply(lambda group: group.ffill().bfill())
+# -
 
-set(prev_features) - set(features)
+id_const_columns = ['patientunitstayid'] + const_columns
+# Forward fill and backward fill
+eICU_df.loc[:, id_const_columns] = eICU_df[id_const_columns].groupby('patientunitstayid').apply(lambda group: group.ffill().bfill())
 
-eICU_df.head()
 
-du.data_processing.save_chunked_data(eICU_df, file_name='eICU_post_high_missing_cols_removal', n_chunks=8, 
+# Replace remaining missing values with zero
+eICU_df.loc[:, const_columns] = eICU_df[const_columns].fillna(value=0)
+
+
+du.data_processing.save_chunked_data(eICU_df, file_name='eICU_post_const_imputation', n_chunks=8, 
                                      data_path=f'{data_path}normalized/ohe/')
 
-# ### Performing imputation
+du.search_explore.dataframe_missing_values(eICU_df)
 
-eICU_df = du.data_processing.load_chunked_data(file_name='eICU_post_high_missing_cols_removal', n_chunks=8, 
+# +
+# eICU_df[eICU_df.patientunitstayid == 2385766][id_const_columns]
+# -
+
+# #### Boolean columns
+#
+# Boolean columns should have their missing values filled with zeros, so as to signal the absense of each feature.
+
+eICU_df = du.data_processing.load_chunked_data(file_name='eICU_post_const_imputation', n_chunks=8, 
                                                data_path=f'{data_path}normalized/ohe/', dtypes=dtype_dict)
 eICU_df.head()
 
 du.search_explore.dataframe_missing_values(eICU_df)
 
-# Imputate patient and past history features separately, as they should remain the same regardless of time:
+existing_columns = list(eICU_df.columns)
 
-eICU_columns = list(eICU_df.columns)
-patient_columns = list(set((list(patient_df.columns) + list(past_history_df.columns))))
-const_columns = list()
-for col in patient_columns:
-    if col in eICU_columns:
-        const_columns.append(col)
+bool_columns = list()
+for key, val in dtype_dict.items():
+    if val == 'UInt8' or val == 'boolean':
+        if key in existing_columns:
+            bool_columns.append(key)
+        elif key.lower() in existing_columns:
+            bool_columns.append(key.lower())
+        else:
+            print(f'Column {key} not found in the dataframe.')
 
-# Forward fill
-eICU_df.loc[:, const_columns] = (eICU_df.set_index('patientunitstayid', append=True)
-                                 .groupby('patientunitstayid')[const_columns].fillna(method='ffill'))
-# Backward fill
-eICU_df.loc[:, const_columns] = (eICU_df.set_index('patientunitstayid', append=True)
-                                 .groupby('patientunitstayid')[const_columns].fillna(method='bfill')
-# Replace remaining missing values with zero
-eICU_df.loc[:, const_columns] = eICU_df[const_columns].fillna(value=0)
+bool_columns
 
-# Imputate the remaining features:
+eICU_df.dtypes.value_counts()
 
-eICU_df = du.data_processing.missing_values_imputation(eICU_df, method='interpolation',
-                                                       id_column='patientunitstayid', inplace=True)
+eICU_df.dtypes[eICU_df.dtypes != 'UInt8']
+
+# Replace missing values with zero
+eICU_df.loc[:, bool_columns] = eICU_df[bool_columns].fillna(value=0)
+
+du.data_processing.save_chunked_data(eICU_df, file_name='eICU_post_bool_imputation', n_chunks=8, 
+                                     data_path=f'{data_path}normalized/ohe/')
+
+du.search_explore.dataframe_missing_values(eICU_df)
+
+# #### Remaining features
+
+eICU_df = du.data_processing.load_chunked_data(file_name='eICU_post_bool_imputation', n_chunks=8, 
+                                               data_path=f'{data_path}normalized/ohe/', dtypes=dtype_dict)
 eICU_df.head()
 
 du.search_explore.dataframe_missing_values(eICU_df)
 
-du.data_processing.save_chunked_data(eICU_df, file_name='eICU_post_imputation', n_chunks=8, 
+existing_columns = list(eICU_df.columns)
+
+bool_columns = list()
+for key, val in dtype_dict.items():
+    if val == 'UInt8' or val == 'boolean':
+        if key in existing_columns:
+            bool_columns.append(key)
+        elif key.lower() in existing_columns:
+            bool_columns.append(key.lower())
+        else:
+            print(f'Column {key} not found in the dataframe.')
+
+columns_to_imputate = list(eICU_df.columns)
+columns_to_imputate.remove('death_ts')
+columns_to_imputate.remove('ts')
+columns_to_imputate = list(set(columns_to_imputate) - set(const_columns) - set(bool_columns))
+columns_to_imputate
+
+# +
+# # %%pixie_debugger
+# # Trying to imputate data of just one unit stay
+# du.data_processing.missing_values_imputation(eICU_df[eICU_df.patientunitstayid == 2385766], 
+#                                              columns_to_imputate=columns_to_imputate,
+#                                              method='interpolation', id_column='patientunitstayid',
+#                                              inplace=True)
+# -
+
+eICU_df = du.data_processing.missing_values_imputation(eICU_df, method='interpolation',
+                                                       columns_to_imputate=columns_to_imputate,
+                                                       id_column='patientunitstayid', 
+                                                       zero_bool=False, inplace=True)
+eICU_df.head()
+
+# +
+# eICU_df = eICU_df.fillna(value=0)
+# eICU_df.head()
+# -
+
+du.data_processing.save_chunked_data(eICU_df, file_name='eICU', n_chunks=8, 
                                      data_path=f'{data_path}normalized/ohe/')
+
+du.search_explore.dataframe_missing_values(eICU_df)
 
 # ### Rearranging columns
 #

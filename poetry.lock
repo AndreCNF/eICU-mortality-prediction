@@ -292,6 +292,7 @@ version = "0.1.0"
 
 [package.dependencies]
 comet-ml = "^3.1.2"
+dash = "^1.9.1"
 dask = "^2.5"
 distributed = "^2.5"
 everett = "^1.0.2"
@@ -308,7 +309,7 @@ torch = "^1.3"
 tqdm = "^4.43.0"
 
 [package.source]
-reference = "8a4a09109ff2a36c221945dd2b4b4c4adea299b5"
+reference = "29d40af4c875e9749f64d6559ffa9250e957dc93"
 type = "git"
 url = "https://github.com/AndreCNF/data-utils.git"
 
@@ -805,11 +806,14 @@ description = "Jupyter notebooks as Markdown documents, Julia, Python or R scrip
 name = "jupytext"
 optional = false
 python-versions = "*"
-version = "1.3.4"
+version = "1.4.1"
 
 [package.dependencies]
 nbformat = ">=4.0.0"
 pyyaml = "*"
+
+[package.extras]
+myst = ["myst-parser (>=0.7.1,<0.8.0)"]
 
 [[package]]
 category = "main"
@@ -1009,7 +1013,7 @@ torch = "^1.1"
 tqdm = "^4.32"
 
 [package.source]
-reference = "2d29a0ef47d486f31e57c14f6666e1f23c9236a7"
+reference = "00b82ed39bdf99acfdb76ed04bd02fbb6f8b0a18"
 type = "git"
 url = "https://github.com/AndreCNF/model-interpreter.git"
 
@@ -1661,7 +1665,7 @@ description = "A unified approach to explain the output of any machine learning 
 name = "shap"
 optional = false
 python-versions = "*"
-version = "0.34.0"
+version = "0.35.0"
 
 [package.dependencies]
 numpy = "*"
@@ -1671,12 +1675,12 @@ scipy = "*"
 tqdm = ">4.25.0"
 
 [package.extras]
-all = ["matplotlib", "ipython", "lime"]
+all = ["ipython", "matplotlib", "lime"]
 others = ["lime"]
 plots = ["matplotlib", "ipython"]
 
 [package.source]
-reference = "8e2a355c60bf340704affd264107e67ca913d0c9"
+reference = "4ba8951b3714cab3165847f20ae3cd83ee58eb17"
 type = "git"
 url = "https://github.com/AndreCNF/shap.git"
 
@@ -2092,7 +2096,7 @@ test = ["zope.event"]
 testing = ["coverage", "nose", "zope.event"]
 
 [metadata]
-content-hash = "3bf0853207ffa57ea4794f0f16364c7686d0eb0b94fe8421624df619a7c432ea"
+content-hash = "f6064007de41932eeb6da084ce288dfee47d9ae03b33707f73de51d7fd6a7252"
 python-versions = "^3.6.1"
 
 [metadata.files]
@@ -2352,7 +2356,7 @@ jupyter-lsp = [
     {file = "jupyter-lsp-0.7.0.tar.gz", hash = "sha256:18d79881ab34eeb6e5f42930dc369e23b0d2240da94a0e2416317eb50cbdfaa1"},
 ]
 jupytext = [
-    {file = "jupytext-1.3.4.tar.gz", hash = "sha256:23d56a92c8bf8166a27d87fe9049b2791d981b6a90cbec4cfc53ab381471324a"},
+    {file = "jupytext-1.4.1.tar.gz", hash = "sha256:512605f43aa109fca3518738f9f4fba7335f599ccf4492fd3b734101ceafd488"},
 ]
 kiwisolver = [
     {file = "kiwisolver-1.1.0-cp27-cp27m-macosx_10_6_intel.macosx_10_9_intel.macosx_10_9_x86_64.macosx_10_10_intel.macosx_10_10_x86_64.whl", hash = "sha256:7f4dd50874177d2bb060d74769210f3bce1af87a8c7cf5b37d032ebf94f0aca3"},
