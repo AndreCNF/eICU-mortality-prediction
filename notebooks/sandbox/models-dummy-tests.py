@@ -318,7 +318,7 @@ n_layers = 2                                  # Number of LSTM layers
 p_dropout = 0.2                               # Probability of dropout
 embed_features = [du.search_explore.find_col_idx(dmy_norm_df, col) for col in ohe_columns] # Indeces fo the features to be emebedded
 embed_features.sort()
-embedding_dim = 2                             # Number of outputs of the embedding layr
+embedding_dim = 2                             # Number of outputs of the embedding layer
 
 # Instantiating the model:
 
