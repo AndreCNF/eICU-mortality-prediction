@@ -36,6 +36,12 @@ os.chdir('..')
 
 # ## Initializing variables
 
+# Comet ML settings:
+
+comet_ml_project_name = input('Comet ML project name:')
+comet_ml_workspace = input('Comet ML workspace:')
+comet_ml_api_key = getpass.getpass('Comet ML API key')
+
 # Data that we'll be using:
 
 dmy_data = np.array([[0, 0, 23, 284, 70, 5, np.nan, 0],
@@ -553,9 +559,9 @@ metrics
 if do_hyperparam_optim:
     val_loss_min, exp_name_min = du.machine_learning.optimize_hyperparameters(Models.TLSTM, df=dmy_norm_df, 
                                                                               config_name='TLSTM_hyperparameter_optimization_config.yaml', 
-                                                                              comet_ml_api_key='jiDa6SsGNoyddaLPZESuAO6qi',
-                                                                              comet_ml_project_name='models-dummy-tests', 
-                                                                              comet_ml_workspace='andrecnf', 
+                                                                              comet_ml_api_key=comet_ml_api_key,
+                                                                              comet_ml_project_name=comet_ml_project_name, 
+                                                                              comet_ml_workspace=comet_ml_workspace, 
                                                                               n_inputs=n_inputs-4, id_column='subject_id',  
                                                                               label_column='label', inst_column='ts',
                                                                               n_outputs=1, model_type='multivariate_rnn',
@@ -645,9 +651,9 @@ metrics
 if do_hyperparam_optim:
     val_loss_min, exp_name_min = du.machine_learning.optimize_hyperparameters(Models.MF1LSTM, df=dmy_norm_df, 
                                                                               config_name='TLSTM_hyperparameter_optimization_config.yaml', 
-                                                                              comet_ml_api_key='jiDa6SsGNoyddaLPZESuAO6qi',
-                                                                              comet_ml_project_name='models-dummy-tests', 
-                                                                              comet_ml_workspace='andrecnf', 
+                                                                              comet_ml_api_key=comet_ml_api_key,
+                                                                              comet_ml_project_name=comet_ml_project_name, 
+                                                                              comet_ml_workspace=comet_ml_workspace, 
                                                                               n_inputs=n_inputs-4, id_column='subject_id',  
                                                                               label_column='label', inst_column='ts',
                                                                               n_outputs=1, model_type='multivariate_rnn',
@@ -737,9 +743,9 @@ metrics
 if do_hyperparam_optim:
     val_loss_min, exp_name_min = du.machine_learning.optimize_hyperparameters(Models.MF2LSTM, df=dmy_norm_df, 
                                                                               config_name='TLSTM_hyperparameter_optimization_config.yaml', 
-                                                                              comet_ml_api_key='jiDa6SsGNoyddaLPZESuAO6qi',
-                                                                              comet_ml_project_name='models-dummy-tests', 
-                                                                              comet_ml_workspace='andrecnf', 
+                                                                              comet_ml_api_key=comet_ml_api_key,
+                                                                              comet_ml_project_name=comet_ml_project_name, 
+                                                                              comet_ml_workspace=comet_ml_workspace, 
                                                                               n_inputs=n_inputs-4, id_column='subject_id',  
                                                                               label_column='label', inst_column='ts',
                                                                               n_outputs=1, model_type='multivariate_rnn',
