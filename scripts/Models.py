@@ -274,6 +274,217 @@ class BaseRNN(nn.Module):
         return hidden
 
 
+class VanillaRNN(nn.Module):
+    def __init__(self, n_inputs, n_hidden, n_outputs, n_rnn_layers=1, p_dropout=0,
+                 embed_features=None, n_embeddings=None, embedding_dim=None,
+                 bidir=False, padding_value=999999):
+        '''A vanilla RNN model, using PyTorch's predefined RNN module, with
+        the option to include embedding layers.
+        Parameters
+        ----------
+        n_inputs : int
+            Number of input features.
+        n_hidden : int
+            Number of hidden units.
+        n_outputs : int
+            Number of outputs.
+        n_rnn_layers : int, default 1
+            Number of RNN layers.
+        p_dropout : float or int, default 0
+            Probability of dropout.
+        embed_features : list of ints, default None
+            List of features (refered to by their indeces) that need to go
+            through embedding layers.
+        n_embeddings : list of ints, default None
+            List of the total number of unique categories for the embedding
+            layers. Needs to be in the same order as the embedding layers are
+            described in `embed_features`.
+        embedding_dim : list of ints, default None
+            List of embedding dimensions. Needs to be in the same order as the
+            embedding layers are described in `embed_features`.
+        bidir : bool, default False
+            If set to True, the RNN model will be bidirectional (have hidden
+            memory flowing both forward and backwards).
+        padding_value : int or float, default 999999
+            Value to use in the padding, to fill the sequences.
+        '''
+        super().__init__()
+        self.n_inputs = n_inputs
+        self.n_hidden = n_hidden
+        self.n_outputs = n_outputs
+        self.n_rnn_layers = n_rnn_layers
+        self.p_dropout = p_dropout
+        self.embed_features = embed_features
+        self.n_embeddings = n_embeddings
+        self.embedding_dim = embedding_dim
+        self.bidir = bidir
+        self.padding_value = padding_value
+        # Embedding layers
+        if self.embed_features is not None:
+            if not isinstance(self.embed_features, list):
+                raise Exception(f'ERROR: The embedding features must be indicated in `embed_features` as either a list of indices or a list of lists of indices (there are multiple one hot encoded columns for every original categorical feature). The provided argument has type {type(embed_features)}.')
+            if self.n_embeddings is None:
+                # Find the number of embeddings based on the number of one hot encoded feature
+                if all([isinstance(feature, int) for feature in self.embed_features]):
+                    self.n_embeddings = len(self.embed_features) + 1
+                elif (all([isinstance(feat_list, list) for feat_list in self.embed_features])
+                and all([isinstance(feature, int) for feature in feat_list
+                        for feat_list in self.embed_features])):
+                    self.n_embeddings = []
+                    [self.n_embeddings.append(len(feat_list) + 1) for feat_list in self.embed_features]
+                else:
+                    raise Exception(f'ERROR: The embedding features must be indicated in `embed_features` as either a single, integer index or a list of indices. The provided argument has type {type(embed_features)}.')
+            else:
+                if isinstance(self.n_embeddings, int):
+                    self.n_embeddings = [self.n_embeddings]
+                if all([isinstance(feature, int) for feature in self.embed_features]):
+                    if self.n_embeddings != len(self.embed_features)+1:
+                        raise Exception(f'ERROR: The number of embeddings `n_embeddings` must equal the length of its corresponding embedding features `embed_features`. The provided `n_embeddings` is {self.n_embeddings} while `embed_features` has length {len(self.embed_features)}.')
+                elif (all([isinstance(feat_list, list) for feat_list in self.embed_features])
+                and all([isinstance(feature, int) for feature in feat_list
+                        for feat_list in self.embed_features])):
+                    if len(self.n_embeddings) != len(self.embed_features):
+                        raise Exception(f'ERROR: The list of the number of embeddings `n_embeddings` and the embedding features `embed_features` must have the same length. The provided `n_embeddings` has length {len(self.n_embeddings)} while `embed_features` has length {len(self.embed_features)}.')
+                    for i in range(self.n_embeddings):
+                        if self.n_embeddings[i] != len(self.embed_features[i]):
+                            raise Exception(f'ERROR: The number of embeddings `n_embeddings` must equal the length of its corresponding embedding features `embed_features`. The provided `n_embeddings` is {self.n_embeddings[i]} while `embed_features` has length {len(self.embed_features[i])}, in embedding features set {i}.')
+            if all([isinstance(feature, int) for feature in self.embed_features]):
+                if embedding_dim is None:
+                    # Calculate a reasonable embedding dimension for the
+                    # current feature; the formula sets a minimum embedding
+                    # dimension of 3, with above values being calculated as
+                    # the rounded up base 5 logarithm of the number of
+                    # embeddings.
+                    embedding_dim = max(3, int(math.ceil(math.log(self.n_embeddings, base=5))))
+                # Create a single embedding layer
+                self.embed_layers = nn.EmbeddingBag(self.n_embeddings, embedding_dim)
+            elif (all([isinstance(feat_list, list) for feat_list in self.embed_features])
+            and all([isinstance(feature, int) for feature in feat_list
+                    for feat_list in self.embed_features])):
+                # Create a modules list of embedding bag layers
+                self.embed_layers = nn.ModuleList()
+                for i in range(len(self.embed_features)):
+                    if embedding_dim is None:
+                        # Calculate a reasonable embedding dimension for the
+                        # current feature; the formula sets a minimum embedding
+                        # dimension of 3, with above values being calculated as
+                        # the rounded up base 5 logarithm of the number of
+                        # embeddings.
+                        embedding_dim_i = max(3, int(math.ceil(math.log(self.n_embeddings[i], base=5))))
+                    else:
+                        embedding_dim_i = self.embedding_dim[i]
+                    # Create an embedding layer for the current feature
+                    self.embed_layers[f'embed_{i}'] = nn.EmbeddingBag(self.n_embeddings[i], embedding_dim_i)
+            else:
+                raise Exception(f'ERROR: The embedding features must be indicated in `embed_features` as either a single, integer index or a list of indices. The provided argument has type {type(embed_features)}.')
+        # RNN layer(s)
+        if self.embed_features is None:
+            self.rnn_n_inputs = self.n_inputs
+        else:
+            # Have into account the new embedding columns that will be added, as
+            # well as the removal of the originating categorical columns
+            if all([isinstance(feature, int) for feature in self.embed_features]):
+                self.rnn_n_inputs = self.n_inputs + self.embedding_dim - len(self.embed_features)
+            elif (all([isinstance(feat_list, list) for feat_list in self.embed_features])
+            and all([isinstance(feature, int) for feature in feat_list
+                    for feat_list in self.embed_features])):
+                self.rnn_n_inputs = self.n_inputs
+                for i in range(len(self.embed_features)):
+                    self.rnn_n_inputs = self.rnn_n_inputs + self.embedding_dim[i] - len(self.embed_features[i])
+        self.rnn = nn.RNN(self.rnn_n_inputs, self.n_hidden, self.n_rnn_layers,
+                           batch_first=True, dropout=self.p_dropout,
+                           bidirectional=self.bidir)
+        # Fully connected layer which takes the RNN's hidden units and
+        # calculates the output classification
+        self.fc = nn.Linear(self.n_hidden, self.n_outputs)
+        # Dropout used between the last RNN layer and the fully connected layer
+        self.dropout = nn.Dropout(p=self.p_dropout)
+        if self.n_outputs == 1:
+            # Use the sigmoid activation function
+            self.activation = nn.Sigmoid()
+            # Use the binary cross entropy function
+            self.criterion = nn.BCEWithLogitsLoss()
+        else:
+            # Use the sigmoid activation function
+            self.activation = nn.Softmax()
+            # Use the binary cross entropy function
+            self.criterion = nn.CrossEntropyLoss()
+
+    def forward(self, x, hidden_state=None, x_lengths=None, get_hidden_state=False,
+                prob_output=True, already_embedded=False):
+        if self.embed_features is not None and already_embedded is False:
+            # Run each embedding layer on each respective feature, adding the
+            # resulting embedding values to the tensor and removing the original,
+            # categorical encoded columns
+            x = du.embedding.embedding_bag_pipeline(x, self.embed_layers, self.embed_features,
+                                                    model_forward=True, inplace=True)
+        # Make sure that the input data is of type float
+        x = x.float()
+        # Get the batch size (might not be always the same)
+        batch_size = x.shape[0]
+        if hidden_state is None:
+            # Reset the RNN hidden state. Must be done before you run a new
+            # batch. Otherwise the RNN will treat a new batch as a continuation
+            # of a sequence.
+            self.hidden = self.init_hidden(batch_size)
+        else:
+            # Use the specified hidden state
+            self.hidden = hidden_state
+        if x_lengths is not None:
+            # pack_padded_sequence so that padded items in the sequence won't be
+            # shown to the RNN
+            x = nn.utils.rnn.pack_padded_sequence(x, x_lengths, batch_first=True)
+        # Get the outputs and hidden states from the RNN layer(s)
+        rnn_output, self.hidden = self.rnn(x, self.hidden)
+        if x_lengths is not None:
+            # Undo the packing operation
+            rnn_output, _ = nn.utils.rnn.pad_packed_sequence(rnn_output, batch_first=True)
+        # Apply dropout to the last RNN layer
+        rnn_output = self.dropout(rnn_output)
+        # Flatten RNN output to fit into the fully connected layer
+        flat_rnn_output = rnn_output.contiguous().view(-1, self.n_hidden)
+        # Apply the final fully connected layer
+        output = self.fc(flat_rnn_output)
+        if prob_output is True:
+            # Get the outputs in the form of probabilities
+            if self.n_outputs == 1:
+                output = self.activation(output)
+            else:
+                # Normalize outputs on their last dimension
+                output = self.activation(output, dim=len(output.shape)-1)
+        if get_hidden_state is True:
+            return output, self.hidden
+        else:
+            return output
+
+    def loss(self, y_pred, y_labels):
+        # Flatten the data
+        y_pred = y_pred.reshape(-1)
+        y_labels = y_labels.reshape(-1)
+        # Find the indeces that correspond to padding samples
+        pad_idx = du.search_explore.find_val_idx(y_labels, self.padding_value)
+        if pad_idx is not None:
+            non_pad_idx = list(range(len(y_labels)))
+            [non_pad_idx.remove(idx) for idx in pad_idx]
+            # Remove the padding samples
+            y_labels = y_labels[non_pad_idx]
+            y_pred = y_pred[non_pad_idx]
+        # Compute cross entropy loss which ignores all padding values
+        ce_loss = self.criterion(y_pred, y_labels)
+        return ce_loss
+
+    def init_hidden(self, batch_size):
+        # Create two new tensors with sizes n_layers x batch_size x n_hidden,
+        # initialized to zero, for hidden state and cell state of RNN
+        weight = next(self.parameters()).data
+        # Check if GPU is available
+        train_on_gpu = torch.cuda.is_available()
+        hidden = weight.new(self.n_rnn_layers * (1 + self.bidir), batch_size, self.n_hidden).zero_()
+        if train_on_gpu is True:
+            hidden = hidden.cuda()
+        return hidden
+
+
 class VanillaLSTM(nn.Module):
     def __init__(self, n_inputs, n_hidden, n_outputs, n_lstm_layers=1, p_dropout=0,
                  embed_features=None, n_embeddings=None, embedding_dim=None,

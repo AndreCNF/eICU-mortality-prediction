@@ -230,7 +230,7 @@ cat_feat_ohe
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
 # + {"Collapsed": "false", "persistent_id": "45fdd1e4-00cd-49f8-b498-f50fb291e89a"}
-stream = open(f'{data_path}/cleaned/cat_feat_ohe_alrg.yaml', 'w')
+stream = open(f'{data_path}/cleaned/cat_feat_ohe_alrg.yml', 'w')
 yaml.dump(cat_feat_ohe, stream, default_flow_style=False)
 
 # + [markdown] {"Collapsed": "false"}
@@ -620,7 +620,7 @@ cat_feat_ohe
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
 # + {"Collapsed": "false", "persistent_id": "534d4a78-6d3e-4e3b-b318-5f353835d53a"}
-stream = open(f'{data_path}/cleaned/cat_feat_ohe_past_hist.yaml', 'w')
+stream = open(f'{data_path}/cleaned/cat_feat_ohe_past_hist.yml', 'w')
 yaml.dump(cat_feat_ohe, stream, default_flow_style=False)
 
 # + [markdown] {"Collapsed": "false"}
@@ -855,7 +855,7 @@ cat_feat_ohe
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
 # + {"Collapsed": "false", "persistent_id": "95ac0351-6a18-41b0-9937-37d255fa34ca", "execution": {"iopub.status.busy": "2020-03-13T01:34:35.617214Z", "iopub.execute_input": "2020-03-13T01:34:35.617453Z", "iopub.status.idle": "2020-03-13T01:34:35.654211Z", "shell.execute_reply.started": "2020-03-13T01:34:35.617408Z", "shell.execute_reply": "2020-03-13T01:34:35.653133Z"}}
-stream = open(f'{data_path}/cleaned/cat_feat_ohe_diag.yaml', 'w')
+stream = open(f'{data_path}/cleaned/cat_feat_ohe_diag.yml', 'w')
 yaml.dump(cat_feat_ohe, stream, default_flow_style=False)
 
 # + [markdown] {"Collapsed": "false"}

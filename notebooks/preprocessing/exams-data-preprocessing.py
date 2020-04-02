@@ -246,7 +246,7 @@ for key, _ in mean.items():
 norm_stats
 
 # + {"Collapsed": "false"}
-stream = open(f'{data_path}/cleaned/lab_norm_stats.yaml', 'w')
+stream = open(f'{data_path}/cleaned/lab_norm_stats.yml', 'w')
 yaml.dump(norm_stats, stream, default_flow_style=False)
 
 # + [markdown] {"Collapsed": "false", "toc-hr-collapsed": false}
@@ -290,7 +290,7 @@ cat_feat_ohe
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
 # + {"Collapsed": "false", "execution": {"iopub.execute_input": "2020-02-19T02:21:31.846912Z", "iopub.status.busy": "2020-02-19T02:21:31.846680Z", "iopub.status.idle": "2020-02-19T02:21:31.951476Z", "shell.execute_reply": "2020-02-19T02:21:31.950669Z", "shell.execute_reply.started": "2020-02-19T02:21:31.846872Z"}, "persistent_id": "e51cc2e0-b598-484f-a3f8-8c764950777f"}
-stream = open(f'{data_path}/cleaned/cat_feat_ohe_lab.yaml', 'w')
+stream = open(f'{data_path}/cleaned/cat_feat_ohe_lab.yml', 'w')
 yaml.dump(cat_feat_ohe, stream, default_flow_style=False)
 
 # + [markdown] {"Collapsed": "false"}

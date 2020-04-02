@@ -59,7 +59,7 @@ comet_ml_api_key = getpass.getpass('Comet ML API key')
 
 dataset_mode = None                        # The mode in which we'll use the data, either one hot encoded or pre-embedded
 ml_core = None                             # The core machine learning type we'll use; either traditional ML or DL
-use_delta_ts = None                        # Indicates if we'll use models that rely on time variation info
+use_delta_ts = None                        # Indicates if we'll use time variation info
 time_window_h = None                       # Number of hours on which we want to predict mortality
 @interact
 def get_dataset_mode(data_mode=['one hot encoded', 'embedded'], ml_or_dl=['machine learning', 'deep learning'],
@@ -72,7 +72,7 @@ def get_dataset_mode(data_mode=['one hot encoded', 'embedded'], ml_or_dl=['machi
 id_column = 'patientunitstayid'            # Name of the sequence ID column
 ts_column = 'ts'                           # Name of the timestamp column
 label_column = 'label'                     # Name of the label column
-n_ids = 8152                               # Total number of sequences
+n_ids = 7000                               # Total number of sequences
 n_inputs = 2090                            # Number of input features
 n_outputs = 1                              # Number of outputs
 padding_value = 999999                     # Padding value used to fill in sequences up to the maximum sequence length
@@ -125,13 +125,6 @@ if eICU_df[id_column].nunique() != n_ids:
     n_ids = eICU_df[id_column].nunique()
     print(f'Changed the number of IDs to {n_ids}')
 
-# **Note:** We need to discard 3 columns from the number of inputs as the models won't use the ID and ts columns directly and obviously the label isn't part of the inputs.
-
-# Make sure that we discard the ID, timestamp and label columns
-if n_inputs != len(eICU_df.columns) - 3:
-    n_inputs = len(eICU_df.columns) - 3
-    print(f'Changed the number of inputs to {n_inputs}')
-
 # +
 # eICU_df.info()
 # -
@@ -167,6 +160,13 @@ else:
     print(f'Embedding features: {embed_features}')
     print(f'Number of embeddings: {n_embeddings}')
 
+# **Note:** We need to discard 3 columns from the number of inputs as the models won't use the ID and ts columns directly and obviously the label isn't part of the inputs.
+
+# Make sure that we discard the ID, timestamp and label columns
+if n_inputs != len(eICU_df.columns) - 3:
+    n_inputs = len(eICU_df.columns) - 3
+    print(f'Changed the number of inputs to {n_inputs}')
+
 # ### Adding a time variation feature
 
 # Create the `delta_ts` features:
@@ -200,9 +200,9 @@ data[0]
 # ### Dataset object
 
 if ml_core == 'deep learning':
-    dataset = du.datasets.Time_Series_Dataset(eICU_df, data)
+    dataset = du.datasets.Time_Series_Dataset(eICU_df, data, label_name=label_column)
 else:
-    dataset = du.datasets.Tabular_Dataset(data, eICU_df)
+    dataset = du.datasets.Tabular_Dataset(eICU_df, data, label_name=label_column)
 
 dataset.__len__()
 
@@ -225,14 +225,99 @@ else:
     train_features, train_labels = dataset.X[train_indeces], dataset.y[train_indeces]
     val_features, val_labels = dataset.X[val_indeces], dataset.y[val_indeces]
     test_features, test_labels = dataset.X[test_indeces], dataset.y[test_indeces]
+    # Ignore the dataloaders, we only care about the full arrays when using scikit-learn or XGBoost
+    del train_dataloaders
+    del val_dataloaders
+    del test_dataloaders
 
-next(iter(train_dataloader))[0]
+if ml_core == 'deep learning':
+    next(iter(train_dataloader))[0]
+else:
+    train_features[:32]
 
-next(iter(val_dataloader))[0]
+if ml_core == 'deep learning':
+    next(iter(val_dataloader))[0]
+else:
+    val_features[:32]
 
-next(iter(test_dataloader))[0]
+if ml_core == 'deep learning':
+    next(iter(test_dataloader))[0]
+else:
+    test_features[:32]
 
 # ## Training models
+
+# ### Vanilla RNN
+
+# #### Creating the model
+
+# Model parameters:
+
+n_hidden = 100                             # Number of hidden units
+n_layers = 2                               # Number of LSTM layers
+p_dropout = 0.2                            # Probability of dropout
+
+if use_delta_ts == 'normalized':
+    # Count the delta_ts column as another feature, only ignore ID, timestamp and label columns
+    n_inputs = len(eICU_df.columns) - 3
+elif use_delta_ts == 'raw':
+    raise Exception('ERROR: When using a model of type Vanilla RNN, we can\'t use raw delta_ts. Please either normalize it (use_delta_ts = "normalized") or discard it (use_delta_ts = False).')
+
+# Instantiating the model:
+
+model = Models.VanillaRNN(n_inputs, n_hidden, n_outputs, n_layers, p_dropout,
+                          embed_features=embed_features, embedding_dim=embedding_dim)
+model
+
+# Define the name that will be given to the models that will be saved:
+
+model_name = 'rnn'
+if dataset_mode == 'embedded':
+    model_name.append('_embedded')
+elif dataset_mode == 'one hot encoded' and embed_features is not None:
+    model_name.append('_with_embedding')
+elif dataset_mode == 'one hot encoded' and embed_features is None:
+    model_name.append('_one_hot_encoded')
+if use_delta_ts is not False:
+    model_name.append('_delta_ts')
+
+# #### Training and testing the model
+
+next(model.parameters())
+
+model = du.deep_learning.train(model, train_dataloader, val_dataloader, test_dataloader, seq_len_dict=seq_len_dict,
+                               padding_value=padding_value, batch_size=batch_size, n_epochs=n_epochs, lr=lr,
+                               models_path=f'{project_path}models/', model_name=model_name, ModelClass=Models.VanillaRNN,
+                               is_custom=False, do_test=True, metrics=metrics, log_comet_ml=True,
+                               comet_ml_api_key=comet_ml_api_key, comet_ml_project_name=comet_ml_project_name,
+                               comet_ml_workspace=comet_ml_workspace, comet_ml_save_model=True,
+                               already_embedded=already_embedded)
+
+next(model.parameters())
+
+# #### Hyperparameter optimization
+
+config_name = input('Hyperparameter optimization configuration file name:')
+
+val_loss_min, exp_name_min = du.machine_learning.optimize_hyperparameters(Models.VanillaRNN, df=dmy_norm_df,
+                                                                          config_name=config_name,
+                                                                          comet_ml_api_key=comet_ml_api_key,
+                                                                          comet_ml_project_name=comet_ml_project_name,
+                                                                          comet_ml_workspace=comet_ml_workspace,
+                                                                          n_inputs=n_inputs, id_column=id_column,
+                                                                          label_column=label_column, inst_column=inst_column,
+                                                                          n_outputs=n_outputs, model_type='multivariate_rnn',
+                                                                          is_custom=True, models_path='models/',
+                                                                          array_param='embedding_dim',
+                                                                          config_path=f'{project_path}hyperparameter_optimization/',
+                                                                          var_seq=True, clip_value=0.5, padding_value=padding_value,
+                                                                          batch_size=batch_size, n_epochs=n_epochs,
+                                                                          lr=lr, test_train_ratio=test_train_ratio,
+                                                                          validation_ratio=validation_ratio,
+                                                                          comet_ml_save_model=True,
+                                                                          embed_features=embed_features)
+
+exp_name_min
 
 # ### Vanilla LSTM
 
@@ -244,12 +329,9 @@ n_hidden = 100                             # Number of hidden units
 n_layers = 2                               # Number of LSTM layers
 p_dropout = 0.2                            # Probability of dropout
 
-if use_delta_ts is False:
-    # Mantain the same number of inputs
-    pass
-elif use_delta_ts == 'normalized':
-    # Count the delta_ts column as another feature
-    n_inputs = n_inputs + 1
+if use_delta_ts == 'normalized':
+    # Count the delta_ts column as another feature, only ignore ID, timestamp and label columns
+    n_inputs = len(eICU_df.columns) - 3
 elif use_delta_ts == 'raw':
     raise Exception('ERROR: When using a model of type Vanilla LSTM, we can\'t use raw delta_ts. Please either normalize it (use_delta_ts = "normalized") or discard it (use_delta_ts = False).')
 
@@ -266,6 +348,8 @@ if dataset_mode == 'embedded':
     model_name.append('_embedded')
 elif dataset_mode == 'one hot encoded' and embed_features is not None:
     model_name.append('_with_embedding')
+elif dataset_mode == 'one hot encoded' and embed_features is None:
+    model_name.append('_one_hot_encoded')
 if use_delta_ts is not False:
     model_name.append('_delta_ts')
 
@@ -283,6 +367,30 @@ model = du.deep_learning.train(model, train_dataloader, val_dataloader, test_dat
 
 next(model.parameters())
 
+# #### Hyperparameter optimization
+
+config_name = input('Hyperparameter optimization configuration file name:')
+
+val_loss_min, exp_name_min = du.machine_learning.optimize_hyperparameters(Models.VanillaLSTM, df=dmy_norm_df,
+                                                                          config_name=config_name,
+                                                                          comet_ml_api_key=comet_ml_api_key,
+                                                                          comet_ml_project_name=comet_ml_project_name,
+                                                                          comet_ml_workspace=comet_ml_workspace,
+                                                                          n_inputs=n_inputs, id_column=id_column,
+                                                                          label_column=label_column, inst_column=inst_column,
+                                                                          n_outputs=n_outputs, model_type='multivariate_rnn',
+                                                                          is_custom=True, models_path='models/',
+                                                                          array_param='embedding_dim',
+                                                                          config_path=f'{project_path}hyperparameter_optimization/',
+                                                                          var_seq=True, clip_value=0.5, padding_value=padding_value,
+                                                                          batch_size=batch_size, n_epochs=n_epochs,
+                                                                          lr=lr, test_train_ratio=test_train_ratio,
+                                                                          validation_ratio=validation_ratio,
+                                                                          comet_ml_save_model=True,
+                                                                          embed_features=embed_features)
+
+exp_name_min
+
 # ### T-LSTM
 #
 # Implementation of the [_Patient Subtyping via Time-Aware LSTM Networks_](http://biometrics.cse.msu.edu/Publications/MachineLearning/Baytasetal_PatientSubtypingViaTimeAwareLSTMNetworks.pdf) paper.
@@ -296,10 +404,7 @@ n_rnn_layers = 4                           # Number of TLSTM layers
 p_dropout = 0.2                            # Probability of dropout
 elapsed_time = 'small'                     # Indicates if the elapsed time between events is small or long; influences how to discount elapsed time
 
-if use_delta_ts == 'normalized':
-    # Count the delta_ts column as another feature
-    n_inputs = n_inputs + 1
-elif use_delta_ts == 'raw':
+if use_delta_ts == 'raw':
     raise Exception('ERROR: When using a model of type TLSTM, we can\'t use raw delta_ts. Please normalize it (use_delta_ts = "normalized").')
 elif use_delta_ts is False:
     raise Exception('ERROR: When using a model of type TLSTM, we must use delta_ts. Please use it, in a normalized version (use_delta_ts = "normalized").')
@@ -318,6 +423,8 @@ if dataset_mode == 'embedded':
     model_name.append('_embedded')
 elif dataset_mode == 'one hot encoded' and embed_features is not None:
     model_name.append('_with_embedding')
+elif dataset_mode == 'one hot encoded' and embed_features is None:
+    model_name.append('_one_hot_encoded')
 
 # #### Training and testing the model
 
@@ -389,6 +496,8 @@ if dataset_mode == 'embedded':
     model_name.append('_embedded')
 elif dataset_mode == 'one hot encoded' and embed_features is not None:
     model_name.append('_with_embedding')
+elif dataset_mode == 'one hot encoded' and embed_features is None:
+    model_name.append('_one_hot_encoded')
 
 # #### Training and testing the model
 
@@ -460,6 +569,8 @@ if dataset_mode == 'embedded':
     model_name.append('_embedded')
 elif dataset_mode == 'one hot encoded' and embed_features is not None:
     model_name.append('_with_embedding')
+elif dataset_mode == 'one hot encoded' and embed_features is None:
+    model_name.append('_one_hot_encoded')
 
 # #### Training and testing the model
 
@@ -503,27 +614,32 @@ exp_name_min
 
 # Model hyperparameters:
 
-n_class = eICU_df.tumor_type_label.nunique()    # Number of classes
-lr = 0.001                                      # Learning rate
-objective = 'multi:softmax'                     # Objective function to minimize (in this case, softmax)
-eval_metric = 'mlogloss'                        # Metric to analyze (in this case, multioutput negative log likelihood loss)
+objective = 'multi:softmax'                # Objective function to minimize (in this case, softmax)
+eval_metric = 'mlogloss'                   # Metric to analyze (in this case, multioutput negative log likelihood loss)
 
 # Initializing the model:
 
-xgb_model = xgb.XGBClassifier(objective=objective, eval_metric='mlogloss', learning_rate=lr,
-                              num_class=n_class, random_state=du.random_seed, seed=du.random_seed)
+xgb_model = xgb.XGBClassifier(objective=objective, eval_metric=eval_metric, learning_rate=lr,
+                              num_class=n_output, random_state=du.random_seed, seed=du.random_seed)
 xgb_model
 
 # Training with early stopping (stops training if the evaluation metric doesn't improve on 5 consequetive iterations):
 
 xgb_model.fit(train_features, train_labels, early_stopping_rounds=5, eval_set=[(val_features, val_labels)])
 
+# Find the validation loss:
+
+val_pred_proba = xgb_model.predict_proba(val_features)
+
+val_loss = log_loss(val_labels, val_pred_proba)
+val_loss
+
 # Save the model:
 
 # Get the current day and time to attach to the saved model's name
 current_datetime = datetime.now().strftime('%d_%m_%Y_%H_%M')
 # Filename and path where the model will be saved
-model_filename = f'{models_path}xgb/checkpoint_{current_datetime}.model'
+model_filename = f'{models_path}xgb_{val_loss:.4f}valloss_{current_datetime}.pth'
 # Save the model
 joblib.dump(xgb_model, model_filename)
 
@@ -566,7 +682,6 @@ auc
 
 # Model hyperparameters:
 
-multi_class = 'multinomial'
 solver = 'lbfgs'
 penalty = 'l2'
 C = 1
@@ -574,19 +689,26 @@ max_iter = 1000
 
 # Initializing the model:
 
-logreg_model = LogisticRegression(multi_class=multi_class, solver=solver, penalty=penalty, C=C, max_iter=max_iter, random_state=du.random_seed)
+logreg_model = LogisticRegression(solver=solver, penalty=penalty, C=C, max_iter=max_iter, random_state=du.random_seed)
 logreg_model
 
 # Training and testing:
 
 logreg_model.fit(train_features, train_labels)
 
+# Find the validation loss:
+
+val_pred_proba = logreg_model.predict_proba(val_features)
+
+val_loss = log_loss(val_labels, val_pred_proba)
+val_loss
+
 # Save the model:
 
 # Get the current day and time to attach to the saved model's name
 current_datetime = datetime.now().strftime('%d_%m_%Y_%H_%M')
 # Filename and path where the model will be saved
-model_filename = f'{models_path}logreg/checkpoint_{current_datetime}.model'
+model_filename = f'{models_path}logreg_{val_loss:.4f}valloss_{current_datetime}.pth'
 # Save the model
 joblib.dump(logreg_model, model_filename)
 
@@ -635,12 +757,19 @@ svm_model
 
 svm_model.fit(train_features, train_labels)
 
+# Find the validation loss:
+
+val_pred_proba = svm_model.predict_proba(val_features)
+
+val_loss = log_loss(val_labels, val_pred_proba)
+val_loss
+
 # Save the model:
 
 # Get the current day and time to attach to the saved model's name
 current_datetime = datetime.now().strftime('%d_%m_%Y_%H_%M')
 # Filename and path where the model will be saved
-model_filename = f'{models_path}svm/checkpoint_{current_datetime}.model'
+model_filename = f'{models_path}svm_{val_loss:.4f}valloss_{current_datetime}.pth'
 # Save the model
 joblib.dump(svm_model, model_filename)
 
@@ -667,3 +796,5 @@ auc = roc_auc_score(test_labels, pred_proba, multi_class='ovr', average='weighte
 auc
 
 # #### Hyperparameter optimization
+
+

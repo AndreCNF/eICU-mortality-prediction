@@ -228,7 +228,7 @@ for key, _ in mean.items():
 norm_stats
 
 # + {"Collapsed": "false"}
-stream = open(f'{data_path}/cleaned/vitalAperiodic_norm_stats.yaml', 'w')
+stream = open(f'{data_path}/cleaned/vitalAperiodic_norm_stats.yml', 'w')
 yaml.dump(norm_stats, stream, default_flow_style=False)
 
 # + [markdown] {"Collapsed": "false"}
@@ -447,7 +447,7 @@ for key, _ in mean.items():
 norm_stats
 
 # + {"Collapsed": "false"}
-stream = open(f'{data_path}/cleaned/vitalPeriodic_norm_stats.yaml', 'w')
+stream = open(f'{data_path}/cleaned/vitalPeriodic_norm_stats.yml', 'w')
 yaml.dump(norm_stats, stream, default_flow_style=False)
 
 # + [markdown] {"Collapsed": "false"}

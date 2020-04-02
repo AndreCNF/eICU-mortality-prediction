@@ -309,10 +309,9 @@ torch = "^1.3"
 tqdm = "^4.43.0"
 
 [package.source]
-reference = "29d40af4c875e9749f64d6559ffa9250e957dc93"
+reference = "eb09d0848e88697e8bc125886d7e1e25970ddf4b"
 type = "git"
 url = "https://github.com/AndreCNF/data-utils.git"
-
 [[package]]
 category = "main"
 description = "This package provides a DateTime data type, as known from Zope. Unless you need to communicate with Zope APIs, you're probably better off using Python's built-in datetime module."
@@ -2040,19 +2039,12 @@ category = "main"
 description = "XGBoost Python Package"
 name = "xgboost"
 optional = false
-python-versions = ">=3.5"
-version = "1.0.2"
+python-versions = ">=3.4"
+version = "0.90"
 
 [package.dependencies]
 numpy = "*"
 scipy = "*"
-
-[package.extras]
-dask = ["dask", "pandas", "distributed"]
-datatable = ["datatable"]
-pandas = ["pandas"]
-plotting = ["graphviz", "matplotlib"]
-sklearn = ["sklearn"]
 
 [[package]]
 category = "main"
@@ -2103,7 +2095,7 @@ test = ["zope.event"]
 testing = ["coverage", "nose", "zope.event"]
 
 [metadata]
-content-hash = "56a423c21dda685100536779254c0898c3586db3c70dd0e4f202643097487d5d"
+content-hash = "f6064007de41932eeb6da084ce288dfee47d9ae03b33707f73de51d7fd6a7252"
 python-versions = "^3.6.1"
 
 [metadata.files]
@@ -3173,9 +3165,9 @@ wurlitzer = [
     {file = "wurlitzer-2.0.0.tar.gz", hash = "sha256:86a510c0d34fcc9786ad1a9f557ac980f30ef2f821a75c2e4333311e0fd9cd76"},
 ]
 xgboost = [
-    {file = "xgboost-1.0.2-py3-none-manylinux1_x86_64.whl", hash = "sha256:0ac03dd7477fe40ba9f716ac59a48af439c371da592675db72319219a1040870"},
-    {file = "xgboost-1.0.2-py3-none-win_amd64.whl", hash = "sha256:649c6e297f4729270233ddfd7b71f5fdf2d61785221245af4704da70356b3b0d"},
-    {file = "xgboost-1.0.2.tar.gz", hash = "sha256:74d0984ed4c338b4b72ff4855f07c12e73fe8c60122b5b303b6e59f7e207da67"},
+    {file = "xgboost-0.90-py2.py3-none-manylinux1_x86_64.whl", hash = "sha256:898f26bb66589c644d17deff1b03961504f7ad79296ed434d0d7a5e9cb4deae6"},
+    {file = "xgboost-0.90-py2.py3-none-win_amd64.whl", hash = "sha256:5ec073f6d68348784e9afdb831371fefb89de896d8eb58e79244ad05177c5753"},
+    {file = "xgboost-0.90.tar.gz", hash = "sha256:d69f90d61a63e8889fd39a31ad00c629bac1ca627f8406b9b6d4594c9e29ab84"},
 ]
 yaspin = [
     {file = "yaspin-0.15.0-py2.py3-none-any.whl", hash = "sha256:0ee4668936d0053de752c9a4963929faa3a832bd0ba823877d27855592dc80aa"},

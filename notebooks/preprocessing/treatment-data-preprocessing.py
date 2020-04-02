@@ -199,7 +199,7 @@ for key, _ in mean.items():
 norm_stats
 
 # + {"Collapsed": "false"}
-stream = open(f'{data_path}/cleaned/infusionDrug_norm_stats.yaml', 'w')
+stream = open(f'{data_path}/cleaned/infusionDrug_norm_stats.yml', 'w')
 yaml.dump(norm_stats, stream, default_flow_style=False)
 
 # + [markdown] {"Collapsed": "false"}
@@ -255,7 +255,7 @@ cat_feat_ohe
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
 # + {"Collapsed": "false", "persistent_id": "b40f8861-dae3-49ca-8649-d937ba3cfcf0"}
-stream = open(f'{data_path}/cleaned/cat_feat_ohe_inf_drug.yaml', 'w')
+stream = open(f'{data_path}/cleaned/cat_feat_ohe_inf_drug.yml', 'w')
 yaml.dump(cat_feat_ohe, stream, default_flow_style=False)
 
 # + [markdown] {"Collapsed": "false"}
@@ -521,7 +521,7 @@ for key, _ in mean.items():
 norm_stats
 
 # + {"Collapsed": "false"}
-stream = open(f'{data_path}/cleaned/admissionDrug_norm_stats.yaml', 'w')
+stream = open(f'{data_path}/cleaned/admissionDrug_norm_stats.yml', 'w')
 yaml.dump(norm_stats, stream, default_flow_style=False)
 
 # + {"Collapsed": "false", "persistent_id": "d8f2c0a4-ba81-4958-90b7-7b5165ff1363", "execution": {"iopub.status.busy": "2020-03-09T16:39:57.583568Z", "iopub.status.idle": "2020-03-09T16:39:57.583851Z"}}
@@ -585,7 +585,7 @@ cat_feat_ohe
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
 # + {"Collapsed": "false", "persistent_id": "fb54b948-abf1-412d-9fb3-4edd22500e97", "execution": {"iopub.status.busy": "2020-03-09T16:37:35.194288Z", "iopub.execute_input": "2020-03-09T16:37:35.194644Z", "iopub.status.idle": "2020-03-09T16:37:35.338301Z", "shell.execute_reply.started": "2020-03-09T16:37:35.194590Z", "shell.execute_reply": "2020-03-09T16:37:35.336950Z"}}
-stream = open(f'{data_path}/cleaned/cat_feat_ohe_adms_drug.yaml', 'w')
+stream = open(f'{data_path}/cleaned/cat_feat_ohe_adms_drug.yml', 'w')
 yaml.dump(cat_feat_ohe, stream, default_flow_style=False)
 
 # + [markdown] {"Collapsed": "false"}
@@ -881,7 +881,7 @@ for key, _ in mean.items():
 norm_stats
 
 # + {"Collapsed": "false", "execution": {"iopub.status.busy": "2020-03-11T16:43:26.038141Z", "iopub.status.idle": "2020-03-11T16:43:26.510570Z", "iopub.execute_input": "2020-03-11T16:43:26.038348Z", "shell.execute_reply.started": "2020-03-11T16:43:26.038311Z", "shell.execute_reply": "2020-03-11T16:43:26.509897Z"}}
-stream = open(f'{data_path}/cleaned/medication_norm_stats.yaml', 'w')
+stream = open(f'{data_path}/cleaned/medication_norm_stats.yml', 'w')
 yaml.dump(norm_stats, stream, default_flow_style=False)
 
 # + {"Collapsed": "false", "persistent_id": "93145ae0-2204-4553-a7eb-5d235552dd82", "execution": {"iopub.status.busy": "2020-03-11T16:43:26.511549Z", "iopub.status.idle": "2020-03-11T16:43:28.558874Z", "iopub.execute_input": "2020-03-11T16:43:26.511759Z", "shell.execute_reply.started": "2020-03-11T16:43:26.511722Z", "shell.execute_reply": "2020-03-11T16:43:28.558161Z"}}
@@ -941,7 +941,7 @@ cat_feat_ohe
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
 # + {"Collapsed": "false", "persistent_id": "e51cc2e0-b598-484f-a3f8-8c764950777f", "execution": {"iopub.status.busy": "2020-03-11T16:45:03.581637Z", "iopub.status.idle": "2020-03-11T16:45:03.624459Z", "iopub.execute_input": "2020-03-11T16:45:03.582404Z", "shell.execute_reply.started": "2020-03-11T16:45:03.581808Z", "shell.execute_reply": "2020-03-11T16:45:03.623714Z"}}
-stream = open(f'{data_path}/cleaned/cat_feat_ohe_med.yaml', 'w')
+stream = open(f'{data_path}/cleaned/cat_feat_ohe_med.yml', 'w')
 yaml.dump(cat_feat_ohe, stream, default_flow_style=False)
 
 # + [markdown] {"Collapsed": "false"}
@@ -1276,7 +1276,7 @@ cat_feat_ohe
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
 # + {"Collapsed": "false", "persistent_id": "373ef393-e31d-4778-a902-78fc1ce179f3", "execution": {"iopub.status.busy": "2020-03-11T17:34:17.378209Z", "iopub.execute_input": "2020-03-11T17:34:17.378453Z", "iopub.status.idle": "2020-03-11T17:34:17.404576Z", "shell.execute_reply.started": "2020-03-11T17:34:17.378409Z", "shell.execute_reply": "2020-03-11T17:34:17.403852Z"}}
-stream = open(f'{data_path}/cleaned/cat_feat_ohe_treat.yaml', 'w')
+stream = open(f'{data_path}/cleaned/cat_feat_ohe_treat.yml', 'w')
 yaml.dump(cat_feat_ohe, stream, default_flow_style=False)
 
 # + [markdown] {"Collapsed": "false"}
@@ -1702,7 +1702,7 @@ for key, _ in mean.items():
 norm_stats
 
 # + {"Collapsed": "false"}
-stream = open(f'{data_path}/cleaned/intakeOutput_norm_stats.yaml', 'w')
+stream = open(f'{data_path}/cleaned/intakeOutput_norm_stats.yml', 'w')
 yaml.dump(norm_stats, stream, default_flow_style=False)
 
 # + [markdown] {"Collapsed": "false"}

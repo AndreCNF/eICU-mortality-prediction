@@ -533,7 +533,7 @@ cat_feat_ohe
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
 # + {"Collapsed": "false", "persistent_id": "2135f766-d52d-4f58-bf40-ac648ce9021f"}
-stream = open(f'{data_path}/cleaned/cat_feat_ohe_resp.yaml', 'w')
+stream = open(f'{data_path}/cleaned/cat_feat_ohe_resp.yml', 'w')
 yaml.dump(cat_feat_ohe, stream, default_flow_style=False)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}

@@ -276,7 +276,7 @@ cat_feat_ohe
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
 # + {"Collapsed": "false", "persistent_id": "398e3a5f-c8e3-4657-aa40-05967570fd66"}
-stream = open(f'{data_path}/cleaned/cat_feat_ohe_nurse_care.yaml', 'w')
+stream = open(f'{data_path}/cleaned/cat_feat_ohe_nurse_care.yml', 'w')
 yaml.dump(cat_feat_ohe, stream, default_flow_style=False)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -585,7 +585,7 @@ cat_feat_ohe
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
 # + {"Collapsed": "false", "persistent_id": "0280b97a-1137-433b-a54e-6168edc4a350"}
-stream = open(f'{data_path}/cleaned/cat_feat_ohe_nurse_assess.yaml', 'w')
+stream = open(f'{data_path}/cleaned/cat_feat_ohe_nurse_assess.yml', 'w')
 yaml.dump(cat_feat_ohe, stream, default_flow_style=False)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
@@ -1032,7 +1032,7 @@ cat_feat_ohe
 # Save the dictionary that maps from the original categories/strings to the new numerical encondings.
 
 # + {"Collapsed": "false", "persistent_id": "439732df-2263-4fe2-81be-7535119a7170"}
-stream = open(f'{data_path}/cleaned/cat_feat_ohe_nurse_chart.yaml', 'w')
+stream = open(f'{data_path}/cleaned/cat_feat_ohe_nurse_chart.yml', 'w')
 yaml.dump(cat_feat_ohe, stream, default_flow_style=False)
 
 # + {"Collapsed": "false", "cell_type": "markdown"}
