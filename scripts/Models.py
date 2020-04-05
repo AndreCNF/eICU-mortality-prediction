@@ -71,8 +71,8 @@ class BaseRNN(nn.Module):
                 if all([isinstance(feature, int) for feature in self.embed_features]):
                     self.n_embeddings = len(self.embed_features) + 1
                 elif (all([isinstance(feat_list, list) for feat_list in self.embed_features])
-                and all([isinstance(feature, int) for feature in feat_list
-                        for feat_list in self.embed_features])):
+                and all([isinstance(feature, int) for feat_list in self.embed_features
+                         for feature in feat_list])):
                     self.n_embeddings = []
                     [self.n_embeddings.append(len(feat_list) + 1) for feat_list in self.embed_features]
                 else:
@@ -80,15 +80,15 @@ class BaseRNN(nn.Module):
             else:
                 if all([isinstance(feature, int) for feature in self.embed_features]):
                     if self.n_embeddings != len(self.embed_features)+1:
-                        raise Exception(f'ERROR: The number of embeddings `n_embeddings` must equal the length of its corresponding embedding features `embed_features`. The provided `n_embeddings` is {self.n_embeddings} while `embed_features` has length {len(self.embed_features)}.')
+                        raise Exception(f'ERROR: The number of embeddings `n_embeddings` must equal the length of its corresponding embedding features `embed_features` + 1 (missing values). The provided `n_embeddings` is {self.n_embeddings} while `embed_features` has length {len(self.embed_features)}.')
                 elif (all([isinstance(feat_list, list) for feat_list in self.embed_features])
-                and all([isinstance(feature, int) for feature in feat_list
-                        for feat_list in self.embed_features])):
+                and all([isinstance(feature, int) for feat_list in self.embed_features
+                         for feature in feat_list])):
                     if len(self.n_embeddings) != len(self.embed_features):
                         raise Exception(f'ERROR: The list of the number of embeddings `n_embeddings` and the embedding features `embed_features` must have the same length. The provided `n_embeddings` has length {len(self.n_embeddings)} while `embed_features` has length {len(self.embed_features)}.')
-                    for i in range(self.n_embeddings):
-                        if self.n_embeddings[i] != len(self.embed_features[i]):
-                            raise Exception(f'ERROR: The number of embeddings `n_embeddings` must equal the length of its corresponding embedding features `embed_features`. The provided `n_embeddings` is {self.n_embeddings[i]} while `embed_features` has length {len(self.embed_features[i])}, in embedding features set {i}.')
+                    for i in range(len(self.n_embeddings)):
+                        if self.n_embeddings[i] != len(self.embed_features[i])+1:
+                            raise Exception(f'ERROR: The number of embeddings `n_embeddings` must equal the length of its corresponding embedding features `embed_features` + 1 (missing values). The provided `n_embeddings` is {self.n_embeddings[i]} while `embed_features` has length {len(self.embed_features[i])}, in embedding features set {i}.')
             if all([isinstance(feature, int) for feature in self.embed_features]):
                 if embedding_dim is None:
                     # Calculate a reasonable embedding dimension for the
@@ -100,8 +100,8 @@ class BaseRNN(nn.Module):
                 # Create a single embedding layer
                 self.embed_layers = nn.EmbeddingBag(self.n_embeddings, embedding_dim)
             elif (all([isinstance(feat_list, list) for feat_list in self.embed_features])
-            and all([isinstance(feature, int) for feature in feat_list
-                    for feat_list in self.embed_features])):
+            and all([isinstance(feature, int) for feat_list in self.embed_features
+                     for feature in feat_list])):
                 # Create a modules list of embedding bag layers
                 self.embed_layers = nn.ModuleList()
                 for i in range(len(self.embed_features)):
@@ -115,7 +115,7 @@ class BaseRNN(nn.Module):
                     else:
                         embedding_dim_i = self.embedding_dim[i]
                     # Create an embedding layer for the current feature
-                    self.embed_layers[f'embed_{i}'] = nn.EmbeddingBag(self.n_embeddings[i], embedding_dim_i)
+                    self.embed_layers.append(nn.EmbeddingBag(self.n_embeddings[i], embedding_dim_i))
             else:
                 raise Exception(f'ERROR: The embedding features must be indicated in `embed_features` as either a single, integer index or a list of indices. The provided argument has type {type(embed_features)}.')
         # RNN layer(s)
@@ -127,8 +127,8 @@ class BaseRNN(nn.Module):
             if all([isinstance(feature, int) for feature in self.embed_features]):
                 self.rnn_n_inputs = self.n_inputs + self.embedding_dim - len(self.embed_features)
             elif (all([isinstance(feat_list, list) for feat_list in self.embed_features])
-            and all([isinstance(feature, int) for feature in feat_list
-                    for feat_list in self.embed_features])):
+            and all([isinstance(feature, int) for feat_list in self.embed_features
+                     for feature in feat_list])):
                 self.rnn_n_inputs = self.n_inputs
                 for i in range(len(self.embed_features)):
                     self.rnn_n_inputs = self.rnn_n_inputs + self.embedding_dim[i] - len(self.embed_features[i])
@@ -247,14 +247,11 @@ class BaseRNN(nn.Module):
         # Flatten the data
         y_pred = y_pred.reshape(-1)
         y_labels = y_labels.reshape(-1)
-        # Find the indeces that correspond to padding samples
-        pad_idx = du.search_explore.find_val_idx(y_labels, self.padding_value)
-        if pad_idx is not None:
-            non_pad_idx = list(range(len(y_labels)))
-            [non_pad_idx.remove(idx) for idx in pad_idx]
-            # Remove the padding samples
-            y_labels = y_labels[non_pad_idx]
-            y_pred = y_pred[non_pad_idx]
+        # Find the indeces that don't correspond to padding samples
+        non_pad_idx = y_labels != self.padding_value
+        # Remove the padding samples
+        y_labels = y_labels[non_pad_idx]
+        y_pred = y_pred[non_pad_idx]
         # Compute cross entropy loss which ignores all padding values
         ce_loss = self.criterion(y_pred, y_labels)
         return ce_loss
@@ -328,8 +325,8 @@ class VanillaRNN(nn.Module):
                 if all([isinstance(feature, int) for feature in self.embed_features]):
                     self.n_embeddings = len(self.embed_features) + 1
                 elif (all([isinstance(feat_list, list) for feat_list in self.embed_features])
-                and all([isinstance(feature, int) for feature in feat_list
-                        for feat_list in self.embed_features])):
+                and all([isinstance(feature, int) for feat_list in self.embed_features
+                         for feature in feat_list])):
                     self.n_embeddings = []
                     [self.n_embeddings.append(len(feat_list) + 1) for feat_list in self.embed_features]
                 else:
@@ -339,15 +336,15 @@ class VanillaRNN(nn.Module):
                     self.n_embeddings = [self.n_embeddings]
                 if all([isinstance(feature, int) for feature in self.embed_features]):
                     if self.n_embeddings != len(self.embed_features)+1:
-                        raise Exception(f'ERROR: The number of embeddings `n_embeddings` must equal the length of its corresponding embedding features `embed_features`. The provided `n_embeddings` is {self.n_embeddings} while `embed_features` has length {len(self.embed_features)}.')
+                        raise Exception(f'ERROR: The number of embeddings `n_embeddings` must equal the length of its corresponding embedding features `embed_features` + 1 (missing values). The provided `n_embeddings` is {self.n_embeddings} while `embed_features` has length {len(self.embed_features)}.')
                 elif (all([isinstance(feat_list, list) for feat_list in self.embed_features])
-                and all([isinstance(feature, int) for feature in feat_list
-                        for feat_list in self.embed_features])):
+                and all([isinstance(feature, int) for feat_list in self.embed_features
+                         for feature in feat_list])):
                     if len(self.n_embeddings) != len(self.embed_features):
                         raise Exception(f'ERROR: The list of the number of embeddings `n_embeddings` and the embedding features `embed_features` must have the same length. The provided `n_embeddings` has length {len(self.n_embeddings)} while `embed_features` has length {len(self.embed_features)}.')
-                    for i in range(self.n_embeddings):
-                        if self.n_embeddings[i] != len(self.embed_features[i]):
-                            raise Exception(f'ERROR: The number of embeddings `n_embeddings` must equal the length of its corresponding embedding features `embed_features`. The provided `n_embeddings` is {self.n_embeddings[i]} while `embed_features` has length {len(self.embed_features[i])}, in embedding features set {i}.')
+                    for i in range(len(self.n_embeddings)):
+                        if self.n_embeddings[i] != len(self.embed_features[i])+1:
+                            raise Exception(f'ERROR: The number of embeddings `n_embeddings` must equal the length of its corresponding embedding features `embed_features` + 1 (missing values). The provided `n_embeddings` is {self.n_embeddings[i]} while `embed_features` has length {len(self.embed_features[i])}, in embedding features set {i}.')
             if all([isinstance(feature, int) for feature in self.embed_features]):
                 if embedding_dim is None:
                     # Calculate a reasonable embedding dimension for the
@@ -359,8 +356,8 @@ class VanillaRNN(nn.Module):
                 # Create a single embedding layer
                 self.embed_layers = nn.EmbeddingBag(self.n_embeddings, embedding_dim)
             elif (all([isinstance(feat_list, list) for feat_list in self.embed_features])
-            and all([isinstance(feature, int) for feature in feat_list
-                    for feat_list in self.embed_features])):
+            and all([isinstance(feature, int) for feat_list in self.embed_features
+                     for feature in feat_list])):
                 # Create a modules list of embedding bag layers
                 self.embed_layers = nn.ModuleList()
                 for i in range(len(self.embed_features)):
@@ -374,7 +371,7 @@ class VanillaRNN(nn.Module):
                     else:
                         embedding_dim_i = self.embedding_dim[i]
                     # Create an embedding layer for the current feature
-                    self.embed_layers[f'embed_{i}'] = nn.EmbeddingBag(self.n_embeddings[i], embedding_dim_i)
+                    self.embed_layers.append(nn.EmbeddingBag(self.n_embeddings[i], embedding_dim_i))
             else:
                 raise Exception(f'ERROR: The embedding features must be indicated in `embed_features` as either a single, integer index or a list of indices. The provided argument has type {type(embed_features)}.')
         # RNN layer(s)
@@ -386,8 +383,8 @@ class VanillaRNN(nn.Module):
             if all([isinstance(feature, int) for feature in self.embed_features]):
                 self.rnn_n_inputs = self.n_inputs + self.embedding_dim - len(self.embed_features)
             elif (all([isinstance(feat_list, list) for feat_list in self.embed_features])
-            and all([isinstance(feature, int) for feature in feat_list
-                    for feat_list in self.embed_features])):
+            and all([isinstance(feature, int) for feat_list in self.embed_features
+                     for feature in feat_list])):
                 self.rnn_n_inputs = self.n_inputs
                 for i in range(len(self.embed_features)):
                     self.rnn_n_inputs = self.rnn_n_inputs + self.embedding_dim[i] - len(self.embed_features[i])
@@ -461,14 +458,11 @@ class VanillaRNN(nn.Module):
         # Flatten the data
         y_pred = y_pred.reshape(-1)
         y_labels = y_labels.reshape(-1)
-        # Find the indeces that correspond to padding samples
-        pad_idx = du.search_explore.find_val_idx(y_labels, self.padding_value)
-        if pad_idx is not None:
-            non_pad_idx = list(range(len(y_labels)))
-            [non_pad_idx.remove(idx) for idx in pad_idx]
-            # Remove the padding samples
-            y_labels = y_labels[non_pad_idx]
-            y_pred = y_pred[non_pad_idx]
+        # Find the indeces that don't correspond to padding samples
+        non_pad_idx = y_labels != self.padding_value
+        # Remove the padding samples
+        y_labels = y_labels[non_pad_idx]
+        y_pred = y_pred[non_pad_idx]
         # Compute cross entropy loss which ignores all padding values
         ce_loss = self.criterion(y_pred, y_labels)
         return ce_loss
@@ -539,8 +533,8 @@ class VanillaLSTM(nn.Module):
                 if all([isinstance(feature, int) for feature in self.embed_features]):
                     self.n_embeddings = len(self.embed_features) + 1
                 elif (all([isinstance(feat_list, list) for feat_list in self.embed_features])
-                and all([isinstance(feature, int) for feature in feat_list
-                        for feat_list in self.embed_features])):
+                and all([isinstance(feature, int) for feat_list in self.embed_features
+                         for feature in feat_list])):
                     self.n_embeddings = []
                     [self.n_embeddings.append(len(feat_list) + 1) for feat_list in self.embed_features]
                 else:
@@ -550,15 +544,15 @@ class VanillaLSTM(nn.Module):
                     self.n_embeddings = [self.n_embeddings]
                 if all([isinstance(feature, int) for feature in self.embed_features]):
                     if self.n_embeddings != len(self.embed_features)+1:
-                        raise Exception(f'ERROR: The number of embeddings `n_embeddings` must equal the length of its corresponding embedding features `embed_features`. The provided `n_embeddings` is {self.n_embeddings} while `embed_features` has length {len(self.embed_features)}.')
+                        raise Exception(f'ERROR: The number of embeddings `n_embeddings` must equal the length of its corresponding embedding features `embed_features` + 1 (missing values). The provided `n_embeddings` is {self.n_embeddings} while `embed_features` has length {len(self.embed_features)}.')
                 elif (all([isinstance(feat_list, list) for feat_list in self.embed_features])
-                and all([isinstance(feature, int) for feature in feat_list
-                        for feat_list in self.embed_features])):
+                and all([isinstance(feature, int) for feat_list in self.embed_features
+                         for feature in feat_list])):
                     if len(self.n_embeddings) != len(self.embed_features):
                         raise Exception(f'ERROR: The list of the number of embeddings `n_embeddings` and the embedding features `embed_features` must have the same length. The provided `n_embeddings` has length {len(self.n_embeddings)} while `embed_features` has length {len(self.embed_features)}.')
-                    for i in range(self.n_embeddings):
-                        if self.n_embeddings[i] != len(self.embed_features[i]):
-                            raise Exception(f'ERROR: The number of embeddings `n_embeddings` must equal the length of its corresponding embedding features `embed_features`. The provided `n_embeddings` is {self.n_embeddings[i]} while `embed_features` has length {len(self.embed_features[i])}, in embedding features set {i}.')
+                    for i in range(len(self.n_embeddings)):
+                        if self.n_embeddings[i] != len(self.embed_features[i])+1:
+                            raise Exception(f'ERROR: The number of embeddings `n_embeddings` must equal the length of its corresponding embedding features `embed_features` + 1 (missing values). The provided `n_embeddings` is {self.n_embeddings[i]} while `embed_features` has length {len(self.embed_features[i])}, in embedding features set {i}.')
             if all([isinstance(feature, int) for feature in self.embed_features]):
                 if embedding_dim is None:
                     # Calculate a reasonable embedding dimension for the
@@ -570,8 +564,8 @@ class VanillaLSTM(nn.Module):
                 # Create a single embedding layer
                 self.embed_layers = nn.EmbeddingBag(self.n_embeddings, embedding_dim)
             elif (all([isinstance(feat_list, list) for feat_list in self.embed_features])
-            and all([isinstance(feature, int) for feature in feat_list
-                    for feat_list in self.embed_features])):
+            and all([isinstance(feature, int) for feat_list in self.embed_features
+                     for feature in feat_list])):
                 # Create a modules list of embedding bag layers
                 self.embed_layers = nn.ModuleList()
                 for i in range(len(self.embed_features)):
@@ -585,7 +579,7 @@ class VanillaLSTM(nn.Module):
                     else:
                         embedding_dim_i = self.embedding_dim[i]
                     # Create an embedding layer for the current feature
-                    self.embed_layers[f'embed_{i}'] = nn.EmbeddingBag(self.n_embeddings[i], embedding_dim_i)
+                    self.embed_layers.append(nn.EmbeddingBag(self.n_embeddings[i], embedding_dim_i))
             else:
                 raise Exception(f'ERROR: The embedding features must be indicated in `embed_features` as either a single, integer index or a list of indices. The provided argument has type {type(embed_features)}.')
         # LSTM layer(s)
@@ -597,8 +591,8 @@ class VanillaLSTM(nn.Module):
             if all([isinstance(feature, int) for feature in self.embed_features]):
                 self.lstm_n_inputs = self.n_inputs + self.embedding_dim - len(self.embed_features)
             elif (all([isinstance(feat_list, list) for feat_list in self.embed_features])
-            and all([isinstance(feature, int) for feature in feat_list
-                    for feat_list in self.embed_features])):
+            and all([isinstance(feature, int) for feat_list in self.embed_features
+                     for feature in feat_list])):
                 self.lstm_n_inputs = self.n_inputs
                 for i in range(len(self.embed_features)):
                     self.lstm_n_inputs = self.lstm_n_inputs + self.embedding_dim[i] - len(self.embed_features[i])
@@ -672,14 +666,11 @@ class VanillaLSTM(nn.Module):
         # Flatten the data
         y_pred = y_pred.reshape(-1)
         y_labels = y_labels.reshape(-1)
-        # Find the indeces that correspond to padding samples
-        pad_idx = du.search_explore.find_val_idx(y_labels, self.padding_value)
-        if pad_idx is not None:
-            non_pad_idx = list(range(len(y_labels)))
-            [non_pad_idx.remove(idx) for idx in pad_idx]
-            # Remove the padding samples
-            y_labels = y_labels[non_pad_idx]
-            y_pred = y_pred[non_pad_idx]
+        # Find the indeces that don't correspond to padding samples
+        non_pad_idx = y_labels != self.padding_value
+        # Remove the padding samples
+        y_labels = y_labels[non_pad_idx]
+        y_pred = y_pred[non_pad_idx]
         # Compute cross entropy loss which ignores all padding values
         ce_loss = self.criterion(y_pred, y_labels)
         return ce_loss
@@ -734,8 +725,8 @@ class TLSTM(BaseRNN):
                 if all([isinstance(feature, int) for feature in embed_features]):
                     self.delta_ts_col = n_inputs - len(embed_features)
                 elif (all([isinstance(feat_list, list) for feat_list in embed_features])
-                and all([isinstance(feature, int) for feature in feat_list
-                        for feat_list in embed_features])):
+                and all([isinstance(feature, int) for feat_list in embed_features
+                         for feature in feat_list])):
                     self.delta_ts_col = n_inputs
                     for i in range(len(embed_features)):
                         self.delta_ts_col = rnn_n_inputs - len(embed_features[i])
@@ -855,8 +846,8 @@ class MF1LSTM(BaseRNN):
                 if all([isinstance(feature, int) for feature in embed_features]):
                     self.delta_ts_col = n_inputs - len(embed_features)
                 elif (all([isinstance(feat_list, list) for feat_list in embed_features])
-                and all([isinstance(feature, int) for feature in feat_list
-                        for feat_list in embed_features])):
+                and all([isinstance(feature, int) for feat_list in embed_features
+                         for feature in feat_list])):
                     self.delta_ts_col = n_inputs
                     for i in range(len(embed_features)):
                         self.delta_ts_col = rnn_n_inputs - len(embed_features[i])
@@ -978,8 +969,8 @@ class MF2LSTM(BaseRNN):
                 if all([isinstance(feature, int) for feature in embed_features]):
                     self.delta_ts_col = n_inputs - len(embed_features)
                 elif (all([isinstance(feat_list, list) for feat_list in embed_features])
-                and all([isinstance(feature, int) for feature in feat_list
-                        for feat_list in embed_features])):
+                and all([isinstance(feature, int) for feat_list in embed_features
+                         for feature in feat_list])):
                     self.delta_ts_col = n_inputs
                     for i in range(len(embed_features)):
                         self.delta_ts_col = rnn_n_inputs - len(embed_features[i])

@@ -61,10 +61,11 @@ dataset_mode = None                        # The mode in which we'll use the dat
 ml_core = None                             # The core machine learning type we'll use; either traditional ML or DL
 use_delta_ts = None                        # Indicates if we'll use time variation info
 time_window_h = None                       # Number of hours on which we want to predict mortality
+already_embedded = None                    # Indicates if categorical features are already embedded when fetching a batch
 @interact
-def get_dataset_mode(data_mode=['one hot encoded', 'embedded'], ml_or_dl=['machine learning', 'deep learning'],
+def get_dataset_mode(data_mode=['one hot encoded', 'embedded'], ml_or_dl=['deep learning', 'machine learning'],
                      use_delta=[False, 'normalized', 'raw'], window_h=(0, 96, 24)):
-    global dataset_mode, ml_core, use_delta_ts, time_window_h
+    global dataset_mode, ml_core, use_delta_ts, time_window_h, already_embedded
     dataset_mode, ml_core, use_delta_ts, time_window_h = data_mode, ml_or_dl, use_delta, window_h
     already_embedded = dataset_mode == 'embedded'
 
@@ -72,7 +73,7 @@ def get_dataset_mode(data_mode=['one hot encoded', 'embedded'], ml_or_dl=['machi
 id_column = 'patientunitstayid'            # Name of the sequence ID column
 ts_column = 'ts'                           # Name of the timestamp column
 label_column = 'label'                     # Name of the label column
-n_ids = 7000                               # Total number of sequences
+n_ids = 8000                               # Total number of sequences
 n_inputs = 2090                            # Number of input features
 n_outputs = 1                              # Number of outputs
 padding_value = 999999                     # Padding value used to fill in sequences up to the maximum sequence length
@@ -144,21 +145,21 @@ eICU_df.drop(columns='death_ts', inplace=True)
 
 # ### Embedding of the categorical features
 
+# Find the indeces of the features that will be embedded,
+# as well as the total number of categories per categorical feature
+# Subtracting 2 because of the ID and ts columns
+embed_features = [[du.search_explore.find_col_idx(eICU_df, col)-2 for col in feat_list]
+                   for feat_list in cat_feat_ohe]
+n_embeddings = list()
+[n_embeddings.append(len(feat_list) + 1) for feat_list in cat_feat_ohe]
+print(f'Embedding features: {embed_features}')
+print(f'Number of embeddings: {n_embeddings}')
+
 if dataset_mode == 'embedded':
     # [TODO] Add code to pre-embed the categorical features
     # Don't train any new embedding layer
     embed_features = None
     n_embeddings = None
-else:
-    # Find the indeces of the features that will be embedded,
-    # as well as the total number of categories per categorical feature
-    # Subtracting 2 because of the ID and ts columns
-    embed_features = [[du.search_explore.find_col_idx(eICU_df, col)-2 for col in feat_list]
-                       for feat_list in cat_feat_ohe]
-    n_embeddings = list()
-    [n_embeddings.append(len(feat_list) + 1) for feat_list in cat_feat_ohe]
-    print(f'Embedding features: {embed_features}')
-    print(f'Number of embeddings: {n_embeddings}')
 
 # **Note:** We need to discard 3 columns from the number of inputs as the models won't use the ID and ts columns directly and obviously the label isn't part of the inputs.
 
@@ -169,7 +170,7 @@ if n_inputs != len(eICU_df.columns) - 3:
 
 # ### Adding a time variation feature
 
-# Create the `delta_ts` features:
+# Create the `delta_ts` feature:
 
 if use_delta_ts is not False:
     eICU['delta_ts'] = eICU.groupby(id_column).ts.diff()
