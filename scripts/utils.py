@@ -7,16 +7,20 @@ def eICU_initial_analysis(self):
     df = pd.read_feather(self.files[0])
     # Number of input features, discarding the ID, timestamp and label columns
     self.n_inputs = len(df.columns) - 3
-    # Find the indeces of the features that will be embedded,
-    # as well as the total number of categories per categorical feature
-    # Subtracting 2 because of the ID and ts columns
-    cat_feat_ohe_list = [feat_list for feat_list in self.cat_feat_ohe.values()]
-    self.embed_features = [[du.search_explore.find_col_idx(df, col)
-                            for col in feat_list]
-                            for feat_list in cat_feat_ohe_list]
-    self.n_embeddings = list()
-    [self.n_embeddings.append(len(feat_list) + 1)
-     for feat_list in self.embed_features]
+    # Find the column indeces for the ID columns
+    self.id_columns_idx = [du.search_explore.find_col_idx(df, col)
+                           for col in ['patientunitstayid', 'ts']]
+    if self.dataset_mode != 'one hot encoded':
+        # Find the indeces of the features that will be embedded,
+        # as well as the total number of categories per categorical feature
+        # Subtracting 2 because of the ID and ts columns
+        cat_feat_ohe_list = [feat_list for feat_list in self.cat_feat_ohe.values()]
+        self.embed_features = [[du.search_explore.find_col_idx(df, col)
+                                for col in feat_list]
+                                for feat_list in cat_feat_ohe_list]
+        self.n_embeddings = list()
+        [self.n_embeddings.append(len(feat_list) + 1)
+         for feat_list in self.embed_features]
     if self.dtype_dict is not None:
         # Convert column data types and use them to find the boolean features later
         df = du.utils.convert_dtypes(df, dtypes=self.dtype_dict, inplace=True)
@@ -55,7 +59,7 @@ def eICU_process_pipeline(self, df):
                                                padding_value=self.padding_value,
                                                inplace=True)
     # Check if we need to pre-embed the categorical features
-    if self.dataset_mode == 'embedded':
+    if self.dataset_mode == 'pre-embedded':
         # Run each embedding layer on each respective feature, adding the
         # resulting embedding values to the tensor and removing the original,
         # categorical encoded columns

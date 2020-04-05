@@ -26,7 +26,7 @@ project_path = 'code/eICU-mortality-prediction/'
 # Another trick to do with Pandas so as to be able to allocate bigger objects to memory
 # !sudo bash -c 'echo 1 > /proc/sys/vm/overcommit_memory'
 
-import modin.pandas as mpd                  # Optimized distributed version of Pandas
+# import modin.pandas as mpd                  # Optimized distributed version of Pandas
 import pandas as pd
 import data_utils as du                     # Data science and machine learning relevant methods
 
@@ -56,10 +56,22 @@ const_columns
 
 # ### Patient information
 
-patient_df = mpd.read_csv(f'{data_path}normalized/ohe/patient.csv', dtype=dtype_dict)
-patient_df = du.utils.convert_dataframe(patient_df, to='pandas', return_library=False, dtypes=dtype_dict)
+patient_df = pd.read_csv(f'{data_path}normalized/ohe/patient.csv', dtype=dtype_dict)
+# patient_df = du.utils.convert_dataframe(patient_df, to='pandas', return_library=False, dtypes=dtype_dict)
 patient_df = patient_df.drop(columns='Unnamed: 0')
 patient_df.head()
+
+patient_df.dtypes
+
+patient_dies = ~(patient_df.groupby('patientunitstayid').death_ts.max().isna())
+patient_dies
+
+unit_stay_patient_dies = set(patient_dies[patient_dies == True].index)
+unit_stay_patient_dies
+
+len(unit_stay_patient_dies)
+
+(~patient_df['death_ts'].isnull()).sum()
 
 patient_df.to_numpy()
 
@@ -620,28 +632,46 @@ vital_aprdc_df.set_index(['patientunitstayid', 'ts'], inplace=True)
 eICU_df = eICU_df.join(vital_aprdc_df, how='outer')
 eICU_df.head()
 
-# #### Filtering for the lengthiest unit stays
+# #### Filtering for the unit stays with less missing data
 #
-# Filter to the 10k lengthiest unit stays, also including those where the patient dies (even if it's not one of the lengthiest, so as to avoid making the dataset even more unbalanced)
+# Filter to the 10k unit stays with less missing data, also including those where the patient dies (even if it's not one of those with less missing data, so as to avoid making the dataset even more unbalanced)
 
 eICU_df.reset_index(inplace=True)
 eICU_df.head()
 
-eICU_df = du.data_processing.load_chunked_data(file_name='eICU_before_joining_vital_prdc_full', n_chunks=8, 
-                                               data_path=f'{data_path}normalized/ohe/', dtypes=dtype_dict)
-eICU_df.head()
+n_features = len(eICU_df.columns)
+n_features
 
-# Get the 10k lengthiest unit stays:
+# Create a temporary column that counts each row's number of missing values:
 
-unit_stay_len = eICU_df.groupby('patientunitstayid').patientunitstayid.count().sort_values(ascending=False)
-unit_stay_len
+eICU_df['row_msng_val'] = eICU_df.isnull().sum(axis=1)
+eICU_df[['patientunitstayid', 'ts', 'row_msng_val']].head()
 
-unit_stay_len.value_counts()
+# Check each unit stay's percentage of missing data points:
 
-unit_stay_long = set(unit_stay_len[:10000].index)
-unit_stay_long
+# Number of possible data points in each unit stay
+n_data_points = eICU_df.groupby('patientunitstayid').ts.count() * n_features
+n_data_points
 
-len(unit_stay_long)
+# Number of missing values in each unit stay
+n_msng_val = eICU_df.groupby('patientunitstayid').row_msng_val.sum()
+n_msng_val
+
+# Percentage of missing values in each unit stay
+msng_val_prct = (n_msng_val / n_data_points) * 100
+msng_val_prct
+
+msng_val_prct.describe()
+
+msng_val_prct = msng_val_prct.sort_values(ascending=False)
+msng_val_prct
+
+# Get the 10k unit stays with less missing data points:
+
+unit_stay_low_msgn = set(msng_val_prct[:10000].index)
+unit_stay_low_msgn
+
+len(unit_stay_low_msgn)
 
 patient_dies = ~(eICU_df.groupby('patientunitstayid').death_ts.max().isna())
 patient_dies
@@ -653,13 +683,24 @@ len(unit_stay_patient_dies)
 
 eICU_df.patientunitstayid.nunique()
 
-eICU_df = eICU_df[eICU_df.patientunitstayid.isin(unit_stay_long | unit_stay_patient_dies)]
+# eICU_df = eICU_df[eICU_df.patientunitstayid.isin(unit_stay_low_msgn | unit_stay_patient_dies)]
+eICU_df = eICU_df[eICU_df.patientunitstayid.isin(unit_stay_low_msgn)]
 
 eICU_df.patientunitstayid.nunique()
 
+patient_dies = ~(eICU_df.groupby('patientunitstayid').death_ts.max().isna())
+patient_dies
+
+unit_stay_patient_dies = set(patient_dies[patient_dies == True].index)
+unit_stay_patient_dies
+
+len(unit_stay_patient_dies)
+
+eICU_df.drop(columns='row_msng_val', inplace=True)
+
 # Save the current dataframe:
 
-du.data_processing.save_chunked_data(eICU_df, file_name='eICU_before_joining_vital_prdc', n_chunks=8, 
+du.data_processing.save_chunked_data(eICU_df, file_name='eICU_before_joining_vital_prdc_10k', n_chunks=8, 
                                      data_path=f'{data_path}normalized/ohe/')
 
 eICU_df.dtypes.value_counts()
@@ -766,6 +807,10 @@ du.data_processing.save_chunked_data(eICU_df, file_name='eICU_post_joining', n_c
 
 eICU_df.dtypes.value_counts()
 
+patient_dies = ~(eICU_df.groupby('patientunitstayid').death_ts.max().isna())
+unit_stay_patient_dies = set(patient_dies[patient_dies == True].index)
+len(unit_stay_patient_dies)
+
 eICU_df.dtypes[eICU_df.dtypes=='float64']
 
 # ## Cleaning the joined data
@@ -848,10 +893,20 @@ msng_val_prct
 
 msng_val_prct.describe()
 
-# Remove unit stays that have too many missing values (>99% of their respective data points):
+msng_val_prct = msng_val_prct.sort_values(ascending=False)
+msng_val_prct
 
-unit_stay_low_msgn = set(msng_val_prct[msng_val_prct < 99].index)
+# Only keep the 7k unit stays that have less missing data points:
+
+unit_stay_low_msgn = set(msng_val_prct[:8000].index)
 unit_stay_low_msgn
+
+# ~Remove unit stays that have too many missing values (>99% of their respective data points):~
+
+# +
+# unit_stay_low_msgn = set(msng_val_prct[msng_val_prct < 99].index)
+# unit_stay_low_msgn
+# -
 
 len(unit_stay_low_msgn)
 
@@ -865,16 +920,30 @@ len(unit_stay_patient_dies)
 
 len(unit_stay_low_msgn | unit_stay_patient_dies)
 
-eICU_df.patientunitstayid.nunique()
-
-eICU_df = eICU_df[eICU_df.patientunitstayid.isin(unit_stay_low_msgn | unit_stay_patient_dies)]
+len(unit_stay_low_msgn & unit_stay_patient_dies)
 
 eICU_df.patientunitstayid.nunique()
+
+# eICU_df = eICU_df[eICU_df.patientunitstayid.isin(unit_stay_low_msgn | unit_stay_patient_dies)]
+eICU_df = eICU_df[eICU_df.patientunitstayid.isin(unit_stay_low_msgn)]
+
+eICU_df.patientunitstayid.nunique()
+
+patient_dies = ~(eICU_df.groupby('patientunitstayid').death_ts.max().isna())
+patient_dies
+
+unit_stay_patient_dies = set(patient_dies[patient_dies == True].index)
+unit_stay_patient_dies
+
+len(unit_stay_patient_dies)
 
 eICU_df.drop(columns='row_msng_val', inplace=True)
 
 du.data_processing.save_chunked_data(eICU_df, file_name='eICU_post_high_missing_stay_removal', n_chunks=8, 
                                      data_path=f'{data_path}normalized/ohe/')
+
+tmp_arr = eICU_df.to_records(index=False)
+tmp_arr
 
 # ### Removing columns with too many missing values
 #
@@ -928,7 +997,9 @@ eICU_df = du.data_processing.load_chunked_data(file_name='eICU_post_high_missing
                                                data_path=f'{data_path}normalized/ohe/', dtypes=dtype_dict)
 eICU_df.head()
 
-du.search_explore.dataframe_missing_values(eICU_df)
+eICU_df.shape
+
+eICU_df.patientunitstayid.nunique()
 
 # #### Constant columns
 #
@@ -945,6 +1016,8 @@ eICU_df.reset_index(drop=True, inplace=True)
 # # Forward fill and backward fill
 # eICU_df[eICU_df.patientunitstayid == 2385766][id_const_columns].groupby('patientunitstayid').apply(lambda group: group.ffill().bfill())
 # -
+
+du.search_explore.dataframe_missing_values(eICU_df)
 
 id_const_columns = ['patientunitstayid'] + const_columns
 # Forward fill and backward fill
@@ -974,18 +1047,7 @@ eICU_df.head()
 
 du.search_explore.dataframe_missing_values(eICU_df)
 
-existing_columns = list(eICU_df.columns)
-
-bool_columns = list()
-for key, val in dtype_dict.items():
-    if val == 'UInt8' or val == 'boolean':
-        if key in existing_columns:
-            bool_columns.append(key)
-        elif key.lower() in existing_columns:
-            bool_columns.append(key.lower())
-        else:
-            print(f'Column {key} not found in the dataframe.')
-
+bool_columns = du.search_explore.list_boolean_columns(eICU_df, search_by_dtypes=True)
 bool_columns
 
 eICU_df.dtypes.value_counts()
@@ -1008,17 +1070,8 @@ eICU_df.head()
 
 du.search_explore.dataframe_missing_values(eICU_df)
 
-existing_columns = list(eICU_df.columns)
-
-bool_columns = list()
-for key, val in dtype_dict.items():
-    if val == 'UInt8' or val == 'boolean':
-        if key in existing_columns:
-            bool_columns.append(key)
-        elif key.lower() in existing_columns:
-            bool_columns.append(key.lower())
-        else:
-            print(f'Column {key} not found in the dataframe.')
+bool_columns = du.search_explore.list_boolean_columns(eICU_df, search_by_dtypes=True)
+bool_columns
 
 columns_to_imputate = list(eICU_df.columns)
 columns_to_imputate.remove('death_ts')
@@ -1046,8 +1099,8 @@ eICU_df.head()
 # eICU_df.head()
 # -
 
-du.data_processing.save_chunked_data(eICU_df, file_name='eICU', n_chunks=8, 
-                                     data_path=f'{data_path}normalized/ohe/')
+du.data_processing.save_chunked_data(eICU_df, file_name='eICU', batch_size=32,
+                                     id_column='patientunitstayid', data_path=f'{data_path}normalized/ohe/')
 
 du.search_explore.dataframe_missing_values(eICU_df)
 
@@ -1071,14 +1124,5 @@ columns
 eICU_df = eICU_df[columns]
 eICU_df.head()
 
-du.data_processing.save_chunked_data(eICU_df, file_name='eICU', n_chunks=8, 
-                                     data_path=f'{data_path}normalized/ohe/')
-
-# ## Setting the label
-#
-# Define the label column considering the desired time window on which we want to predict mortality (0, 24h, 48h, 72h, etc).
-
-time_window_h = 24
-
-eICU_df['label'] = eICU_df[eICU_df.death_ts - eICU_df.ts <= time_window_h * 60]
-eICU_df.head()
+du.data_processing.save_chunked_data(eICU_df, file_name='eICU', batch_size=32,
+                                     id_column='patientunitstayid', data_path=f'{data_path}normalized/ohe/')

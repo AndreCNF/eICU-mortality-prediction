@@ -6,6 +6,7 @@
 # ## Importing the necessary packages
 
 import os                                  # os handles directory/workspace changes
+import comet_ml                            # Comet.ml can log training metrics, parameters, do version control and parameter optimization
 import torch                               # PyTorch to create and apply deep learning models
 # import modin.pandas as pd                  # Optimized distributed version of Pandas
 import pandas as pd                        # Pandas to load and handle the data
@@ -35,6 +36,12 @@ du.set_pandas_library(lib='pandas')
 
 # ## Initializing variables
 
+# Comet ML settings:
+
+comet_ml_project_name = input('Comet ML project name:')
+comet_ml_workspace = input('Comet ML workspace:')
+comet_ml_api_key = getpass.getpass('Comet ML API key')
+
 # Dataset parameters:
 
 dataset_mode = None                        # The mode in which we'll use the data, either one hot encoded or pre-embedded
@@ -43,7 +50,8 @@ use_delta_ts = None                        # Indicates if we'll use time variati
 time_window_h = None                       # Number of hours on which we want to predict mortality
 already_embedded = None                    # Indicates if categorical features are already embedded when fetching a batch
 @interact
-def get_dataset_mode(data_mode=['one hot encoded', 'embedded'], ml_or_dl=['deep learning', 'machine learning'],
+def get_dataset_mode(data_mode=['one hot encoded', 'learn embedding', 'pre-embedded'], 
+                     ml_or_dl=['deep learning', 'machine learning'],
                      use_delta=[False, 'normalized', 'raw'], window_h=(0, 96, 24)):
     global dataset_mode, ml_core, use_delta_ts, time_window_h, already_embedded
     dataset_mode, ml_core, use_delta_ts, time_window_h = data_mode, ml_or_dl, use_delta, window_h
@@ -197,13 +205,23 @@ dataset = du.datasets.Large_Dataset(files_name='dmy_large_data', process_pipelin
                                     use_delta_ts=use_delta_ts, time_window_h=time_window_h, 
                                     padding_value=padding_value, cat_feat_ohe=cat_feat_ohe, dtype_dict=dtype_dict)
 
+# Make sure that we discard the ID, timestamp and label columns
+if n_inputs != dataset.n_inputs:
+    n_inputs = dataset.n_inputs
+    print(f'Changed the number of inputs to {n_inputs}')
+else:
+    n_inputs
+
+if dataset_mode == 'learn embedding':
+    embed_features = dataset.embed_features
+    n_embeddings = dataset.n_embeddings
+else:
+    embed_features = None
+    n_embeddings = None
+print(f'Embedding features: {embed_features}')
+print(f'Number of embeddings: {n_embeddings}')
+
 dataset.__len__()
-
-dataset.n_inputs
-
-dataset.embed_features
-
-dataset.n_embeddings
 
 dataset.bool_feat
 
@@ -230,10 +248,6 @@ else:
     del train_dataloaders
     del val_dataloaders
     del test_dataloaders
-
-data_df.cat_2_bool_1.dtype == 'boolean'
-
-str(data_df.cat_2_bool_1.astype('boolean').dtype) == 'boolean'
 
 if ml_core == 'deep learning':
     print(next(iter(train_dataloader))[0])
@@ -267,24 +281,25 @@ embedding_dim = [3, 2, 4]                  # List of embedding dimensions
 
 if use_delta_ts == 'normalized':
     # Count the delta_ts column as another feature, only ignore ID, timestamp and label columns
-    n_inputs = dataset.n_inputs
+    n_inputs = dataset.n_inputs + 1
 elif use_delta_ts == 'raw':
     raise Exception('ERROR: When using a model of type Vanilla RNN, we can\'t use raw delta_ts. Please either normalize it (use_delta_ts = "normalized") or discard it (use_delta_ts = False).')
 
 # Instantiating the model:
 
 model = Models.VanillaRNN(n_inputs, n_hidden, n_outputs, n_layers, p_dropout,
-                          embed_features=dataset.embed_features, embedding_dim=embedding_dim)
+                          embed_features=embed_features, n_embeddings=n_embeddings, 
+                          embedding_dim=embedding_dim)
 model
 
 # Define the name that will be given to the models that will be saved:
 
 model_name = 'rnn'
-if dataset_mode == 'embedded':
-    model_name = model_name + '_embedded'
-elif dataset_mode == 'one hot encoded' and dataset.embed_features is not None:
+if dataset_mode == 'pre-embedded':
+    model_name = model_name + '_pre_embedded'
+elif dataset_mode == 'learn embedding':
     model_name = model_name + '_with_embedding'
-elif dataset_mode == 'one hot encoded' and dataset.embed_features is None:
+elif dataset_mode == 'one hot encoded':
     model_name = model_name + '_one_hot_encoded'
 if use_delta_ts is not False:
     model_name = model_name + '_delta_ts'
@@ -306,22 +321,30 @@ next(model.parameters())
 
 config_name = input('Hyperparameter optimization configuration file name:')
 
-val_loss_min, exp_name_min = du.machine_learning.optimize_hyperparameters(Models.VanillaRNN, df=dmy_norm_df,
+val_loss_min, exp_name_min = du.machine_learning.optimize_hyperparameters(Models.VanillaRNN, 
+                                                                          train_dataloader=train_dataloader, 
+                                                                          val_dataloader=val_dataloader, 
+                                                                          test_dataloader=test_dataloader, 
+                                                                          dataset=dataset,
                                                                           config_name=config_name,
                                                                           comet_ml_api_key=comet_ml_api_key,
                                                                           comet_ml_project_name=comet_ml_project_name,
                                                                           comet_ml_workspace=comet_ml_workspace,
                                                                           n_inputs=n_inputs, id_column=id_column,
-                                                                          label_column=label_column, inst_column=inst_column,
+                                                                          inst_column=ts_column,
+                                                                          id_columns_idx=[0, 1],
                                                                           n_outputs=n_outputs, model_type='multivariate_rnn',
-                                                                          is_custom=True, models_path='models/',
+                                                                          is_custom=False, models_path='models/',
+                                                                          model_name=model_name,
                                                                           array_param='embedding_dim',
-                                                                          config_path=f'{project_path}hyperparameter_optimization/',
-                                                                          var_seq=True, clip_value=0.5, padding_value=padding_value,
+                                                                          metrics=metrics,
+                                                                          config_path=f'{project_path}notebooks/sandbox/',
+                                                                          var_seq=True, clip_value=0.5, 
+                                                                          padding_value=padding_value,
                                                                           batch_size=batch_size, n_epochs=n_epochs,
-                                                                          lr=lr, test_train_ratio=test_train_ratio,
-                                                                          validation_ratio=validation_ratio,
+                                                                          lr=lr, 
                                                                           comet_ml_save_model=True,
-                                                                          embed_features=embed_features)
+                                                                          embed_features=embed_features,
+                                                                          n_embeddings=n_embeddings)
 
 exp_name_min
