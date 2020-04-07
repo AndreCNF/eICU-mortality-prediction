@@ -61,10 +61,25 @@ def get_dataset_mode(data_mode=['one hot encoded', 'learn embedding', 'pre-embed
 id_column = 'patientunitstayid'            # Name of the sequence ID column
 ts_column = 'ts'                           # Name of the timestamp column
 label_column = 'label'                     # Name of the label column
-n_ids = 6.                                 # Total number of sequences
+n_ids = 6                                  # Total number of sequences
 n_inputs = 9                               # Number of input features
 n_outputs = 1                              # Number of outputs
 padding_value = 999999                     # Padding value used to fill in sequences up to the maximum sequence length
+
+# Data types:
+
+dtype_dict = dict(patientunitstayid='uint',
+                  ts='uint',
+                  int_col='Int32',
+                  float_col='float32',
+                  cat_1_bool_1='UInt8',
+                  cat_1_bool_2='UInt8',
+                  cat_2_bool_1='UInt8',
+                  cat_3_bool_1='UInt8',
+                  cat_3_bool_2='UInt8',
+                  cat_3_bool_3='UInt8',
+                  cat_3_bool_4='UInt8',
+                  death_ts='Int32')
 
 # One hot encoding columns categorization:
 
@@ -80,7 +95,7 @@ list(cat_feat_ohe.keys())
 test_train_ratio = 0.25                    # Percentage of the data which will be used as a test set
 validation_ratio = 1/3                     # Percentage of the data from the training set which is used for validation purposes
 batch_size = 2                             # Number of unit stays in a mini batch
-n_epochs = 10                              # Number of epochs
+n_epochs = 1                               # Number of epochs
 lr = 0.001                                 # Learning rate
 
 # Testing parameters:
@@ -167,19 +182,6 @@ data_df
 
 data_df.dtypes
 
-dtype_dict = dict(patientunitstayid='uint',
-                  ts='uint',
-                  int_col='Int32',
-                  float_col='float32',
-                  cat_1_bool_1='UInt8',
-                  cat_1_bool_2='UInt8',
-                  cat_2_bool_1='UInt8',
-                  cat_3_bool_1='UInt8',
-                  cat_3_bool_2='UInt8',
-                  cat_3_bool_3='UInt8',
-                  cat_3_bool_4='UInt8',
-                  death_ts='Int32')
-
 data_df = du.utils.convert_dtypes(data_df, dtypes=dtype_dict, inplace=True)
 
 data_df.dtypes
@@ -202,7 +204,7 @@ cat_feat_ohe
 dataset = du.datasets.Large_Dataset(files_name='dmy_large_data', process_pipeline=utils.eICU_process_pipeline,
                                     id_column=id_column, initial_analysis=utils.eICU_initial_analysis, 
                                     files_path=data_path, dataset_mode=dataset_mode, ml_core=ml_core, 
-                                    use_delta_ts=use_delta_ts, time_window_h=time_window_h, 
+                                    use_delta_ts=use_delta_ts, time_window_h=time_window_h, total_length=100000,
                                     padding_value=padding_value, cat_feat_ohe=cat_feat_ohe, dtype_dict=dtype_dict)
 
 # Make sure that we discard the ID, timestamp and label columns
@@ -232,7 +234,8 @@ train_indeces, val_indeces, test_indeces) = du.machine_learning.create_train_set
                                                                                   test_train_ratio=test_train_ratio,
                                                                                   validation_ratio=validation_ratio,
                                                                                   batch_size=1,
-                                                                                  get_indeces=True)
+                                                                                  get_indeces=True,
+                                                                                  num_workers=2)
 
 if ml_core == 'deep learning':
     # Ignore the indeces, we only care about the dataloaders when using neural networks
@@ -289,7 +292,7 @@ elif use_delta_ts == 'raw':
 
 model = Models.VanillaRNN(n_inputs, n_hidden, n_outputs, n_layers, p_dropout,
                           embed_features=embed_features, n_embeddings=n_embeddings, 
-                          embedding_dim=embedding_dim)
+                          embedding_dim=embedding_dim, total_length=100000)
 model
 
 # Define the name that will be given to the models that will be saved:

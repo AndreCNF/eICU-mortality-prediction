@@ -1,5 +1,6 @@
 import torch                            # PyTorch to create and apply deep learning models
 from torch import nn                    # nn for neural network layers
+from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 import torch.jit as jit                 # TorchScript for faster custom models
 import math                             # Useful package for logarithm operations
 import numpy as np                      # Mathematical operations package, allowing also for missing values representation
@@ -221,8 +222,6 @@ class BaseRNN(nn.Module):
                     output_states[i] = [out_state]
                 i += 1
             # Update the hidden states variable
-            # [TODO] Change the hidden state' shape so as to be (2 x [n_rnn_layers * (1 + self.bidir), batch_size, self.n_hidden])
-            # when the model is LSTM based (has two hidden state variables)
             self.hidden = output_states
         # Apply dropout to the last RNN layer
         # [TODO] Consider if it makes sense to add dropout to the last RNN layer
@@ -274,7 +273,7 @@ class BaseRNN(nn.Module):
 class VanillaRNN(nn.Module):
     def __init__(self, n_inputs, n_hidden, n_outputs, n_rnn_layers=1, p_dropout=0,
                  embed_features=None, n_embeddings=None, embedding_dim=None,
-                 bidir=False, padding_value=999999):
+                 bidir=False, padding_value=999999, total_length=None):
         '''A vanilla RNN model, using PyTorch's predefined RNN module, with
         the option to include embedding layers.
         Parameters
@@ -304,6 +303,10 @@ class VanillaRNN(nn.Module):
             memory flowing both forward and backwards).
         padding_value : int or float, default 999999
             Value to use in the padding, to fill the sequences.
+        total_length : int, default None
+            If not None, the output will be padded to have length total_length.
+            This method will throw ValueError if total_length is less than the
+            max sequence length in sequence.
         '''
         super().__init__()
         self.n_inputs = n_inputs
@@ -316,6 +319,7 @@ class VanillaRNN(nn.Module):
         self.embedding_dim = embedding_dim
         self.bidir = bidir
         self.padding_value = padding_value
+        self.total_length = total_length
         # Embedding layers
         if self.embed_features is not None:
             if not isinstance(self.embed_features, list):
@@ -430,12 +434,13 @@ class VanillaRNN(nn.Module):
         if x_lengths is not None:
             # pack_padded_sequence so that padded items in the sequence won't be
             # shown to the RNN
-            x = nn.utils.rnn.pack_padded_sequence(x, x_lengths, batch_first=True)
+            x = pack_padded_sequence(x, x_lengths, batch_first=True, enforce_sorted=False)
         # Get the outputs and hidden states from the RNN layer(s)
         rnn_output, self.hidden = self.rnn(x, self.hidden)
         if x_lengths is not None:
             # Undo the packing operation
-            rnn_output, _ = nn.utils.rnn.pad_packed_sequence(rnn_output, batch_first=True)
+            rnn_output, _ = pad_packed_sequence(rnn_output, batch_first=True,
+                                                total_length=self.total_length)
         # Apply dropout to the last RNN layer
         rnn_output = self.dropout(rnn_output)
         # Flatten RNN output to fit into the fully connected layer
@@ -482,7 +487,7 @@ class VanillaRNN(nn.Module):
 class VanillaLSTM(nn.Module):
     def __init__(self, n_inputs, n_hidden, n_outputs, n_lstm_layers=1, p_dropout=0,
                  embed_features=None, n_embeddings=None, embedding_dim=None,
-                 bidir=False, padding_value=999999):
+                 bidir=False, padding_value=999999, total_length=None):
         '''A vanilla LSTM model, using PyTorch's predefined LSTM module, with
         the option to include embedding layers.
         Parameters
@@ -512,6 +517,10 @@ class VanillaLSTM(nn.Module):
             memory flowing both forward and backwards).
         padding_value : int or float, default 999999
             Value to use in the padding, to fill the sequences.
+        total_length : int, default None
+            If not None, the output will be padded to have length total_length.
+            This method will throw ValueError if total_length is less than the
+            max sequence length in sequence.
         '''
         super().__init__()
         self.n_inputs = n_inputs
@@ -524,6 +533,7 @@ class VanillaLSTM(nn.Module):
         self.embedding_dim = embedding_dim
         self.bidir = bidir
         self.padding_value = padding_value
+        self.total_length = total_length
         # Embedding layers
         if self.embed_features is not None:
             if not isinstance(self.embed_features, list):
@@ -638,12 +648,13 @@ class VanillaLSTM(nn.Module):
         if x_lengths is not None:
             # pack_padded_sequence so that padded items in the sequence won't be
             # shown to the LSTM
-            x = nn.utils.rnn.pack_padded_sequence(x, x_lengths, batch_first=True)
+            x = pack_padded_sequence(x, x_lengths, batch_first=True, enforce_sorted=False)
         # Get the outputs and hidden states from the LSTM layer(s)
         lstm_output, self.hidden = self.lstm(x, self.hidden)
         if x_lengths is not None:
             # Undo the packing operation
-            lstm_output, _ = nn.utils.rnn.pad_packed_sequence(lstm_output, batch_first=True)
+            lstm_output, _ = pad_packed_sequence(lstm_output, batch_first=True,
+                                                 total_length=self.total_length)
         # Apply dropout to the last LSTM layer
         lstm_output = self.dropout(lstm_output)
         # Flatten LSTM output to fit into the fully connected layer
@@ -807,7 +818,6 @@ class TLSTM(BaseRNN):
                 output_states[1][i] = out_state[1]
                 i += 1
             # Update the hidden states variable
-            # [TODO] Change the hidden state' shape so as to be (2 x [n_rnn_layers * (1 + self.bidir), batch_size, self.n_hidden])
             self.hidden = output_states
         # Apply dropout to the last RNN layer
         # [TODO] Consider if it makes sense to add dropout to the last RNN layer
@@ -928,7 +938,6 @@ class MF1LSTM(BaseRNN):
                 output_states[1][i] = out_state[1]
                 i += 1
             # Update the hidden states variable
-            # [TODO] Change the hidden state' shape so as to be (2 x [n_rnn_layers * (1 + self.bidir), batch_size, self.n_hidden])
             self.hidden = output_states
         # Apply dropout to the last RNN layer
         # [TODO] Consider if it makes sense to add dropout to the last RNN layer
@@ -1051,7 +1060,6 @@ class MF2LSTM(BaseRNN):
                 output_states[1][i] = out_state[1]
                 i += 1
             # Update the hidden states variable
-            # [TODO] Change the hidden state' shape so as to be (2 x [n_rnn_layers * (1 + self.bidir), batch_size, self.n_hidden])
             self.hidden = output_states
         # Apply dropout to the last RNN layer
         # [TODO] Consider if it makes sense to add dropout to the last RNN layer

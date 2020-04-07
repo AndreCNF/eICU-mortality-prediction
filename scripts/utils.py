@@ -57,6 +57,7 @@ def eICU_process_pipeline(self, df):
                                                ts_column='ts',
                                                bool_feat=self.bool_feat,
                                                padding_value=self.padding_value,
+                                               total_length=self.total_length,
                                                inplace=True)
     # Check if we need to pre-embed the categorical features
     if self.dataset_mode == 'pre-embedded':

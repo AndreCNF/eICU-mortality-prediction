@@ -1100,9 +1100,43 @@ eICU_df.head()
 # -
 
 du.data_processing.save_chunked_data(eICU_df, file_name='eICU', batch_size=32,
-                                     id_column='patientunitstayid', data_path=f'{data_path}normalized/ohe/')
+                                     id_column='patientunitstayid', data_path=f'{data_path}normalized/ohe/final/')
 
 du.search_explore.dataframe_missing_values(eICU_df)
+
+eICU_df = du.data_processing.load_chunked_data(file_name='eICU', n_chunks=250, 
+                                               data_path=f'{data_path}normalized/ohe/final/', dtypes=dtype_dict)
+eICU_df.head()
+
+# Set the label columns
+eICU_df['label_0h'] = (eICU_df.death_ts - eICU_df.ts <= 0).astype('float16')
+eICU_df['label_24h'] = (eICU_df.death_ts - eICU_df.ts <= 24 * 60).astype('float16')
+eICU_df['label_48h'] = (eICU_df.death_ts - eICU_df.ts <= 48 * 60).astype('float16')
+eICU_df['label_72h'] = (eICU_df.death_ts - eICU_df.ts <= 72 * 60).astype('float16')
+eICU_df['label_96h'] = (eICU_df.death_ts - eICU_df.ts <= 96 * 60).astype('float16')
+
+(eICU_df['label_0h'].sum() / len(eICU_df)) * 100
+
+(eICU_df['label_24h'].sum() / len(eICU_df)) * 100
+
+(eICU_df['label_48h'].sum() / len(eICU_df)) * 100
+
+(eICU_df['label_72h'].sum() / len(eICU_df)) * 100
+
+(eICU_df['label_96h'].sum() / len(eICU_df)) * 100
+
+n_unit_stays = eICU_df.patientunitstayid.nunique()
+n_unit_stays
+
+((eICU_df.groupby('patientunitstayid').label_0h.max() == 1).sum() / n_unit_stays) * 100
+
+((eICU_df.groupby('patientunitstayid').label_24h.max() == 1).sum() / n_unit_stays) * 100
+
+((eICU_df.groupby('patientunitstayid').label_48h.max() == 1).sum() / n_unit_stays) * 100
+
+((eICU_df.groupby('patientunitstayid').label_72h.max() == 1).sum() / n_unit_stays) * 100
+
+((eICU_df.groupby('patientunitstayid').label_96h.max() == 1).sum() / n_unit_stays) * 100
 
 # ### Rearranging columns
 #
