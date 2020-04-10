@@ -1,6 +1,7 @@
 import pandas as pd                        # Pandas to load and handle the data
 import torch                               # PyTorch to create and apply deep learning models
 import data_utils as du                    # Data science and machine learning relevant methods
+from . import Models                       # Deep learning models
 
 def eICU_initial_analysis(self):
     # Load a single, so as to retrieve some basic information
@@ -72,3 +73,135 @@ def eICU_process_pipeline(self, df):
     # Features
     features = du.deep_learning.remove_tensor_column(df, label_num, inplace=True)
     return features, labels
+
+
+def eICU_model_creator(config):
+    """Constructor function for the model(s) to be optimized.
+
+    You will also need to provide a custom training
+    function to specify the optimization procedure for multiple models.
+
+    Args:
+        config (dict): Configuration dictionary passed into ``TorchTrainer``.
+
+    Returns:
+        One or more torch.nn.Module objects.
+    """
+    if config['model'] == 'VanillaRNN':
+        return Models.VanillaRNN(config['n_inputs'], config['n_hidden'],
+                                 config['n_outputs'], config['n_rnn_layers'],
+                                 config['p_dropout'], bidir=config['bidir'],
+                                 embed_features=config['embed_features'],
+                                 n_embeddings=config['n_embeddings'],
+                                 embedding_dim=config['embedding_dim'])
+    elif config['model'] == 'VanillaLSTM':
+        return Models.VanillaLSTM(config['n_inputs'], config['n_hidden'],
+                                  config['n_outputs'], config['n_rnn_layers'],
+                                  config['p_dropout'], bidir=config['bidir'],
+                                  embed_features=config['embed_features'],
+                                  n_embeddings=config['n_embeddings'],
+                                  embedding_dim=config['embedding_dim'])
+    elif config['model'] == 'TLSTM':
+        return Models.TLSTM(config['n_inputs'], config['n_hidden'],
+                            config['n_outputs'], config['n_rnn_layers'],
+                            config['p_dropout'],
+                            embed_features=config['embed_features'],
+                            n_embeddings=config['n_embeddings'],
+                            embedding_dim=config['embedding_dim'],
+                            elapsed_time=config['elapsed_time'])
+    elif config['model'] == 'MF1LSTM':
+        return Models.MF1LSTM(config['n_inputs'], config['n_hidden'],
+                              config['n_outputs'], config['n_rnn_layers'],
+                              config['p_dropout'],
+                              embed_features=config['embed_features'],
+                              n_embeddings=config['n_embeddings'],
+                              embedding_dim=config['embedding_dim'],
+                              elapsed_time=config['elapsed_time'])
+    elif config['model'] == 'MF2LSTM':
+        return Models.MF2LSTM(config['n_inputs'], config['n_hidden'],
+                              config['n_outputs'], config['n_rnn_layers'],
+                              config['p_dropout'],
+                              embed_features=config['embed_features'],
+                              n_embeddings=config['n_embeddings'],
+                              embedding_dim=config['embedding_dim'],
+                              elapsed_time=config['elapsed_time'])
+    else:
+        raise Exception(f'ERROR: {config['model']} is an invalid model type. Please specify either "VanillaRNN", "VanillaLSTM", "TLSTM", "MF1LSTM" or "MF2LSTM".')
+
+
+def eICU_data_creator(config):
+    """Constructs Iterables for training and validation.
+
+    Note that even though two Iterable objects can be returned,
+    only one Iterable will be used for training.
+
+    Args:
+        config: Configuration dictionary passed into ``TorchTrainer``
+
+    Returns:
+        One or Two Iterable objects. If only one Iterable object is provided,
+        ``trainer.validate()`` will throw a ValueError.
+    """
+    data_path = config['data_path']
+    # Load the data types
+    stream_dtypes = open(f'{data_path}eICU_dtype_dict.yml', 'r')
+    dtype_dict = yaml.load(stream_dtypes, Loader=yaml.FullLoader)
+    # Load the one hot encoding columns categorization information
+    stream_cat_feat_ohe = open(f'{data_path}eICU_cat_feat_ohe.yml', 'r')
+    cat_feat_ohe = yaml.load(stream_cat_feat_ohe, Loader=yaml.FullLoader)
+    # Define the dataset object
+    dataset = du.datasets.Large_Dataset(files_name='eICU',
+                                        process_pipeline=eICU_process_pipeline,
+                                        id_column=config['id_column'],
+                                        initial_analysis=eICU_initial_analysis,
+                                        files_path=config['data_path'],
+                                        dataset_mode=config['dataset_mode'],
+                                        ml_core=config['ml_core'],
+                                        use_delta_ts=config['use_delta_ts'],
+                                        time_window_h=config['time_window_h'],
+                                        padding_value=config['padding_value'],
+                                        cat_feat_ohe=cat_feat_ohe,
+                                        dtype_dict=dtype_dict)
+    # Update the embedding information
+    if dataset_mode == 'learn embedding':
+        config['embed_features'] = dataset.embed_features
+        config['n_embeddings'] = dataset.n_embeddings
+    else:
+        config['embed_features'] = None
+        config['n_embeddings'] = None
+    # Separate into train and validation sets
+    train_dataloader, val_dataloader, _ = du.machine_learning.create_train_sets(dataset,
+                                                                                test_train_ratio=config['test_train_ratio'],
+                                                                                validation_ratio=config['validation_ratio'],
+                                                                                batch_size=config['batch_size'],
+                                                                                get_indeces=False)
+    return train_loader, val_loader
+
+
+def eICU_optimizer_creator(model, config):
+    """Constructor of one or more Torch optimizers.
+
+    Args:
+        models: The return values from ``model_creator``. This can be one
+            or more torch nn modules.
+        config (dict): Configuration dictionary passed into ``TorchTrainer``.
+
+    Returns:
+        One or more Torch optimizer objects.
+    """
+    return torch.optim.Adam(model.parameters(), lr=config.get("lr", 1e-4))
+
+
+def eICU_loss_creator(config):
+    """Constructs the Torch Loss object.
+
+    Note that optionally, you can pass in a Torch Loss constructor directly
+    into the TorchTrainer (i.e., ``TorchTrainer(loss_creator=nn.BCELoss, ...)``).
+
+    Args:
+        config: Configuration dictionary passed into ``TorchTrainer``
+
+    Returns:
+        Torch Loss object.
+    """
+    return torch.nn.CrossEntropyLoss()

@@ -29,7 +29,7 @@ project_path = 'code/eICU-mortality-prediction/'
 
 # Change to the scripts directory
 os.chdir("../scripts/")
-import Models                              # Machine learning models
+import Models                              # Deep learning models
 import utils                               # Context specific (in this case, for the eICU data) methods
 # Change to parent directory (presumably "Documents")
 os.chdir("../../..")
@@ -64,7 +64,7 @@ use_delta_ts = None                        # Indicates if we'll use time variati
 time_window_h = None                       # Number of hours on which we want to predict mortality
 already_embedded = None                    # Indicates if categorical features are already embedded when fetching a batch
 @interact
-def get_dataset_mode(data_mode=['one hot encoded', 'learn embedding', 'pre-embedded'], 
+def get_dataset_mode(data_mode=['one hot encoded', 'learn embedding', 'pre-embedded'],
                      ml_or_dl=['deep learning', 'machine learning'],
                      use_delta=[False, 'normalized', 'raw'], window_h=(0, 96, 24)):
     global dataset_mode, ml_core, use_delta_ts, time_window_h, already_embedded
@@ -117,9 +117,9 @@ cat_feat_ohe
 [[col for col in feat_list] for feat_list in [feat_list for feat_list in cat_feat_ohe.values()]]
 
 dataset = du.datasets.Large_Dataset(files_name='eICU', process_pipeline=utils.eICU_process_pipeline,
-                                    id_column=id_column, initial_analysis=utils.eICU_initial_analysis, 
-                                    files_path=data_path, dataset_mode=dataset_mode, ml_core=ml_core, 
-                                    use_delta_ts=use_delta_ts, time_window_h=time_window_h, 
+                                    id_column=id_column, initial_analysis=utils.eICU_initial_analysis,
+                                    files_path=data_path, dataset_mode=dataset_mode, ml_core=ml_core,
+                                    use_delta_ts=use_delta_ts, time_window_h=time_window_h,
                                     padding_value=padding_value, cat_feat_ohe=cat_feat_ohe, dtype_dict=dtype_dict)
 
 # Make sure that we discard the ID, timestamp and label columns
@@ -205,7 +205,7 @@ elif use_delta_ts == 'raw':
 # Instantiating the model:
 
 model = Models.VanillaRNN(n_inputs, n_hidden, n_outputs, n_layers, p_dropout,
-                          embed_features=embed_features, n_embeddings=n_embeddings, 
+                          embed_features=embed_features, n_embeddings=n_embeddings,
                           embedding_dim=embedding_dim, bidir=bidir)
 model
 
@@ -240,10 +240,10 @@ next(model.parameters())
 
 config_name = input('Hyperparameter optimization configuration file name:')
 
-val_loss_min, exp_name_min = du.machine_learning.optimize_hyperparameters(Models.VanillaRNN, 
-                                                                          train_dataloader=train_dataloader, 
-                                                                          val_dataloader=val_dataloader, 
-                                                                          test_dataloader=test_dataloader, 
+val_loss_min, exp_name_min = du.machine_learning.optimize_hyperparameters(Models.VanillaRNN,
+                                                                          train_dataloader=train_dataloader,
+                                                                          val_dataloader=val_dataloader,
+                                                                          test_dataloader=test_dataloader,
                                                                           dataset=dataset,
                                                                           config_name=config_name,
                                                                           comet_ml_api_key=comet_ml_api_key,
@@ -258,10 +258,10 @@ val_loss_min, exp_name_min = du.machine_learning.optimize_hyperparameters(Models
                                                                           array_param='embedding_dim',
                                                                           metrics=metrics,
                                                                           config_path=f'{project_path}hyperparameter_optimization/',
-                                                                          var_seq=True, clip_value=0.5, 
+                                                                          var_seq=True, clip_value=0.5,
                                                                           padding_value=padding_value,
                                                                           batch_size=batch_size, n_epochs=n_epochs,
-                                                                          lr=lr, 
+                                                                          lr=lr,
                                                                           comet_ml_save_model=True,
                                                                           embed_features=embed_features,
                                                                           n_embeddings=n_embeddings)
@@ -288,7 +288,7 @@ elif use_delta_ts == 'raw':
 # Instantiating the model:
 
 model = Models.VanillaLSTM(n_inputs, n_hidden, n_outputs, n_layers, p_dropout,
-                           embed_features=embed_features, n_embeddings=n_embeddings, 
+                           embed_features=embed_features, n_embeddings=n_embeddings,
                            embedding_dim=embedding_dim, bidir=bidir)
 model
 
@@ -323,10 +323,10 @@ next(model.parameters())
 
 config_name = input('Hyperparameter optimization configuration file name:')
 
-val_loss_min, exp_name_min = du.machine_learning.optimize_hyperparameters(Models.VanillaLSTM, 
-                                                                          train_dataloader=train_dataloader, 
-                                                                          val_dataloader=val_dataloader, 
-                                                                          test_dataloader=test_dataloader, 
+val_loss_min, exp_name_min = du.machine_learning.optimize_hyperparameters(Models.VanillaLSTM,
+                                                                          train_dataloader=train_dataloader,
+                                                                          val_dataloader=val_dataloader,
+                                                                          test_dataloader=test_dataloader,
                                                                           dataset=dataset,
                                                                           config_name=config_name,
                                                                           comet_ml_api_key=comet_ml_api_key,
@@ -341,10 +341,10 @@ val_loss_min, exp_name_min = du.machine_learning.optimize_hyperparameters(Models
                                                                           array_param='embedding_dim',
                                                                           metrics=metrics,
                                                                           config_path=f'{project_path}hyperparameter_optimization/',
-                                                                          var_seq=True, clip_value=0.5, 
+                                                                          var_seq=True, clip_value=0.5,
                                                                           padding_value=padding_value,
                                                                           batch_size=batch_size, n_epochs=n_epochs,
-                                                                          lr=lr, 
+                                                                          lr=lr,
                                                                           comet_ml_save_model=True,
                                                                           embed_features=embed_features,
                                                                           n_embeddings=n_embeddings)
@@ -372,7 +372,7 @@ elif use_delta_ts is False:
 # Instantiating the model:
 
 model = Models.TLSTM(n_inputs, n_hidden, n_outputs, n_rnn_layers, p_dropout,
-                     embed_features=embed_features, n_embeddings=n_embeddings, 
+                     embed_features=embed_features, n_embeddings=n_embeddings,
                      embedding_dim=embedding_dim, elapsed_time=elapsed_time)
 model
 
@@ -407,10 +407,10 @@ next(model.parameters())
 
 config_name = input('Hyperparameter optimization configuration file name:')
 
-val_loss_min, exp_name_min = du.machine_learning.optimize_hyperparameters(Models.TLSTM, 
-                                                                          train_dataloader=train_dataloader, 
-                                                                          val_dataloader=val_dataloader, 
-                                                                          test_dataloader=test_dataloader, 
+val_loss_min, exp_name_min = du.machine_learning.optimize_hyperparameters(Models.TLSTM,
+                                                                          train_dataloader=train_dataloader,
+                                                                          val_dataloader=val_dataloader,
+                                                                          test_dataloader=test_dataloader,
                                                                           dataset=dataset,
                                                                           config_name=config_name,
                                                                           comet_ml_api_key=comet_ml_api_key,
@@ -425,10 +425,10 @@ val_loss_min, exp_name_min = du.machine_learning.optimize_hyperparameters(Models
                                                                           array_param='embedding_dim',
                                                                           metrics=metrics,
                                                                           config_path=f'{project_path}hyperparameter_optimization/',
-                                                                          var_seq=True, clip_value=0.5, 
+                                                                          var_seq=True, clip_value=0.5,
                                                                           padding_value=padding_value,
                                                                           batch_size=batch_size, n_epochs=n_epochs,
-                                                                          lr=lr, 
+                                                                          lr=lr,
                                                                           comet_ml_save_model=True,
                                                                           embed_features=embed_features,
                                                                           n_embeddings=n_embeddings)
@@ -456,7 +456,7 @@ elif use_delta_ts is False:
 # Instantiating the model:
 
 model = Models.MF1LSTM(n_inputs, n_hidden, n_outputs, n_rnn_layers, p_dropout,
-                       embed_features=embed_features, n_embeddings=n_embeddings, 
+                       embed_features=embed_features, n_embeddings=n_embeddings,
                        embedding_dim=embedding_dim, elapsed_time=elapsed_time)
 model
 
@@ -491,10 +491,10 @@ next(model.parameters())
 
 config_name = input('Hyperparameter optimization configuration file name:')
 
-val_loss_min, exp_name_min = du.machine_learning.optimize_hyperparameters(Models.MF1LSTM, 
-                                                                          train_dataloader=train_dataloader, 
-                                                                          val_dataloader=val_dataloader, 
-                                                                          test_dataloader=test_dataloader, 
+val_loss_min, exp_name_min = du.machine_learning.optimize_hyperparameters(Models.MF1LSTM,
+                                                                          train_dataloader=train_dataloader,
+                                                                          val_dataloader=val_dataloader,
+                                                                          test_dataloader=test_dataloader,
                                                                           dataset=dataset,
                                                                           config_name=config_name,
                                                                           comet_ml_api_key=comet_ml_api_key,
@@ -509,10 +509,10 @@ val_loss_min, exp_name_min = du.machine_learning.optimize_hyperparameters(Models
                                                                           array_param='embedding_dim',
                                                                           metrics=metrics,
                                                                           config_path=f'{project_path}hyperparameter_optimization/',
-                                                                          var_seq=True, clip_value=0.5, 
+                                                                          var_seq=True, clip_value=0.5,
                                                                           padding_value=padding_value,
                                                                           batch_size=batch_size, n_epochs=n_epochs,
-                                                                          lr=lr, 
+                                                                          lr=lr,
                                                                           comet_ml_save_model=True,
                                                                           embed_features=embed_features,
                                                                           n_embeddings=n_embeddings)
@@ -540,7 +540,7 @@ elif use_delta_ts is False:
 # Instantiating the model:
 
 model = Models.MF2LSTM(n_inputs, n_hidden, n_outputs, n_rnn_layers, p_dropout,
-                       embed_features=embed_features, n_embeddings=n_embeddings, 
+                       embed_features=embed_features, n_embeddings=n_embeddings,
                        embedding_dim=embedding_dim, elapsed_time=elapsed_time)
 model
 
@@ -575,10 +575,10 @@ next(model.parameters())
 
 config_name = input('Hyperparameter optimization configuration file name:')
 
-val_loss_min, exp_name_min = du.machine_learning.optimize_hyperparameters(Models.MF2LSTM, 
-                                                                          train_dataloader=train_dataloader, 
-                                                                          val_dataloader=val_dataloader, 
-                                                                          test_dataloader=test_dataloader, 
+val_loss_min, exp_name_min = du.machine_learning.optimize_hyperparameters(Models.MF2LSTM,
+                                                                          train_dataloader=train_dataloader,
+                                                                          val_dataloader=val_dataloader,
+                                                                          test_dataloader=test_dataloader,
                                                                           dataset=dataset,
                                                                           config_name=config_name,
                                                                           comet_ml_api_key=comet_ml_api_key,
@@ -593,10 +593,10 @@ val_loss_min, exp_name_min = du.machine_learning.optimize_hyperparameters(Models
                                                                           array_param='embedding_dim',
                                                                           metrics=metrics,
                                                                           config_path=f'{project_path}hyperparameter_optimization/',
-                                                                          var_seq=True, clip_value=0.5, 
+                                                                          var_seq=True, clip_value=0.5,
                                                                           padding_value=padding_value,
                                                                           batch_size=batch_size, n_epochs=n_epochs,
-                                                                          lr=lr, 
+                                                                          lr=lr,
                                                                           comet_ml_save_model=True,
                                                                           embed_features=embed_features,
                                                                           n_embeddings=n_embeddings)
@@ -789,5 +789,3 @@ auc = roc_auc_score(test_labels, pred_proba, multi_class='ovr', average='weighte
 auc
 
 # #### Hyperparameter optimization
-
-
