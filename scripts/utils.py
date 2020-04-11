@@ -1,13 +1,13 @@
 from comet_ml import Experiment            # Comet.ml can log training metrics, parameters, do version control and parameter optimization
 import pandas as pd                        # Pandas to load and handle the data
 import torch                               # PyTorch to create and apply deep learning models
-from ray.util.sgd import TorchTrainer      # Distributed training package
-from ray.util.sgd.utils import override
+import ray                                 # Distributed computing
+from ray.util.sgd.utils import override    # Distributed training package
 from ray.util.sgd.torch import TrainingOperator
 import inspect                             # Inspect methods and their arguments
 from sklearn.metrics import roc_auc_score  # ROC AUC model performance metric
 import data_utils as du                    # Data science and machine learning relevant methods
-from . import Models                       # Deep learning models
+import Models                              # Deep learning models
 
 def eICU_initial_analysis(self):
     # Load a single, so as to retrieve some basic information
@@ -97,14 +97,14 @@ def eICU_model_creator(config):
     if model_class == 'VanillaRNN':
         return Models.VanillaRNN(config.get('n_inputs', 2090), config.get('n_hidden', 100),
                                  config.get('n_outputs', 1), config.get('n_rnn_layers', 2),
-                                 config.get('p_dropout', 0.2), bidir=config.get('bidir'],
+                                 config.get('p_dropout', 0.2), bidir=config.get('bidir', False),
                                  embed_features=config.get('embed_features', None),
                                  n_embeddings=config.get('n_embeddings', None),
                                  embedding_dim=config.get('embedding_dim', None))
     elif model_class == 'VanillaLSTM':
         return Models.VanillaLSTM(config.get('n_inputs', 2090), config.get('n_hidden', 100),
                                   config.get('n_outputs', 1), config.get('n_rnn_layers', 2),
-                                  config.get('p_dropout', 0.2), bidir=config.get('bidir'],
+                                  config.get('p_dropout', 0.2), bidir=config.get('bidir', False),
                                   embed_features=config.get('embed_features', None),
                                   n_embeddings=config.get('n_embeddings', None),
                                   embedding_dim=config.get('embedding_dim', None))
@@ -318,7 +318,12 @@ class eICU_Operator(TrainingOperator):
         val_auc = np.mean(val_auc)
         if self.model.n_outputs > 1:
             val_auc_wgt = np.mean(val_auc_wgt)
-        # [TODO] Return the validation metrics
+        # Return the validation metrics
+        metrics = dict(val_loss=val_loss,
+                       val_acc=val_acc,
+                       val_auc=val_auc)
+        if self.model.n_outputs > 1:
+            metrics['val_auc_wgt'] = val_auc_wgt
         return metrics
 
     @override(TrainingOperator)
@@ -398,12 +403,13 @@ class eICU_Operator(TrainingOperator):
                     # Get the current day and time to attach to the saved model's name
                     current_datetime = datetime.now().strftime('%d_%m_%Y_%H_%M')
                     # Filename and path where the model will be saved
-                    model_filename = f'{models_path}{model_name}_{val_loss:.4f}valloss_{current_datetime}.pth'
+                    model_filename = f'{model_name}_{val_loss:.4f}valloss_{current_datetime}.pth'
                     print(f'Saving model in {model_filename}')
                     # Save the best performing model so far, along with additional information to implement it
-                    checkpoint = hyper_params
+                    checkpoint = self.hyper_params
                     checkpoint['state_dict'] = self.model.state_dict()
-                    torch.save(checkpoint, model_filename)
+                    # [TODO] Check if this really works locally or if it just saves in the temporary nodes
+                    self.save(checkpoint, f'{models_path}{model_filename}')
                     if log_comet_ml is True and comet_ml_save_model is True:
                         # Upload the model to Comet.ml
                         experiment.log_asset(file_data=model_filename, overwrite=True)
@@ -441,5 +447,10 @@ class eICU_Operator(TrainingOperator):
             print('----------------------')
         except Exception as e:
             warnings.warn(f'There was a problem printing metrics from epoch {epoch}. Original exception message: "{str(e)}"')
-        # [TODO] Return the training metrics
+        # Return the training metrics
+        metrics = dict(train_loss=train_loss,
+                       train_acc=train_acc,
+                       train_auc=train_auc)
+        if self.model.n_outputs > 1:
+            metrics['train_auc_wgt'] = train_auc_wgt
         return metrics
