@@ -224,21 +224,22 @@ class eICU_Operator(TrainingOperator):
                              'n_epochs': n_epochs,
                              'learning_rate': lr})
         # Fetch the Comet ML credentials
-        self.comet_ml_api_key =  config['comet_ml_api_key']
-        self.comet_ml_project_name =  config['comet_ml_project_name']
-        self.comet_ml_workspace =  config['comet_ml_workspace']
+        self.comet_ml_api_key = config['comet_ml_api_key']
+        self.comet_ml_project_name = config['comet_ml_project_name']
+        self.comet_ml_workspace = config['comet_ml_workspace']
         self.log_comet_ml = config.get('log_comet_ml', True)
+        self.comet_ml_save_model = config.get('comet_ml_save_model', True)
         # Additional properties and relevant  training information
         self.step = 0                                                           # Number of iteration steps done so far
         self.print_every = config.get('print_every', 10)                        # Steps interval where the metrics are printed
         self.val_loss_min = np.inf                                              # Start with an infinitely big minimum validation loss
         self.clip_value = config.get('clip_value', 0.5)                         # Gradient clipping value, to avoid exploiding gradients
         self.features_list = config.get('features_list', None)                  # Names of the features being used in the current pipeline
-        self.model_type = config.get('model_type', 'multivariate_rnn')
-        self.padding_value  = config.get('padding_value', 999999)
-        self.cols_to_remove = config.get('cols_to_remove', [0, 1])
-        self.is_custom = config.get('is_custom', False)
-        self.already_embedded = config.get('already_embedded', False)
+        self.model_type = config.get('model_type', 'multivariate_rnn')          # Type of model to train
+        self.padding_value = config.get('padding_value', 999999)                # Value to use in the padding, to fill the sequences
+        self.cols_to_remove = config.get('cols_to_remove', [0, 1])              # List of indeces of columns to remove from the features before feeding to the model
+        self.is_custom = config.get('is_custom', False)                         # Specifies if the model being used is a custom built one
+        self.already_embedded = config.get('already_embedded', False)           # Indicates if the categorical features are already embedded when fetching a batch
         if self.log_comet_ml is True:
             # Create a new Comet.ml experiment
             self.experiment = Experiment(api_key=self.comet_ml_api_key,
@@ -311,7 +312,6 @@ class eICU_Operator(TrainingOperator):
                 # Remove the current features and labels from memory
                 del features
                 del labels
-
         # Calculate the average of the metrics over the batches
         val_loss = val_loss / len(val_dataloader)
         val_acc = val_acc / len(val_dataloader)
@@ -334,7 +334,6 @@ class eICU_Operator(TrainingOperator):
         train_auc = list()
         if self.model.n_outputs > 1:
             train_auc_wgt = list()
-
         try:
             # Loop through the training data
             for features, labels in iterator:
@@ -384,14 +383,12 @@ class eICU_Operator(TrainingOperator):
                     except Exception as e:
                         warnings.warn(f'Couldn\'t calculate the training AUC on step {step}. Received exception "{str(e)}".')
                 step += 1                                                       # Count one more iteration step
-                self.model.eval()                                                    # Deactivate dropout to test the model
+                self.model.eval()                                               # Deactivate dropout to test the model
                 # Remove the current features and labels from memory
                 del features
                 del labels
-
                 # Run the current model on the validation set
                 val_metrics = self.validate(self.validation_loader, info)
-
                 # Display validation loss
                 if step % print_every == 0:
                     print(f'Epoch {epoch} step {step}: Validation loss: {val_loss}; Validation Accuracy: {val_acc}; Validation AUC: {val_auc}')
@@ -410,7 +407,7 @@ class eICU_Operator(TrainingOperator):
                     checkpoint['state_dict'] = self.model.state_dict()
                     # [TODO] Check if this really works locally or if it just saves in the temporary nodes
                     self.save(checkpoint, f'{models_path}{model_filename}')
-                    if log_comet_ml is True and comet_ml_save_model is True:
+                    if self.log_comet_ml is True and self.comet_ml_save_model is True:
                         # Upload the model to Comet.ml
                         experiment.log_asset(file_data=model_filename, overwrite=True)
         except Exception as e:
@@ -427,7 +424,6 @@ class eICU_Operator(TrainingOperator):
             if self.use_gpu is True:
                 # Move metrics data to CPU
                 train_loss, val_loss = train_loss.cpu(), val_loss.cpu()
-
             if log_comet_ml is True:
                 # Log metrics to Comet.ml
                 experiment.log_metric('train_loss', train_loss, step=epoch)
