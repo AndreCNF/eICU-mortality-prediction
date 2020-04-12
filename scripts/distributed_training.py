@@ -36,3 +36,6 @@ trainer = TorchTrainer(
         config=config,
         use_gpu=True,
         use_tqdm=True)
+# Train the model
+for epoch in range(trainer.n_epochs):
+    stats = trainer.train(info=dict(epoch_idx=itr))

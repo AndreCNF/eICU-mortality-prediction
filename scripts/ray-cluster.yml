@@ -44,9 +44,9 @@ idle_timeout_minutes: 5
 # Cloud-provider specific configuration.
 provider:
     type: gcp
-    region: europe-west2-a
+    region: europe-west2
     availability_zone: europe-west2-a
-    project_id: null # Globally unique project id
+    project_id: perseids-scholarship # Globally unique project id
 
 # How Ray will authenticate with newly launched nodes.
 auth:
@@ -62,7 +62,7 @@ auth:
 # For more documentation on available fields, see:
 # https://cloud.google.com/compute/docs/reference/rest/v1/instances/insert
 head_node:
-    machineType: n1-highmem-32
+    machineType: n1-highmem-16
     disks:
       - boot: true
         autoDelete: true
@@ -73,8 +73,10 @@ head_node:
           sourceImage: projects/ml-images/global/images/c2-deeplearning-pytorch-1-4-cu101-20200327
     # GPUs
     guestAccelerators:
-      - acceleratorType: nvidia-tesla-t4
+      - acceleratorType: projects/perseids-scholarship/zones/europe-west2-a/acceleratorTypes/nvidia-tesla-t4
         acceleratorCount: 1
+    scheduling:
+      - onHostMaintenance: TERMINATE
 
     # Additional options can be found in in the compute docs at
     # https://cloud.google.com/compute/docs/reference/rest/v1/instances/insert
@@ -89,7 +91,7 @@ head_node:
     #     aliasIpRanges: []
 
 worker_nodes:
-    machineType: n1-highmem-32
+    machineType: n1-highmem-16
     disks:
       - boot: true
         autoDelete: true
@@ -100,12 +102,13 @@ worker_nodes:
           sourceImage: projects/ml-images/global/images/c2-deeplearning-pytorch-1-4-cu101-20200327
     # GPUs
     guestAccelerators:
-      - acceleratorType: nvidia-tesla-t4
+      - acceleratorType: projects/perseids-scholarship/zones/europe-west2-a/acceleratorTypes/nvidia-tesla-t4
         acceleratorCount: 1
     # Run workers on preemtible instance by default.
     # Comment this out to use on-demand.
     scheduling:
       - preemptible: true
+        onHostMaintenance: TERMINATE
 
     # Additional options can be found in in the compute docs at
     # https://cloud.google.com/compute/docs/reference/rest/v1/instances/insert

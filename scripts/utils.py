@@ -75,7 +75,7 @@ def eICU_process_pipeline(self, df):
                                                   self.embed_features,
                                                   inplace=True)
     # Labels
-    labels = df[:, :, label_num]
+    labels = df[:, label_num]
     # Features
     features = du.deep_learning.remove_tensor_column(df, label_num, inplace=True)
     return features, labels
@@ -196,7 +196,7 @@ def eICU_optimizer_creator(model, config):
     Returns:
         One or more Torch optimizer objects.
     """
-    return torch.optim.Adam(model.parameters(), lr=config.get('lr', 1e-4))
+    return torch.optim.Adam(model.parameters(), lr=config.get('lr', 0.001))
 
 
 def eICU_loss_creator(config):
@@ -216,13 +216,6 @@ def eICU_loss_creator(config):
 
 class eICU_Operator(TrainingOperator):
     def setup(self, config):
-        # Register all the hyperparameters
-        model_args = inspect.getfullargspec(self.model.__init__).args[1:]
-        self.hyper_params = dict([(param, getattr(self.model, param))
-                             for param in model_args])
-        self.hyper_params.update({'batch_size': batch_size,
-                             'n_epochs': n_epochs,
-                             'learning_rate': lr})
         # Fetch the Comet ML credentials
         self.comet_ml_api_key = config['comet_ml_api_key']
         self.comet_ml_project_name = config['comet_ml_project_name']
@@ -240,6 +233,9 @@ class eICU_Operator(TrainingOperator):
         self.cols_to_remove = config.get('cols_to_remove', [0, 1])              # List of indeces of columns to remove from the features before feeding to the model
         self.is_custom = config.get('is_custom', False)                         # Specifies if the model being used is a custom built one
         self.already_embedded = config.get('already_embedded', False)           # Indicates if the categorical features are already embedded when fetching a batch
+        self.batch_size = config.get('batch_size', 32)                          # The number of samples used in each training, validation or test iteration
+        self.n_epochs = config.get('n_epochs', 5)                               # Number of epochs, i.e. the number of times to iterate through all of the training data
+        self.lr = config.get('lr', 0.001)                                       # Learning rate
         if self.log_comet_ml is True:
             # Create a new Comet.ml experiment
             self.experiment = Experiment(api_key=self.comet_ml_api_key,
@@ -256,6 +252,13 @@ class eICU_Operator(TrainingOperator):
             # Set gradient clipping to avoid exploding gradients
             for p in self.model.parameters():
                 p.register_hook(lambda grad: torch.clamp(grad, -self.clip_value, self.clip_value))
+        # Register all the hyperparameters
+        model_args = inspect.getfullargspec(self.model.__init__).args[1:]
+        self.hyper_params = dict([(param, getattr(self.model, param))
+                             for param in model_args])
+        self.hyper_params.update({'batch_size': self.batch_size,
+                                  'n_epochs': self.n_epochs,
+                                  'learning_rate': self.lr})
 
     @override(TrainingOperator)
     def validate(val_iterator, info):
@@ -328,6 +331,8 @@ class eICU_Operator(TrainingOperator):
 
     @override(TrainingOperator)
     def train_epoch(self, iterator, info):
+        # Register the current epoch
+        epoch = info.get('epoch_idx', 0)
         # Initialize the training metrics
         train_loss = 0
         train_acc = 0
@@ -409,7 +414,7 @@ class eICU_Operator(TrainingOperator):
                     self.save(checkpoint, f'{models_path}{model_filename}')
                     if self.log_comet_ml is True and self.comet_ml_save_model is True:
                         # Upload the model to Comet.ml
-                        experiment.log_asset(file_data=model_filename, overwrite=True)
+                        self.experiment.log_asset(file_data=model_filename, overwrite=True)
         except Exception as e:
             warnings.warn(f'There was a problem doing training epoch {epoch}. Ending current epoch. Original exception message: "{str(e)}"')
         try:
@@ -426,17 +431,17 @@ class eICU_Operator(TrainingOperator):
                 train_loss, val_loss = train_loss.cpu(), val_loss.cpu()
             if log_comet_ml is True:
                 # Log metrics to Comet.ml
-                experiment.log_metric('train_loss', train_loss, step=epoch)
-                experiment.log_metric('train_acc', train_acc, step=epoch)
-                experiment.log_metric('train_auc', train_auc, step=epoch)
-                experiment.log_metric('val_loss', val_loss, step=epoch)
-                experiment.log_metric('val_acc', val_acc, step=epoch)
-                experiment.log_metric('val_auc', val_auc, step=epoch)
-                experiment.log_metric('epoch', epoch)
-                experiment.log_epoch_end(epoch, step=step)
+                self.experiment.log_metric('train_loss', train_loss, step=epoch)
+                self.experiment.log_metric('train_acc', train_acc, step=epoch)
+                self.experiment.log_metric('train_auc', train_auc, step=epoch)
+                self.experiment.log_metric('val_loss', val_loss, step=epoch)
+                self.experiment.log_metric('val_acc', val_acc, step=epoch)
+                self.experiment.log_metric('val_auc', val_auc, step=epoch)
+                self.experiment.log_metric('epoch', epoch)
+                self.experiment.log_epoch_end(epoch, step=step)
                 if self.model.n_outputs > 1:
-                    experiment.log_metric('train_auc_wgt', train_auc_wgt, step=epoch)
-                    experiment.log_metric('val_auc_wgt', val_auc_wgt, step=epoch)
+                    self.experiment.log_metric('train_auc_wgt', train_auc_wgt, step=epoch)
+                    self.experiment.log_metric('val_auc_wgt', val_auc_wgt, step=epoch)
             # Print a report of the epoch
             print(f'Epoch {epoch}: Training loss: {train_loss}; Training Accuracy: {train_acc}; Training AUC: {train_auc}; \
                     Validation loss: {val_loss}; Validation Accuracy: {val_acc}; Validation AUC: {val_auc}')
