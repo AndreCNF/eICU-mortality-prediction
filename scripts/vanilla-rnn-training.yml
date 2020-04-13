@@ -1,3 +1,5 @@
+# Total number of workers
+num_workers: 50
 # Model parameters:
 model: VanillaRNN                         # Model class
 n_inputs: 2090                            # Number of model inputs
@@ -14,6 +16,7 @@ model_type: multivariate_rnn              # Sets the type of model to train; Imp
 is_custom: False                          # If the model being used is a custom built one, which won't require sequence length information
 # Dataset parameters:
 data_path: ''                             # Path to the directory where the data is stored
+models_path: ''                           # Path to the directory where the models are stored
 dataset_mode: one hot encoded             # The mode in which we'll use the data, either one hot encoded or pre-embedded
 ml_core: deep learning                    # The core machine learning type we'll use; either traditional ML or DL
 use_delta_ts: False                       # Indicates if we'll use time variation info
@@ -23,9 +26,9 @@ already_embedded: False                   # Indicates if categorical features ar
 test_train_ratio: 0.25                    # Percentage of the data which will be used as a test set
 validation_ratio: 0.1                     # Percentage of the data from the training set which is used for validation purposes
 batch_size: 16                            # Number of unit stays in worker's mini batch
-n_epochs: 10                              # Number of epochs
+n_epochs: 2                               # Number of epochs
 lr: 0.001                                 # Learning rate
-print_every: 10                           # Steps interval where the metrics are printed
+print_every: 5                            # Steps interval where the metrics are printed
 clip_value: 0.5                           # Gradient clipping value, to avoid exploiding gradients
 # Comet ML settings:
 log_comet_ml: True                        # If true, makes the code upload a training report and metrics to comet.ml

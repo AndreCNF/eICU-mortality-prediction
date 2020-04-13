@@ -54,6 +54,7 @@ google-api-core==1.16.0
 google-api-python-client==1.8.0
 google-auth==1.13.1
 google-auth-httplib2==0.0.3
+google-cloud==0.34.0
 googleapis-common-protos==1.51.0
 graphviz==0.11.1
 grpcio==1.28.1

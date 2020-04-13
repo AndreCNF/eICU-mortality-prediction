@@ -2,7 +2,7 @@ from comet_ml import Experiment            # Comet.ml can log training metrics, 
 import ray                                 # Distributed computing
 from ray.util.sgd import TorchTrainer      # Distributed training package
 import argparse                            # Read terminal arguments
-from . import utils                        # RaySGD custom constructors and data pipelines
+import utils                               # RaySGD custom constructors and data pipelines
 import data_utils as du                    # Data science and machine learning relevant methods
 import yaml                                # Save and load YAML files
 
@@ -24,8 +24,12 @@ config['comet_ml_api_key'] = args.comet_ml_api_key
 config['comet_ml_workspace'] = args.comet_ml_workspace
 config['comet_ml_project_name'] = args.comet_ml_project_name
 config['comet_ml_save_model'] = args.comet_ml_save_model
+# Make sure that all None configuration are correctly formated as None, not a string
+for key, val in config.items():
+    if str(val).lower() == 'none':
+        config[key] = None
 # Start ray
-ray.init(address='auto')
+ray.init()
 # Create the trainer
 trainer = TorchTrainer(
         model_creator=utils.eICU_model_creator,
@@ -37,5 +41,5 @@ trainer = TorchTrainer(
         use_gpu=True,
         use_tqdm=True)
 # Train the model
-for epoch in range(trainer.n_epochs):
-    stats = trainer.train(info=dict(epoch_idx=itr))
+for epoch in range(config.get('n_epochs', 1)):
+    stats = trainer.train(info=dict(epoch_idx=epoch))
