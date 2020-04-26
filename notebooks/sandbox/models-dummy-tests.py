@@ -785,6 +785,43 @@ interpreter.feat_scores.shape
 
 interpreter.test_data[:, :, 2:].shape
 
+column_names = list(dmy_df.columns)
+column_names
+
+features_names = column_names.copy()
+features_names.remove('subject_id')
+features_names.remove('ts')
+features_names.remove('label')
+features_names
+
+shap_column_names = [f'{feature}_shap' for feature in features_names]
+shap_column_names
+
+data_n_shap = np.concatenate([interpreter.test_data.numpy(), interpreter.feat_scores], axis=2)
+data_n_shap
+
+data_n_shap.shape
+
+['subject_id', 'ts']+features_names+shap_column_names
+
+data_n_shap.reshape(-1, 18)
+
+data_n_shap_columns = ['subject_id', 'ts']+features_names+shap_column_names
+data_n_shap_columns
+
+[feature for feature in data_n_shap_columns if feature.endswith('_shap')]
+
+data_n_shap_df = pd.DataFrame(data=data_n_shap.reshape(-1, 18), columns=data_n_shap_columns)
+data_n_shap_df
+
+data_n_shap_df.to_csv('notebooks/sandbox/dummy_data/data_n_shap_df.csv')
+
+du.visualization.shap_summary_plot(interpreter.feat_scores, features_names, max_display=3,
+                                   background_color='#282828',
+                                   output_type='plotly',
+                                   font_family='Roboto', font_size=14,
+                                   font_color='#ADAFAE')
+
 interpreter.feat_scores.sum(axis=2)
 
 interpreter.explainer.expected_value[0]
