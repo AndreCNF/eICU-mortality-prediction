@@ -39,6 +39,7 @@ trainer = TorchTrainer(
         num_workers=config.get('num_workers', 1),
         config=config,
         use_gpu=True,
+        use_fp16=config.get('use_fp16', False),
         use_tqdm=True)
 # Train the model
 for epoch in range(config.get('n_epochs', 1)):

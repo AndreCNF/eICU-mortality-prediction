@@ -29,8 +29,8 @@ project_path = 'code/eICU-mortality-prediction/'
 
 # Change to the scripts directory
 os.chdir("../scripts/")
-import Models                              # Deep learning models
 import utils                               # Context specific (in this case, for the eICU data) methods
+import Models                              # Deep learning models
 # Change to parent directory (presumably "Documents")
 os.chdir("../../..")
 # import modin.pandas as pd                  # Optimized distributed version of Pandas
@@ -75,7 +75,6 @@ def get_dataset_mode(data_mode=['one hot encoded', 'learn embedding', 'pre-embed
 id_column = 'patientunitstayid'            # Name of the sequence ID column
 ts_column = 'ts'                           # Name of the timestamp column
 label_column = 'label'                     # Name of the label column
-n_ids = 8000                               # Total number of sequences
 n_inputs = 2090                            # Number of input features
 n_outputs = 1                              # Number of outputs
 padding_value = 999999                     # Padding value used to fill in sequences up to the maximum sequence length
@@ -98,11 +97,15 @@ list(cat_feat_ohe.keys())
 
 # Training parameters:
 
-test_train_ratio = 0.25                    # Percentage of the data which will be used as a test set
-validation_ratio = 0.1                     # Percentage of the data from the training set which is used for validation purposes
+# test_train_ratio = 0.25                    # Percentage of the data which will be used as a test set
+# validation_ratio = 0.1                     # Percentage of the data from the training set which is used for validation purposes
 batch_size = 32                            # Number of unit stays in a mini batch
 n_epochs = 10                              # Number of epochs
 lr = 0.001                                 # Learning rate
+
+stream_tvt_sets = open(f'{data_path}eICU_tvt_sets.yml', 'r')
+eICU_tvt_sets = yaml.load(stream_tvt_sets, Loader=yaml.FullLoader)
+eICU_tvt_sets
 
 # Testing parameters:
 
@@ -146,9 +149,12 @@ dataset.bool_feat
 
 (train_dataloader, val_dataloader, test_dataloader,
 train_indeces, val_indeces, test_indeces) = du.machine_learning.create_train_sets(dataset,
-                                                                                  test_train_ratio=test_train_ratio,
-                                                                                  validation_ratio=validation_ratio,
-                                                                                  batch_size=1,
+#                                                                                   test_train_ratio=test_train_ratio,
+#                                                                                   validation_ratio=validation_ratio,
+                                                                                  train_indices=eICU_tvt_sets['train_indices'],
+                                                                                  val_indices=eICU_tvt_sets['val_indices'],
+                                                                                  test_indices=eICU_tvt_sets['test_indices'],
+                                                                                  batch_size=batch_size,
                                                                                   get_indeces=True)
 
 if ml_core == 'deep learning':
