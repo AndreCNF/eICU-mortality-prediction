@@ -29,7 +29,7 @@ for key, val in config.items():
     if str(val).lower() == 'none':
         config[key] = None
 # Start ray
-ray.init()
+ray.init(address='auto')
 # Create the trainer
 trainer = TorchTrainer(
         model_creator=utils.eICU_model_creator,
@@ -42,5 +42,5 @@ trainer = TorchTrainer(
         use_fp16=config.get('use_fp16', False),
         use_tqdm=True)
 # Train the model
-for epoch in range(config.get('n_epochs', 1)):
+for epoch in du.utils.iterations_loop(range(config.get('n_epochs', 1)), see_progress=config.get('see_progress', True), desc='Epochs'):
     stats = trainer.train(info=dict(epoch_idx=epoch))

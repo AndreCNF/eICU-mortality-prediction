@@ -254,6 +254,7 @@ class eICU_Operator(TrainingOperator):
         self.n_epochs = config.get('n_epochs', 1)                               # Number of epochs, i.e. the number of times to iterate through all of the training data
         self.lr = config.get('lr', 0.001)                                       # Learning rate
         self.models_path = config.get('models_path', '')                        # Path to the directory where the models are stored
+        self.see_progress = config.get('see_progress', True)                    # Sets if a progress bar is shown for each training and validation loop
         # Register all the hyperparameters
         model_args = inspect.getfullargspec(self.model.__init__).args[1:]
         self.hyper_params = dict([(param, getattr(self.model, param))
@@ -306,7 +307,7 @@ class eICU_Operator(TrainingOperator):
         current_datetime = datetime.now().strftime('%d_%m_%Y_%H_%M')
         model_filename = f'{model_filename}_{val_loss:.4f}valloss_{current_datetime}.pth'
         return model_filename
-    
+
     @override(TrainingOperator)
     def validate(self, val_iterator, info):
         # Number of iteration steps done so far
@@ -318,7 +319,7 @@ class eICU_Operator(TrainingOperator):
         if self.model.n_outputs > 1:
             val_auc_wgt = list()
         # Loop through the validation data
-        for features, labels in val_iterator:
+        for features, labels in du.utils.iterations_loop(val_iterator, see_progress=self.see_progress, desc='Val batches'):
             # Turn off gradients for validation, saves memory and computations
             with torch.no_grad():
                 if self.use_gpu is True:
@@ -392,7 +393,7 @@ class eICU_Operator(TrainingOperator):
             train_auc_wgt = list()
         try:
             # Loop through the training data
-            for features, labels in iterator:
+            for features, labels in du.utils.iterations_loop(iterator, see_progress=self.see_progress, desc='Steps'):
                 # Activate dropout to train the model
                 self.model.train()
                 # Clear the gradients of all optimized variables
@@ -416,7 +417,7 @@ class eICU_Operator(TrainingOperator):
                 else:
                     raise Exception(f'ERROR: Invalid model type. It must be "multivariate_rnn" or "mlp", not {self.model_type}.')
                 # Add the training loss and accuracy of the current batch
-                train_loss += loss 
+                train_loss += loss
                 train_acc += torch.mean(correct_pred.type(torch.FloatTensor))
                 if self.use_gpu is True:
                     # Move data to CPU for performance computations

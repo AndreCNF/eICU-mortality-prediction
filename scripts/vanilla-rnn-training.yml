@@ -1,5 +1,5 @@
 # Total number of workers
-num_workers: 50
+num_workers: 2
 # Model parameters:
 model: VanillaRNN                         # Model class
 n_inputs: 2090                            # Number of model inputs
@@ -34,6 +34,7 @@ clip_value: 0.5                           # Gradient clipping value, to avoid ex
 log_comet_ml: True                        # If true, makes the code upload a training report and metrics to comet.ml
 comet_ml_save_model: True                 # If set to true, uploads the model with the lowest validation loss to comet.ml
 # Other settings:
+use_fp16: False                           # Sets if mixed precision will be used
 padding_value: 999999                     # Value to use in the padding, to fill the sequences
 cols_to_remove:                           # List of indeces of columns to remove from the features before feeding to the model
   - 0
