@@ -1,4 +1,6 @@
 from comet_ml import Experiment            # Comet.ml can log training metrics, parameters, do version control and parameter optimization
+import os                                  # os handles directory/workspace changes
+print(f'DEBUG: Comet ML environment variable:\n{os.environ["COMET_DISABLE_AUTO_LOGGING"]}')
 import pandas as pd                        # Pandas to load and handle the data
 import torch                               # PyTorch to create and apply deep learning models
 from torch.nn.functional import sigmoid, softmax
@@ -12,6 +14,8 @@ from sklearn.metrics import roc_auc_score  # ROC AUC model performance metric
 import yaml                                # Save and load YAML files
 import warnings                            # Print warnings for bad practices
 import data_utils as du                    # Data science and machine learning relevant methods
+import sys
+sys.path.append('/home/ubuntu/')           # Add the folder on which local files are uploaded
 import Models                              # Deep learning models
 
 def eICU_initial_analysis(self):
@@ -19,11 +23,11 @@ def eICU_initial_analysis(self):
     df = pd.read_feather(self.files[0])
     # Number of input features, discarding the ID, timestamp and label columns
     self.n_inputs = len(df.columns) - 3
-    # Find the column indeces for the ID columns
+    # Find the column indices for the ID columns
     self.id_columns_idx = [du.search_explore.find_col_idx(df, col)
                            for col in ['patientunitstayid', 'ts']]
     if self.dataset_mode != 'one hot encoded':
-        # Find the indeces of the features that will be embedded,
+        # Find the indices of the features that will be embedded,
         # as well as the total number of categories per categorical feature
         # Subtracting 2 because of the ID and ts columns
         cat_feat_ohe_list = [feat_list for feat_list in self.cat_feat_ohe.values()]
@@ -161,6 +165,24 @@ def eICU_data_creator(config):
     # Load the one hot encoding columns categorization information
     stream_cat_feat_ohe = open(f'{data_path}eICU_cat_feat_ohe.yml', 'r')
     cat_feat_ohe = yaml.load(stream_cat_feat_ohe, Loader=yaml.FullLoader)
+    # Load the predefined train, validation and test sets' indices, if they exist
+    sets_file_name = config.get('sets_file_name', None)
+    if data_path is not None and sets_file_name is not None:
+        print(f'DEBUG: Found indices file {data_path}{sets_file_name}.yml')
+        stream_tvt_sets = open(f'{data_path}{sets_file_name}.yml', 'r')
+        eICU_tvt_sets = yaml.load(stream_tvt_sets, Loader=yaml.FullLoader)
+        train_indices = eICU_tvt_sets.get('train_indices', None)
+        print('DEBUG: train_indices is None') if train_indices is None else print('train_indices is not None')
+        val_indices = eICU_tvt_sets.get('val_indices', None)
+        print('DEBUG: val_indices is None') if val_indices is None else print('val_indices is not None')
+        test_indices = eICU_tvt_sets.get('test_indices', [])
+        print('DEBUG: test_indices is None') if test_indices is None else print('test_indices is not None')
+    else:
+        print('DEBUG: Didn\'t find the indices file name in the config!')
+        # No predefined train, validation and test sets' indices
+        train_indices = None
+        val_indices = None
+        test_indices = None
     # Load the dataset parameters
     dataset_mode = config.get('dataset_mode', 'one hot encoded')                # The mode in which we'll use the data, either one hot encoded or pre-embedded
     ml_core = config.get('ml_core', 'deep learning')                            # The core machine learning type we'll use; either traditional ML or DL
@@ -180,6 +202,8 @@ def eICU_data_creator(config):
                                         padding_value=padding_value,
                                         cat_feat_ohe=cat_feat_ohe,
                                         dtype_dict=dtype_dict)
+    print('DEBUG: Successfully created the dataset object.')
+    print(f'DEBUG: Dataset length (number of files): {dataset.__len__()}')
     # Update the embedding information
     if dataset_mode == 'learn embedding':
         config['embed_features'] = dataset.embed_features
@@ -189,10 +213,14 @@ def eICU_data_creator(config):
         config['n_embeddings'] = None
     # Separate into train and validation sets
     train_dataloader, val_dataloader, _ = du.machine_learning.create_train_sets(dataset,
-                                                                                test_train_ratio=config.get('test_train_ratio', 0.25),
-                                                                                validation_ratio=config.get('validation_ratio', 0.1),
+                                                                                train_indices=train_indices,
+                                                                                val_indices=val_indices,
+                                                                                test_indices=test_indices,
+                                                                                test_train_ratio=config.get('test_train_ratio', None),
+                                                                                validation_ratio=config.get('validation_ratio', None),
                                                                                 batch_size=config.get('batch_size', 32),
-                                                                                get_indeces=False)
+                                                                                get_indices=False)
+    print('DEBUG: Successfully created the dataloaders.')
     return train_dataloader, val_dataloader
 
 
@@ -227,6 +255,8 @@ def eICU_loss_creator(config):
 
 class eICU_Operator(TrainingOperator):
     def setup(self, config):
+        # Number of RaySGD workers
+        self.num_workers = config.get('num_workers', 1)
         # Fetch the Comet ML credentials
         self.comet_ml_api_key = config['comet_ml_api_key']
         self.comet_ml_project_name = config['comet_ml_project_name']
@@ -247,7 +277,7 @@ class eICU_Operator(TrainingOperator):
         self.features_list = config.get('features_list', None)                  # Names of the features being used in the current pipeline
         self.model_type = config.get('model_type', 'multivariate_rnn')          # Type of model to train
         self.padding_value = config.get('padding_value', 999999)                # Value to use in the padding, to fill the sequences
-        self.cols_to_remove = config.get('cols_to_remove', [0, 1])              # List of indeces of columns to remove from the features before feeding to the model
+        self.cols_to_remove = config.get('cols_to_remove', [0, 1])              # List of indices of columns to remove from the features before feeding to the model
         self.is_custom = config.get('is_custom', False)                         # Specifies if the model being used is a custom built one
         self.already_embedded = config.get('already_embedded', False)           # Indicates if the categorical features are already embedded when fetching a batch
         self.batch_size = config.get('batch_size', 32)                          # The number of samples used in each training, validation or test iteration
@@ -256,8 +286,13 @@ class eICU_Operator(TrainingOperator):
         self.models_path = config.get('models_path', '')                        # Path to the directory where the models are stored
         self.see_progress = config.get('see_progress', True)                    # Sets if a progress bar is shown for each training and validation loop
         # Register all the hyperparameters
-        model_args = inspect.getfullargspec(self.model.__init__).args[1:]
-        self.hyper_params = dict([(param, getattr(self.model, param))
+        if self.num_workers == 1:
+            model = self.model
+        else:
+            # Get the original model, as the current one is wrapped in DistributedDataParallel
+            model = self.model.module
+        model_args = inspect.getfullargspec(model.__init__).args[1:]
+        self.hyper_params = dict([(param, getattr(model, param))
                                   for param in model_args])
         self.hyper_params.update({'batch_size': self.batch_size,
                                   'n_epochs': self.n_epochs,
@@ -266,11 +301,15 @@ class eICU_Operator(TrainingOperator):
             # Create a new Comet.ml experiment
             self.experiment = Experiment(api_key=self.comet_ml_api_key,
                                          project_name=self.comet_ml_project_name,
-                                         workspace=self.comet_ml_workspace)
+                                         workspace=self.comet_ml_workspace,
+                                         auto_param_logging=False,
+                                         auto_metric_logging=False,
+                                         auto_output_logging=False)
             self.experiment.log_other('completed', False)
             self.experiment.log_other('random_seed', du.random_seed)
             # Report hyperparameters to Comet.ml
             self.experiment.log_parameters(self.hyper_params)
+            self.experiment.log_parameters(config)
             if self.features_list is not None:
                 # Log the names of the features being used
                 self.experiment.log_other('features_list', self.features_list)
@@ -305,7 +344,7 @@ class eICU_Operator(TrainingOperator):
             model_filename = model_filename + '_delta_ts'
         # Add the validation loss and timestamp
         current_datetime = datetime.now().strftime('%d_%m_%Y_%H_%M')
-        model_filename = f'{model_filename}_{val_loss:.4f}valloss_{current_datetime}.pth'
+        model_filename = f'{val_loss:.4f}_valloss_{model_filename}_{current_datetime}.pth'
         return model_filename
 
     @override(TrainingOperator)
@@ -316,12 +355,23 @@ class eICU_Operator(TrainingOperator):
         val_loss = 0
         val_acc = 0
         val_auc = list()
-        if self.model.n_outputs > 1:
+        if self.num_workers == 1:
+            model = self.model
+        else:
+            # Get the original model, as the current one is wrapped in DistributedDataParallel
+            model = self.model.module
+        if model.n_outputs > 1:
             val_auc_wgt = list()
         # Loop through the validation data
         for features, labels in du.utils.iterations_loop(val_iterator, see_progress=self.see_progress, desc='Val batches'):
             # Turn off gradients for validation, saves memory and computations
             with torch.no_grad():
+                if self.is_custom is False:
+                    # Find the original sequence lengths
+                    seq_lengths = du.search_explore.find_seq_len(labels, padding_value=self.padding_value)
+                else:
+                    # No need to find the sequence lengths now
+                    seq_lengths = None
                 if self.use_gpu is True:
                     # Move data to GPU
                     features, labels = features.to(self.device), labels.to(self.device)
@@ -332,7 +382,8 @@ class eICU_Operator(TrainingOperator):
                                                                                             padding_value=self.padding_value,
                                                                                             cols_to_remove=self.cols_to_remove, is_train=False,
                                                                                             prob_output=True, is_custom=self.is_custom,
-                                                                                            already_embedded=self.already_embedded))
+                                                                                            already_embedded=self.already_embedded,
+                                                                                            seq_lengths=seq_lengths))
                 elif self.model_type.lower() == 'mlp':
                     pred, correct_pred, scores, loss = (du.deep_learning.inference_iter_mlp(self.model, features, labels,
                                                                                             self.cols_to_remove, is_train=False,
@@ -345,7 +396,7 @@ class eICU_Operator(TrainingOperator):
                     # Move data to CPU for performance computations
                     scores, labels = scores.cpu(), labels.cpu()
                 # Add the training ROC AUC of the current batch
-                if self.model.n_outputs == 1:
+                if model.n_outputs == 1:
                     try:
                         val_auc.append(roc_auc_score(labels.numpy(), scores.detach().numpy()))
                     except Exception as e:
@@ -369,18 +420,25 @@ class eICU_Operator(TrainingOperator):
         val_loss = val_loss / len(val_iterator)
         val_acc = val_acc / len(val_iterator)
         val_auc = np.mean(val_auc)
-        if self.model.n_outputs > 1:
+        if model.n_outputs > 1:
             val_auc_wgt = np.mean(val_auc_wgt)
         # Return the validation metrics
         metrics = dict(val_loss=val_loss,
                        val_acc=val_acc,
                        val_auc=val_auc)
-        if self.model.n_outputs > 1:
+        if model.n_outputs > 1:
             metrics['val_auc_wgt'] = val_auc_wgt
         return metrics
 
     @override(TrainingOperator)
     def train_epoch(self, iterator, info):
+        if self.num_workers == 1:
+            model = self.model
+        else:
+            # Get the original model, as the current one is wrapped in DistributedDataParallel
+            model = self.model.module
+        print(f'DEBUG: TrainingOperator attributes:\n{vars(self)}')
+        print(f'DEBUG: Model\'s attributes:\n{vars(model)}')
         # Register the current epoch
         epoch = info.get('epoch_idx', 0)
         # Number of iteration steps done so far
@@ -389,123 +447,130 @@ class eICU_Operator(TrainingOperator):
         train_loss = 0
         train_acc = 0
         train_auc = list()
-        if self.model.n_outputs > 1:
+        if model.n_outputs > 1:
             train_auc_wgt = list()
-        try:
-            # Loop through the training data
-            for features, labels in du.utils.iterations_loop(iterator, see_progress=self.see_progress, desc='Steps'):
-                # Activate dropout to train the model
-                self.model.train()
-                # Clear the gradients of all optimized variables
-                self.optimizer.zero_grad()
-                if self.use_gpu is True:
-                    # Move data to GPU
-                    features, labels = features.to(self.device), labels.to(self.device)
-                # Do inference on the data
-                if self.model_type.lower() == 'multivariate_rnn':
-                    (pred, correct_pred,
-                     scores, labels, loss) = (du.deep_learning.inference_iter_multi_var_rnn(self.model, features, labels,
-                                                                                            padding_value=self.padding_value,
-                                                                                            cols_to_remove=self.cols_to_remove, is_train=True,
-                                                                                            prob_output=True, optimizer=self.optimizer,
-                                                                                            is_custom=self.is_custom,
-                                                                                            already_embedded=self.already_embedded))
-                elif self.model_type.lower() == 'mlp':
-                    pred, correct_pred, scores, loss = (du.deep_learning.inference_iter_mlp(self.model, features, labels,
-                                                                                            self.cols_to_remove, is_train=True,
-                                                                                            prob_output=True, optimizer=self.optimizer))
-                else:
-                    raise Exception(f'ERROR: Invalid model type. It must be "multivariate_rnn" or "mlp", not {self.model_type}.')
-                # Add the training loss and accuracy of the current batch
-                train_loss += loss
-                train_acc += torch.mean(correct_pred.type(torch.FloatTensor))
-                if self.use_gpu is True:
-                    # Move data to CPU for performance computations
-                    scores, labels = scores.cpu(), labels.cpu()
-                # Add the training ROC AUC of the current batch
-                if self.model.n_outputs == 1:
-                    try:
-                        train_auc.append(roc_auc_score(labels.numpy(), scores.detach().numpy()))
-                    except Exception as e:
-                        warnings.warn(f'Couldn\'t calculate the training AUC on step {step}. Received exception "{str(e)}".')
-                else:
-                    # It might happen that not all labels are present in the current batch;
-                    # as such, we must focus on the ones that appear in the batch
-                    labels_in_batch = labels.unique().long()
-                    try:
-                        train_auc.append(roc_auc_score(labels.numpy(), softmax(scores[:, labels_in_batch], dim=1).detach().numpy(),
-                                                       multi_class='ovr', average='macro', labels=labels_in_batch.numpy()))
-                        # Also calculate a weighted version of the AUC; important for imbalanced dataset
-                        train_auc_wgt.append(roc_auc_score(labels.numpy(), softmax(scores[:, labels_in_batch], dim=1).detach().numpy(),
-                                                           multi_class='ovr', average='weighted', labels=labels_in_batch.numpy()))
-                    except Exception as e:
-                        warnings.warn(f'Couldn\'t calculate the training AUC on step {step}. Received exception "{str(e)}".')
-                # Count one more iteration step
-                step += 1
-                info['step'] = step
-                # Deactivate dropout to test the model
-                self.model.eval()
-                # Remove the current features and labels from memory
-                del features
-                del labels
-                # Run the current model on the validation set
-                val_metrics = self.validate(self.validation_loader, info)
-                # Display validation loss
-                if step % self.print_every == 0:
-                    print(f'Epoch {epoch} step {step}: Validation loss: {val_metrics["val_loss"]}; Validation Accuracy: {val_metrics["val_acc"]}; Validation AUC: {val_metrics["val_auc"]}')
-                # Check if the performance obtained in the validation set is the best so far (lowest loss value)
-                if val_metrics['val_loss'] < val_loss_min:
-                    print(f'New minimum validation loss: {val_loss_min} -> {val_metrics["val_loss"]}.')
-                    # Update the minimum validation loss
-                    val_loss_min = val_metrics['val_loss']
-                    # Filename and path where the model will be saved
-                    model_filename = self.set_model_filename(val_metrics['val_loss'])
-                    print(f'Saving model in {model_filename}')
-                    # Save the best performing model so far, along with additional information to implement it
-                    checkpoint = self.hyper_params
-                    checkpoint['state_dict'] = self.model.state_dict()
-                    # [TODO] Check if this really works locally or if it just saves in the temporary nodes
-                    self.save(checkpoint, f'{self.models_path}{model_filename}')
-                    if self.log_comet_ml is True and self.comet_ml_save_model is True:
-                        # Upload the model to Comet.ml
-                        self.experiment.log_asset(file_data=model_filename, overwrite=True)
-        except Exception as e:
-            warnings.warn(f'There was a problem doing training epoch {epoch}. Ending current epoch. Original exception message: "{str(e)}"')
-        try:
-            # Calculate the average of the metrics over the epoch
-            train_loss = train_loss / len(iterator)
-            train_acc = train_acc / len(iterator)
-            train_auc = np.mean(train_auc)
-            if self.model.n_outputs > 1:
-                train_auc_wgt = np.mean(train_auc_wgt)
-            # Remove attached gradients so as to be able to print the values
-            train_loss, val_loss = train_loss.detach(), val_metrics['val_loss'].detach()
+        # try:
+        # Loop through the training data
+        for features, labels in du.utils.iterations_loop(iterator, see_progress=self.see_progress, desc='Steps'):
+            # Activate dropout to train the model
+            self.model.train()
+            # Clear the gradients of all optimized variables
+            self.optimizer.zero_grad()
+            if self.is_custom is False:
+                # Find the original sequence lengths
+                seq_lengths = du.search_explore.find_seq_len(labels, padding_value=self.padding_value)
+            else:
+                # No need to find the sequence lengths now
+                seq_lengths = None
             if self.use_gpu is True:
-                # Move metrics data to CPU
-                train_loss, val_loss = train_loss.cpu(), val_loss.cpu()
-            if self.log_comet_ml is True:
-                # Log metrics to Comet.ml
-                self.experiment.log_metric('train_loss', train_loss, step=epoch)
-                self.experiment.log_metric('train_acc', train_acc, step=epoch)
-                self.experiment.log_metric('train_auc', train_auc, step=epoch)
-                self.experiment.log_metric('val_loss', val_loss, step=epoch)
-                self.experiment.log_metric('val_acc', val_metrics['val_acc'], step=epoch)
-                self.experiment.log_metric('val_auc', val_metrics['val_auc'], step=epoch)
-                self.experiment.log_metric('epoch', epoch)
-                self.experiment.log_epoch_end(epoch, step=step)
-                if self.model.n_outputs > 1:
-                    self.experiment.log_metric('train_auc_wgt', train_auc_wgt, step=epoch)
-                    self.experiment.log_metric('val_auc_wgt', val_metrics['val_auc_wgt'], step=epoch)
-            # Print a report of the epoch
-            print(f'Epoch {epoch}: Training loss: {train_loss}; Training Accuracy: {train_acc}; Training AUC: {train_auc}; \
-                    Validation loss: {val_loss}; Validation Accuracy: {val_metrics["val_acc"]}; Validation AUC: {val_metrics["val_auc"]}')
-            print('----------------------')
-        except Exception as e:
-            warnings.warn(f'There was a problem printing metrics from epoch {epoch}. Original exception message: "{str(e)}"')
+                # Move data to GPU
+                features, labels = features.to(self.device), labels.to(self.device)
+            # Do inference on the data
+            if self.model_type.lower() == 'multivariate_rnn':
+                (pred, correct_pred,
+                    scores, labels, loss) = (du.deep_learning.inference_iter_multi_var_rnn(self.model, features, labels,
+                                                                                        padding_value=self.padding_value,
+                                                                                        cols_to_remove=self.cols_to_remove, is_train=True,
+                                                                                        prob_output=True, optimizer=self.optimizer,
+                                                                                        is_custom=self.is_custom,
+                                                                                        already_embedded=self.already_embedded,
+                                                                                        seq_lengths=seq_lengths))
+            elif self.model_type.lower() == 'mlp':
+                pred, correct_pred, scores, loss = (du.deep_learning.inference_iter_mlp(self.model, features, labels,
+                                                                                        self.cols_to_remove, is_train=True,
+                                                                                        prob_output=True, optimizer=self.optimizer))
+            else:
+                raise Exception(f'ERROR: Invalid model type. It must be "multivariate_rnn" or "mlp", not {self.model_type}.')
+            # Add the training loss and accuracy of the current batch
+            train_loss += loss
+            train_acc += torch.mean(correct_pred.type(torch.FloatTensor))
+            if self.use_gpu is True:
+                # Move data to CPU for performance computations
+                scores, labels = scores.cpu(), labels.cpu()
+            # Add the training ROC AUC of the current batch
+            if model.n_outputs == 1:
+                try:
+                    train_auc.append(roc_auc_score(labels.numpy(), scores.detach().numpy()))
+                except Exception as e:
+                    warnings.warn(f'Couldn\'t calculate the training AUC on step {step}. Received exception "{str(e)}".')
+            else:
+                # It might happen that not all labels are present in the current batch;
+                # as such, we must focus on the ones that appear in the batch
+                labels_in_batch = labels.unique().long()
+                try:
+                    train_auc.append(roc_auc_score(labels.numpy(), softmax(scores[:, labels_in_batch], dim=1).detach().numpy(),
+                                                    multi_class='ovr', average='macro', labels=labels_in_batch.numpy()))
+                    # Also calculate a weighted version of the AUC; important for imbalanced dataset
+                    train_auc_wgt.append(roc_auc_score(labels.numpy(), softmax(scores[:, labels_in_batch], dim=1).detach().numpy(),
+                                                        multi_class='ovr', average='weighted', labels=labels_in_batch.numpy()))
+                except Exception as e:
+                    warnings.warn(f'Couldn\'t calculate the training AUC on step {step}. Received exception "{str(e)}".')
+            # Count one more iteration step
+            step += 1
+            info['step'] = step
+            # Deactivate dropout to test the model
+            self.model.eval()
+            # Remove the current features and labels from memory
+            del features
+            del labels
+            # Run the current model on the validation set
+            val_metrics = self.validate(self.validation_loader, info)
+            # Display validation loss
+            if step % self.print_every == 0:
+                print(f'Epoch {epoch} step {step}: Validation loss: {val_metrics["val_loss"]}; Validation Accuracy: {val_metrics["val_acc"]}; Validation AUC: {val_metrics["val_auc"]}')
+            # Check if the performance obtained in the validation set is the best so far (lowest loss value)
+            if val_metrics['val_loss'] < val_loss_min:
+                print(f'New minimum validation loss: {val_loss_min} -> {val_metrics["val_loss"]}.')
+                # Update the minimum validation loss
+                val_loss_min = val_metrics['val_loss']
+                # Filename and path where the model will be saved
+                model_filename = self.set_model_filename(val_metrics['val_loss'])
+                print(f'Saving model in {model_filename}')
+                # Save the best performing model so far, along with additional information to implement it
+                checkpoint = self.hyper_params
+                checkpoint['state_dict'] = self.model.state_dict()
+                # [TODO] Check if this really works locally or if it just saves in the temporary nodes
+                self.save(checkpoint, f'{self.models_path}{model_filename}')
+                if self.log_comet_ml is True and self.comet_ml_save_model is True:
+                    # Upload the model to Comet.ml
+                    self.experiment.log_asset(file_data=model_filename, overwrite=True)
+        # except Exception as e:
+        #     warnings.warn(f'There was a problem doing training epoch {epoch}. Ending current epoch. Original exception message: "{str(e)}"')
+        # try:
+        # Calculate the average of the metrics over the epoch
+        train_loss = train_loss / len(iterator)
+        train_acc = train_acc / len(iterator)
+        train_auc = np.mean(train_auc)
+        if model.n_outputs > 1:
+            train_auc_wgt = np.mean(train_auc_wgt)
+        # Remove attached gradients so as to be able to print the values
+        train_loss, val_loss = train_loss.detach(), val_metrics['val_loss'].detach()
+        if self.use_gpu is True:
+            # Move metrics data to CPU
+            train_loss, val_loss = train_loss.cpu(), val_loss.cpu()
+        if self.log_comet_ml is True:
+            # Log metrics to Comet.ml
+            self.experiment.log_metric('train_loss', train_loss, step=epoch)
+            self.experiment.log_metric('train_acc', train_acc, step=epoch)
+            self.experiment.log_metric('train_auc', train_auc, step=epoch)
+            self.experiment.log_metric('val_loss', val_loss, step=epoch)
+            self.experiment.log_metric('val_acc', val_metrics['val_acc'], step=epoch)
+            self.experiment.log_metric('val_auc', val_metrics['val_auc'], step=epoch)
+            self.experiment.log_metric('epoch', epoch)
+            self.experiment.log_epoch_end(epoch, step=step)
+            if model.n_outputs > 1:
+                self.experiment.log_metric('train_auc_wgt', train_auc_wgt, step=epoch)
+                self.experiment.log_metric('val_auc_wgt', val_metrics['val_auc_wgt'], step=epoch)
+        # Print a report of the epoch
+        print(f'Epoch {epoch}: Training loss: {train_loss}; Training Accuracy: {train_acc}; Training AUC: {train_auc}; \
+                Validation loss: {val_loss}; Validation Accuracy: {val_metrics["val_acc"]}; Validation AUC: {val_metrics["val_auc"]}')
+        print('----------------------')
+        # except Exception as e:
+        #     warnings.warn(f'There was a problem printing metrics from epoch {epoch}. Original exception message: "{str(e)}"')
         # Return the training metrics
         metrics = dict(train_loss=train_loss,
                        train_acc=train_acc,
                        train_auc=train_auc)
-        if self.model.n_outputs > 1:
+        if model.n_outputs > 1:
             metrics['train_auc_wgt'] = train_auc_wgt
         return metrics

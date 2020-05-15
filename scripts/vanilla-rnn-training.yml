@@ -1,5 +1,5 @@
 # Total number of workers
-num_workers: 2
+num_workers: 1
 # Model parameters:
 model: VanillaRNN                         # Model class
 n_inputs: 2090                            # Number of model inputs
@@ -8,14 +8,14 @@ n_outputs: 1                              # Number of model outputs
 n_rnn_layers: 2                           # Number of recurrent layers
 p_dropout: 0.2                            # Probability of dropout
 bidir: False                              # Sets if the recurrent model is bidirectional
-embed_features: None                      # List of features (refered to by their indeces) that need to go through embedding layers
+embed_features: None                      # List of features (refered to by their indices) that need to go through embedding layers
 n_embeddings: None                        # List of the total number of unique categories for the embedding layers
 embedding_dim: None                       # List of embedding dimensions
 elapsed_time: None                        # Indicates if the elapsed time between samples is long or small (changes how time variations are handled)
 model_type: multivariate_rnn              # Sets the type of model to train; Important to know what type of inference to do
 is_custom: False                          # If the model being used is a custom built one, which won't require sequence length information
 # Dataset parameters:
-data_path: ''                             # Path to the directory where the data is stored
+data_path: /home/ubuntu/                  # Path to the directory where the data is stored
 models_path: ''                           # Path to the directory where the models are stored
 dataset_mode: one hot encoded             # The mode in which we'll use the data, either one hot encoded or pre-embedded
 ml_core: deep learning                    # The core machine learning type we'll use; either traditional ML or DL
@@ -23,19 +23,21 @@ use_delta_ts: False                       # Indicates if we'll use time variatio
 time_window_h: 48                         # Number of hours on which we want to predict mortality
 already_embedded: False                   # Indicates if categorical features are already embedded when fetching a batch
 # Training parameters:
-test_train_ratio: 0.25                    # Percentage of the data which will be used as a test set
-validation_ratio: 0.1                     # Percentage of the data from the training set which is used for validation purposes
-batch_size: 16                            # Number of unit stays in worker's mini batch
+sets_file_name: eICU_tvt_sets             # Name of file that indicates the indices that correspond to each set (train, validationa and test)
+# test_train_ratio: 0.25                    # Percentage of the data which will be used as a test set
+# validation_ratio: 0.1                     # Percentage of the data from the training set which is used for validation purposes
+batch_size: 8                             # Number of unit stays in worker's mini batch
 n_epochs: 2                               # Number of epochs
 lr: 0.001                                 # Learning rate
 print_every: 5                            # Steps interval where the metrics are printed
 clip_value: 0.5                           # Gradient clipping value, to avoid exploiding gradients
+random_seed: 42                           # Random seed; the trained model should be exactly the same if the random seed is kept the same
 # Comet ML settings:
 log_comet_ml: True                        # If true, makes the code upload a training report and metrics to comet.ml
 comet_ml_save_model: True                 # If set to true, uploads the model with the lowest validation loss to comet.ml
 # Other settings:
 use_fp16: False                           # Sets if mixed precision will be used
 padding_value: 999999                     # Value to use in the padding, to fill the sequences
-cols_to_remove:                           # List of indeces of columns to remove from the features before feeding to the model
+cols_to_remove:                           # List of indices of columns to remove from the features before feeding to the model
   - 0
   - 1

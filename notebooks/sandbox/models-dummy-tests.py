@@ -258,7 +258,7 @@ lr = 0.001                                      # Learning rate
 # Get the train and validation sets data loaders, which will allow loading batches
 train_dataloader, val_dataloader, _ = du.machine_learning.create_train_sets(dataset, test_train_ratio=0, 
                                                                             validation_ratio=0.25,
-                                                                            batch_size=4, get_indeces=False)
+                                                                            batch_size=4, get_indices=False)
 
 next(iter(train_dataloader))[0]
 
@@ -287,6 +287,45 @@ p_dropout = 0.2                               # Probability of dropout
 
 model = Models.VanillaLSTM(n_inputs-3, n_hidden, n_outputs, n_layers, p_dropout)
 model
+
+model.n_outputs
+
+model.bidir
+
+# +
+import os
+import tempfile
+import torch
+import torch.distributed as dist
+import torch.nn as nn
+import torch.optim as optim
+import torch.multiprocessing as mp
+
+from torch.nn.parallel import DistributedDataParallel as DDP
+
+
+def setup(rank, world_size):
+    os.environ['MASTER_ADDR'] = 'localhost'
+    os.environ['MASTER_PORT'] = '12355'
+
+    # initialize the process group
+    dist.init_process_group("gloo", rank=rank, world_size=world_size)
+
+
+def cleanup():
+    dist.destroy_process_group()
+
+
+# -
+
+setup(rank=0, world_size=1)
+model_ddp = DDP(model)
+
+model_ddp
+
+model_ddp.module.n_outputs
+
+model_ddp.parameters()
 
 # #### Training the model
 
@@ -797,21 +836,25 @@ features_names
 shap_column_names = [f'{feature}_shap' for feature in features_names]
 shap_column_names
 
-data_n_shap = np.concatenate([interpreter.test_data.numpy(), interpreter.feat_scores], axis=2)
+interpreter.test_data.numpy().shape
+
+interpreter.test_labels.unsqueeze(2).numpy().shape
+
+interpreter.feat_scores.shape
+
+data_n_shap = np.concatenate([interpreter.test_data.numpy(), interpreter.test_labels.unsqueeze(2).numpy(), interpreter.feat_scores], axis=2)
 data_n_shap
 
 data_n_shap.shape
 
-['subject_id', 'ts']+features_names+shap_column_names
+data_n_shap.reshape(-1, 19)
 
-data_n_shap.reshape(-1, 18)
-
-data_n_shap_columns = ['subject_id', 'ts']+features_names+shap_column_names
+data_n_shap_columns = ['subject_id', 'ts']+features_names+['label']+shap_column_names
 data_n_shap_columns
 
 [feature for feature in data_n_shap_columns if feature.endswith('_shap')]
 
-data_n_shap_df = pd.DataFrame(data=data_n_shap.reshape(-1, 18), columns=data_n_shap_columns)
+data_n_shap_df = pd.DataFrame(data=data_n_shap.reshape(-1, 19), columns=data_n_shap_columns)
 data_n_shap_df
 
 data_n_shap_df.to_csv('notebooks/sandbox/dummy_data/data_n_shap_df.csv')

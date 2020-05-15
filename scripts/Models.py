@@ -30,7 +30,7 @@ class BaseRNN(nn.Module):
         p_dropout : float or int, default 0
             Probability of dropout.
         embed_features : list of ints or list of lists of ints, default None
-            List of features (refered to by their indeces) that need to go
+            List of features (refered to by their indices) that need to go
             through embedding layers. One list of one hot encoded feature per
             embedding layer must be set.
         n_embeddings : list of ints, default None
@@ -246,7 +246,7 @@ class BaseRNN(nn.Module):
         # Flatten the data
         y_pred = y_pred.reshape(-1)
         y_labels = y_labels.reshape(-1)
-        # Find the indeces that don't correspond to padding samples
+        # Find the indices that don't correspond to padding samples
         non_pad_idx = y_labels != self.padding_value
         # Remove the padding samples
         y_labels = y_labels[non_pad_idx]
@@ -289,7 +289,7 @@ class VanillaRNN(nn.Module):
         p_dropout : float or int, default 0
             Probability of dropout.
         embed_features : list of ints, default None
-            List of features (refered to by their indeces) that need to go
+            List of features (refered to by their indices) that need to go
             through embedding layers.
         n_embeddings : list of ints, default None
             List of the total number of unique categories for the embedding
@@ -411,7 +411,7 @@ class VanillaRNN(nn.Module):
             # Use the binary cross entropy function
             self.criterion = nn.CrossEntropyLoss()
 
-    def forward(self, x, hidden_state=None, x_lengths=None, get_hidden_state=False,
+    def forward(self, x, hidden_state=None, seq_lengths=None, get_hidden_state=False,
                 prob_output=True, already_embedded=False):
         if self.embed_features is not None and already_embedded is False:
             # Run each embedding layer on each respective feature, adding the
@@ -431,13 +431,13 @@ class VanillaRNN(nn.Module):
         else:
             # Use the specified hidden state
             self.hidden = hidden_state
-        if x_lengths is not None:
+        if seq_lengths is not None:
             # pack_padded_sequence so that padded items in the sequence won't be
             # shown to the RNN
-            x = pack_padded_sequence(x, x_lengths, batch_first=True, enforce_sorted=False)
+            x = pack_padded_sequence(x, seq_lengths, batch_first=True, enforce_sorted=False)
         # Get the outputs and hidden states from the RNN layer(s)
         rnn_output, self.hidden = self.rnn(x, self.hidden)
-        if x_lengths is not None:
+        if seq_lengths is not None:
             # Undo the packing operation
             rnn_output, _ = pad_packed_sequence(rnn_output, batch_first=True,
                                                 total_length=self.total_length)
@@ -463,7 +463,7 @@ class VanillaRNN(nn.Module):
         # Flatten the data
         y_pred = y_pred.reshape(-1)
         y_labels = y_labels.reshape(-1)
-        # Find the indeces that don't correspond to padding samples
+        # Find the indices that don't correspond to padding samples
         non_pad_idx = y_labels != self.padding_value
         # Remove the padding samples
         y_labels = y_labels[non_pad_idx]
@@ -503,7 +503,7 @@ class VanillaLSTM(nn.Module):
         p_dropout : float or int, default 0
             Probability of dropout.
         embed_features : list of ints, default None
-            List of features (refered to by their indeces) that need to go
+            List of features (refered to by their indices) that need to go
             through embedding layers.
         n_embeddings : list of ints, default None
             List of the total number of unique categories for the embedding
@@ -625,7 +625,7 @@ class VanillaLSTM(nn.Module):
             # Use the binary cross entropy function
             self.criterion = nn.CrossEntropyLoss()
 
-    def forward(self, x, hidden_state=None, x_lengths=None, get_hidden_state=False,
+    def forward(self, x, hidden_state=None, seq_lengths=None, get_hidden_state=False,
                 prob_output=True, already_embedded=False):
         if self.embed_features is not None and already_embedded is False:
             # Run each embedding layer on each respective feature, adding the
@@ -645,13 +645,13 @@ class VanillaLSTM(nn.Module):
         else:
             # Use the specified hidden state
             self.hidden = hidden_state
-        if x_lengths is not None:
+        if seq_lengths is not None:
             # pack_padded_sequence so that padded items in the sequence won't be
             # shown to the LSTM
-            x = pack_padded_sequence(x, x_lengths, batch_first=True, enforce_sorted=False)
+            x = pack_padded_sequence(x, seq_lengths, batch_first=True, enforce_sorted=False)
         # Get the outputs and hidden states from the LSTM layer(s)
         lstm_output, self.hidden = self.lstm(x, self.hidden)
-        if x_lengths is not None:
+        if seq_lengths is not None:
             # Undo the packing operation
             lstm_output, _ = pad_packed_sequence(lstm_output, batch_first=True,
                                                  total_length=self.total_length)
@@ -677,7 +677,7 @@ class VanillaLSTM(nn.Module):
         # Flatten the data
         y_pred = y_pred.reshape(-1)
         y_labels = y_labels.reshape(-1)
-        # Find the indeces that don't correspond to padding samples
+        # Find the indices that don't correspond to padding samples
         non_pad_idx = y_labels != self.padding_value
         # Remove the padding samples
         y_labels = y_labels[non_pad_idx]
