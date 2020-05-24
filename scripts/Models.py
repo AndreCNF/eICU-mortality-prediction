@@ -411,7 +411,8 @@ class VanillaRNN(nn.Module):
             # Use the binary cross entropy function
             self.criterion = nn.CrossEntropyLoss()
 
-    def forward(self, x, hidden_state=None, seq_lengths=None, get_hidden_state=False,
+    def forward(self, x, hidden_state=None, seq_lengths=None,
+                total_length=None, get_hidden_state=False,
                 prob_output=True, already_embedded=False):
         if self.embed_features is not None and already_embedded is False:
             # Run each embedding layer on each respective feature, adding the
@@ -438,9 +439,13 @@ class VanillaRNN(nn.Module):
         # Get the outputs and hidden states from the RNN layer(s)
         rnn_output, self.hidden = self.rnn(x, self.hidden)
         if seq_lengths is not None:
+            # [TODO] Use a dynamically defined total_length
+            # if total_length is None:
+            #     # Get the model's predefined total sequence length
+            #     total_length = self.total_length
             # Undo the packing operation
             rnn_output, _ = pad_packed_sequence(rnn_output, batch_first=True,
-                                                total_length=self.total_length)
+                                                 total_length=self.total_length)
         # Apply dropout to the last RNN layer
         rnn_output = self.dropout(rnn_output)
         # Flatten RNN output to fit into the fully connected layer
@@ -625,7 +630,8 @@ class VanillaLSTM(nn.Module):
             # Use the binary cross entropy function
             self.criterion = nn.CrossEntropyLoss()
 
-    def forward(self, x, hidden_state=None, seq_lengths=None, get_hidden_state=False,
+    def forward(self, x, hidden_state=None, seq_lengths=None, 
+                total_length=None, get_hidden_state=False,
                 prob_output=True, already_embedded=False):
         if self.embed_features is not None and already_embedded is False:
             # Run each embedding layer on each respective feature, adding the
@@ -740,7 +746,7 @@ class TLSTM(BaseRNN):
                          for feature in feat_list])):
                     self.delta_ts_col = n_inputs
                     for i in range(len(embed_features)):
-                        self.delta_ts_col = rnn_n_inputs - len(embed_features[i])
+                        self.delta_ts_col = self.delta_ts_col - len(embed_features[i])
 
         else:
             self.delta_ts_col = delta_ts_col
@@ -860,7 +866,7 @@ class MF1LSTM(BaseRNN):
                          for feature in feat_list])):
                     self.delta_ts_col = n_inputs
                     for i in range(len(embed_features)):
-                        self.delta_ts_col = rnn_n_inputs - len(embed_features[i])
+                        self.delta_ts_col = self.delta_ts_col - len(embed_features[i])
 
         else:
             self.delta_ts_col = delta_ts_col
@@ -982,7 +988,7 @@ class MF2LSTM(BaseRNN):
                          for feature in feat_list])):
                     self.delta_ts_col = n_inputs
                     for i in range(len(embed_features)):
-                        self.delta_ts_col = rnn_n_inputs - len(embed_features[i])
+                        self.delta_ts_col = self.delta_ts_col - len(embed_features[i])
 
         else:
             self.delta_ts_col = delta_ts_col

@@ -224,6 +224,9 @@ padding_value = 999999
 seq_len_dict = du.padding.get_sequence_length_dict(dmy_norm_df, id_column='subject_id', ts_column='ts')
 seq_len_dict
 
+total_length = int(max(seq_len_dict.values()))
+total_length
+
 data = du.padding.dataframe_to_padded_tensor(dmy_norm_df, seq_len_dict=seq_len_dict,
                                              id_column='subject_id', padding_value=padding_value)
 data
@@ -268,6 +271,54 @@ dataset.__len__()
 
 # ## Models testing
 
+# ### Vanilla RNN
+
+#
+#
+# #### Creating the model
+
+# Model parameters:
+
+n_ids = dmy_norm_df.subject_id.nunique()      # Total number of sequences
+n_inputs = len(dmy_norm_df.columns)           # Number of input features
+n_hidden = 10                                 # Number of hidden units
+n_outputs = 1                                 # Number of outputs
+n_layers = 2                                  # Number of RNN layers
+p_dropout = 0.2                               # Probability of dropout
+
+# Instantiating the model:
+
+model = Models.VanillaRNN(n_inputs-3, n_hidden, n_outputs, n_layers, p_dropout,
+                          total_length=total_length)
+model
+
+model.n_outputs
+
+model.bidir
+
+# #### Training the model
+
+next(model.parameters())
+
+# # %%pixie_debugger
+model = du.deep_learning.train(model, train_dataloader, val_dataloader, seq_len_dict=seq_len_dict,
+                               batch_size=batch_size, n_epochs=n_epochs, lr=lr, models_path='models/',
+                               padding_value=padding_value, do_test=False, log_comet_ml=False)
+
+next(model.parameters())
+
+# #### Testing the model
+
+output, metrics = du.deep_learning.model_inference(model, dataloader=val_dataloader, 
+                                                   metrics=['loss', 'accuracy', 'AUC'],
+                                                   seq_len_dict=seq_len_dict, padding_value=padding_value, 
+                                                   output_rounded=False, set_name='test', 
+                                                   cols_to_remove=[du.search_explore.find_col_idx(dmy_norm_df, feature)
+                                                                   for feature in ['subject_id', 'ts']])
+output
+
+metrics
+
 # ### Vanilla LSTM
 
 #
@@ -285,7 +336,8 @@ p_dropout = 0.2                               # Probability of dropout
 
 # Instantiating the model:
 
-model = Models.VanillaLSTM(n_inputs-3, n_hidden, n_outputs, n_layers, p_dropout)
+model = Models.VanillaLSTM(n_inputs-3, n_hidden, n_outputs, n_layers, p_dropout,
+                           total_length=total_length)
 model
 
 model.n_outputs

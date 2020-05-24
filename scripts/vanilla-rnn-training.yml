@@ -22,11 +22,13 @@ ml_core: deep learning                    # The core machine learning type we'll
 use_delta_ts: False                       # Indicates if we'll use time variation info
 time_window_h: 48                         # Number of hours on which we want to predict mortality
 already_embedded: False                   # Indicates if categorical features are already embedded when fetching a batch
+total_length: 88786                       # Maximum length of the unit stay sequences
+data_num_workers: 2                       # # Number of CPU cores that will handle the data loading in parallel with the main thread
 # Training parameters:
-sets_file_name: eICU_tvt_sets             # Name of file that indicates the indices that correspond to each set (train, validationa and test)
+sets_file_name: eICU_tvt_sets_indices     # Name of file that indicates the indices that correspond to each set (train, validationa and test)
 # test_train_ratio: 0.25                    # Percentage of the data which will be used as a test set
 # validation_ratio: 0.1                     # Percentage of the data from the training set which is used for validation purposes
-batch_size: 8                             # Number of unit stays in worker's mini batch
+batch_size: 4                             # Number of unit stays in worker's mini batch
 n_epochs: 2                               # Number of epochs
 lr: 0.001                                 # Learning rate
 print_every: 5                            # Steps interval where the metrics are printed

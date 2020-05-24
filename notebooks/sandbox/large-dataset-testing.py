@@ -188,18 +188,12 @@ data_df.dtypes
 
 # Save in batch files:
 
-du.data_processing.save_chunked_data(data_df, file_name='dmy_large_data', batch_size=batch_size,
+du.data_processing.save_chunked_data(data_df, file_name='dmy_large_data', batch_size=1,
                                      id_column=id_column, data_path=data_path)
 
 pd.read_feather(f'{data_path}dmy_large_data_2.ftr')
 
 # ## Defining the dataset object
-
-cat_feat_ohe
-
-[feat_list for feat_list in cat_feat_ohe.values()]
-
-[[col for col in feat_list] for feat_list in [feat_list for feat_list in cat_feat_ohe.values()]]
 
 dataset = du.datasets.Large_Dataset(files_name='dmy_large_data', process_pipeline=utils.eICU_process_pipeline,
                                     id_column=id_column, initial_analysis=utils.eICU_initial_analysis, 
@@ -233,7 +227,7 @@ dataset.bool_feat
 train_indeces, val_indeces, test_indeces) = du.machine_learning.create_train_sets(dataset,
                                                                                   test_train_ratio=test_train_ratio,
                                                                                   validation_ratio=validation_ratio,
-                                                                                  batch_size=1,
+                                                                                  batch_size=batch_size,
                                                                                   get_indeces=True,
                                                                                   num_workers=2)
 
@@ -256,6 +250,8 @@ if ml_core == 'deep learning':
     print(next(iter(train_dataloader))[0])
 else:
     print(train_features[:32])
+
+next(iter(train_dataloader))[0].shape
 
 if ml_core == 'deep learning':
     print(next(iter(val_dataloader))[0])

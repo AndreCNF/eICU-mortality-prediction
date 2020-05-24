@@ -107,6 +107,7 @@ def eICU_model_creator(config):
         return Models.VanillaRNN(config.get('n_inputs', 2090), config.get('n_hidden', 100),
                                  config.get('n_outputs', 1), config.get('n_rnn_layers', 2),
                                  config.get('p_dropout', 0.2), bidir=config.get('bidir', False),
+                                 total_length=config.get('total_length', None),
                                  embed_features=config.get('embed_features', None),
                                  n_embeddings=config.get('n_embeddings', None),
                                  embedding_dim=config.get('embedding_dim', None))
@@ -114,6 +115,7 @@ def eICU_model_creator(config):
         return Models.VanillaLSTM(config.get('n_inputs', 2090), config.get('n_hidden', 100),
                                   config.get('n_outputs', 1), config.get('n_rnn_layers', 2),
                                   config.get('p_dropout', 0.2), bidir=config.get('bidir', False),
+                                  total_length=config.get('total_length', None),
                                   embed_features=config.get('embed_features', None),
                                   n_embeddings=config.get('n_embeddings', None),
                                   embedding_dim=config.get('embedding_dim', None))
@@ -168,7 +170,7 @@ def eICU_data_creator(config):
     # Load the predefined train, validation and test sets' indices, if they exist
     sets_file_name = config.get('sets_file_name', None)
     if data_path is not None and sets_file_name is not None:
-        print(f'DEBUG: Found indices file {data_path}{sets_file_name}.yml')
+        print(f'DEBUG: Set indices file {data_path}{sets_file_name}.yml')
         stream_tvt_sets = open(f'{data_path}{sets_file_name}.yml', 'r')
         eICU_tvt_sets = yaml.load(stream_tvt_sets, Loader=yaml.FullLoader)
         train_indices = eICU_tvt_sets.get('train_indices', None)
@@ -189,6 +191,8 @@ def eICU_data_creator(config):
     use_delta_ts = config.get('use_delta_ts', False)                            # Indicates if we'll use time variation info
     time_window_h = config.get('time_window_h', 48)                             # Number of hours on which we want to predict mortality
     padding_value = config.get('padding_value', 999999)                         # Value to use in the padding, to fill the sequences
+    total_length = config.get('total_length', None)                             # Maximum sequence length up to which the data must be padded
+    data_num_workers = config.get('data_num_workers', 0)                        # Number of CPU cores that will handle the data loading in parallel with the main thread
     # Define the dataset object
     dataset = du.datasets.Large_Dataset(files_name='eICU',
                                         process_pipeline=eICU_process_pipeline,
@@ -201,7 +205,8 @@ def eICU_data_creator(config):
                                         time_window_h=time_window_h,
                                         padding_value=padding_value,
                                         cat_feat_ohe=cat_feat_ohe,
-                                        dtype_dict=dtype_dict)
+                                        dtype_dict=dtype_dict,
+                                        total_length=total_length)
     print('DEBUG: Successfully created the dataset object.')
     print(f'DEBUG: Dataset length (number of files): {dataset.__len__()}')
     # Update the embedding information
@@ -219,7 +224,8 @@ def eICU_data_creator(config):
                                                                                 test_train_ratio=config.get('test_train_ratio', None),
                                                                                 validation_ratio=config.get('validation_ratio', None),
                                                                                 batch_size=config.get('batch_size', 32),
-                                                                                get_indices=False)
+                                                                                get_indices=False,
+                                                                                num_workers=data_num_workers)
     print('DEBUG: Successfully created the dataloaders.')
     return train_dataloader, val_dataloader
 
@@ -383,7 +389,8 @@ class eICU_Operator(TrainingOperator):
                                                                                             cols_to_remove=self.cols_to_remove, is_train=False,
                                                                                             prob_output=True, is_custom=self.is_custom,
                                                                                             already_embedded=self.already_embedded,
-                                                                                            seq_lengths=seq_lengths))
+                                                                                            seq_lengths=seq_lengths,
+                                                                                            distributed_train=(self.num_workers > 1)))
                 elif self.model_type.lower() == 'mlp':
                     pred, correct_pred, scores, loss = (du.deep_learning.inference_iter_mlp(self.model, features, labels,
                                                                                             self.cols_to_remove, is_train=False,
@@ -468,43 +475,53 @@ class eICU_Operator(TrainingOperator):
             # Do inference on the data
             if self.model_type.lower() == 'multivariate_rnn':
                 (pred, correct_pred,
-                    scores, labels, loss) = (du.deep_learning.inference_iter_multi_var_rnn(self.model, features, labels,
-                                                                                        padding_value=self.padding_value,
-                                                                                        cols_to_remove=self.cols_to_remove, is_train=True,
-                                                                                        prob_output=True, optimizer=self.optimizer,
-                                                                                        is_custom=self.is_custom,
-                                                                                        already_embedded=self.already_embedded,
-                                                                                        seq_lengths=seq_lengths))
+                 scores, labels, 
+                 step_train_loss) = (du.deep_learning.inference_iter_multi_var_rnn(self.model, features, labels,
+                                                                                   padding_value=self.padding_value,
+                                                                                   cols_to_remove=self.cols_to_remove, is_train=True,
+                                                                                   prob_output=True, optimizer=self.optimizer,
+                                                                                   is_custom=self.is_custom,
+                                                                                   already_embedded=self.already_embedded,
+                                                                                   seq_lengths=seq_lengths,
+                                                                                   distributed_train=(self.num_workers > 1)))
             elif self.model_type.lower() == 'mlp':
-                pred, correct_pred, scores, loss = (du.deep_learning.inference_iter_mlp(self.model, features, labels,
-                                                                                        self.cols_to_remove, is_train=True,
-                                                                                        prob_output=True, optimizer=self.optimizer))
+                pred, correct_pred, scores, 
+                step_train_loss = (du.deep_learning.inference_iter_mlp(self.model, features, labels,
+                                                                       self.cols_to_remove, is_train=True,
+                                                                       prob_output=True, optimizer=self.optimizer))
             else:
                 raise Exception(f'ERROR: Invalid model type. It must be "multivariate_rnn" or "mlp", not {self.model_type}.')
             # Add the training loss and accuracy of the current batch
-            train_loss += loss
-            train_acc += torch.mean(correct_pred.type(torch.FloatTensor))
+            train_loss += step_train_loss
+            step_train_acc = torch.mean(correct_pred.type(torch.FloatTensor))
+            train_acc += step_train_acc
             if self.use_gpu is True:
                 # Move data to CPU for performance computations
                 scores, labels = scores.cpu(), labels.cpu()
             # Add the training ROC AUC of the current batch
             if model.n_outputs == 1:
                 try:
-                    train_auc.append(roc_auc_score(labels.numpy(), scores.detach().numpy()))
+                    step_train_auc = roc_auc_score(labels.numpy(), scores.detach().numpy())
+                    train_auc.append(step_train_auc)
                 except Exception as e:
                     warnings.warn(f'Couldn\'t calculate the training AUC on step {step}. Received exception "{str(e)}".')
+                    step_train_auc = None
             else:
                 # It might happen that not all labels are present in the current batch;
                 # as such, we must focus on the ones that appear in the batch
                 labels_in_batch = labels.unique().long()
                 try:
-                    train_auc.append(roc_auc_score(labels.numpy(), softmax(scores[:, labels_in_batch], dim=1).detach().numpy(),
-                                                    multi_class='ovr', average='macro', labels=labels_in_batch.numpy()))
+                    step_train_auc = roc_auc_score(labels.numpy(), softmax(scores[:, labels_in_batch], dim=1).detach().numpy(),
+                                                   multi_class='ovr', average='macro', labels=labels_in_batch.numpy())
+                    train_auc.append(step_train_auc)
                     # Also calculate a weighted version of the AUC; important for imbalanced dataset
-                    train_auc_wgt.append(roc_auc_score(labels.numpy(), softmax(scores[:, labels_in_batch], dim=1).detach().numpy(),
-                                                        multi_class='ovr', average='weighted', labels=labels_in_batch.numpy()))
+                    step_train_auc_wgt = roc_auc_score(labels.numpy(), softmax(scores[:, labels_in_batch], dim=1).detach().numpy(),
+                                                       multi_class='ovr', average='weighted', labels=labels_in_batch.numpy())
+                    train_auc_wgt.append(step_train_auc_wgt)
                 except Exception as e:
                     warnings.warn(f'Couldn\'t calculate the training AUC on step {step}. Received exception "{str(e)}".')
+                    step_train_auc = None
+                    step_train_auc_wgt = None
             # Count one more iteration step
             step += 1
             info['step'] = step
@@ -515,14 +532,25 @@ class eICU_Operator(TrainingOperator):
             del labels
             # Run the current model on the validation set
             val_metrics = self.validate(self.validation_loader, info)
+            if self.log_comet_ml is True:
+                # Upload the current step's metrics to Comet ML
+                self.experiment.log_metric('train_loss', step_train_loss, step=step)
+                self.experiment.log_metric('train_acc', step_train_acc, step=step)
+                self.experiment.log_metric('train_auc', step_train_auc, step=step)
+                self.experiment.log_metric('val_loss', val_metrics['val_loss'], step=step)
+                self.experiment.log_metric('val_acc', val_metrics['val_acc'], step=step)
+                self.experiment.log_metric('val_auc', val_metrics['val_auc'], step=step)
+                if model.n_outputs > 1:
+                    self.experiment.log_metric('train_auc_wgt', step_train_auc_wgt, step=step)
+                    self.experiment.log_metric('val_auc_wgt', val_metrics['val_auc_wgt'], step=step)
             # Display validation loss
             if step % self.print_every == 0:
                 print(f'Epoch {epoch} step {step}: Validation loss: {val_metrics["val_loss"]}; Validation Accuracy: {val_metrics["val_acc"]}; Validation AUC: {val_metrics["val_auc"]}')
             # Check if the performance obtained in the validation set is the best so far (lowest loss value)
-            if val_metrics['val_loss'] < val_loss_min:
-                print(f'New minimum validation loss: {val_loss_min} -> {val_metrics["val_loss"]}.')
+            if val_metrics['val_loss'] < self.val_loss_min:
+                print(f'New minimum validation loss: {self.val_loss_min} -> {val_metrics["val_loss"]}.')
                 # Update the minimum validation loss
-                val_loss_min = val_metrics['val_loss']
+                self.val_loss_min = val_metrics['val_loss']
                 # Filename and path where the model will be saved
                 model_filename = self.set_model_filename(val_metrics['val_loss'])
                 print(f'Saving model in {model_filename}')
@@ -530,10 +558,10 @@ class eICU_Operator(TrainingOperator):
                 checkpoint = self.hyper_params
                 checkpoint['state_dict'] = self.model.state_dict()
                 # [TODO] Check if this really works locally or if it just saves in the temporary nodes
-                self.save(checkpoint, f'{self.models_path}{model_filename}')
+                # self.save(checkpoint, f'{self.models_path}{model_filename}')
                 if self.log_comet_ml is True and self.comet_ml_save_model is True:
                     # Upload the model to Comet.ml
-                    self.experiment.log_asset(file_data=model_filename, overwrite=True)
+                    self.experiment.log_model(name=model_filename, file_or_folder=checkpoint, overwrite=True)
         # except Exception as e:
         #     warnings.warn(f'There was a problem doing training epoch {epoch}. Ending current epoch. Original exception message: "{str(e)}"')
         # try:
@@ -549,18 +577,17 @@ class eICU_Operator(TrainingOperator):
             # Move metrics data to CPU
             train_loss, val_loss = train_loss.cpu(), val_loss.cpu()
         if self.log_comet_ml is True:
-            # Log metrics to Comet.ml
-            self.experiment.log_metric('train_loss', train_loss, step=epoch)
-            self.experiment.log_metric('train_acc', train_acc, step=epoch)
-            self.experiment.log_metric('train_auc', train_auc, step=epoch)
-            self.experiment.log_metric('val_loss', val_loss, step=epoch)
-            self.experiment.log_metric('val_acc', val_metrics['val_acc'], step=epoch)
-            self.experiment.log_metric('val_auc', val_metrics['val_auc'], step=epoch)
-            self.experiment.log_metric('epoch', epoch)
-            self.experiment.log_epoch_end(epoch, step=step)
+            # Upload the current epoch's metrics to Comet ML
+            self.experiment.log_metric('train_loss', train_loss, epoch=epoch)
+            self.experiment.log_metric('train_acc', train_acc, epoch=epoch)
+            self.experiment.log_metric('train_auc', train_auc, epoch=epoch)
+            self.experiment.log_metric('val_loss', val_loss, epoch=epoch)
+            self.experiment.log_metric('val_acc', val_metrics['val_acc'], epoch=epoch)
+            self.experiment.log_metric('val_auc', val_metrics['val_auc'], epoch=epoch)
+            self.experiment.log_epoch_end(epoch, epoch=step)
             if model.n_outputs > 1:
-                self.experiment.log_metric('train_auc_wgt', train_auc_wgt, step=epoch)
-                self.experiment.log_metric('val_auc_wgt', val_metrics['val_auc_wgt'], step=epoch)
+                self.experiment.log_metric('train_auc_wgt', train_auc_wgt, epoch=epoch)
+                self.experiment.log_metric('val_auc_wgt', val_metrics['val_auc_wgt'], epoch=epoch)
         # Print a report of the epoch
         print(f'Epoch {epoch}: Training loss: {train_loss}; Training Accuracy: {train_acc}; Training AUC: {train_auc}; \
                 Validation loss: {val_loss}; Validation Accuracy: {val_metrics["val_acc"]}; Validation AUC: {val_metrics["val_auc"]}')

@@ -3,11 +3,11 @@ cluster_name: default
 
 # The minimum number of workers nodes to launch in addition to the head
 # node. This number should be >= 0.
-min_workers: 1
+min_workers: 3
 
 # The maximum number of workers nodes to launch in addition to the head
 # node. This takes precedence over min_workers.
-max_workers: 1
+max_workers: 3
 
 # The initial number of worker nodes to launch in addition to the head
 # node. When the cluster is first brought up (or when it is refreshed with a
@@ -45,7 +45,7 @@ provider:
     type: azure
     # https://azure.microsoft.com/en-us/global-infrastructure/locations
     location: westeurope
-    resource_group: ray-cluster
+    resource_group: ray-cluster-2
     # set subscription id otherwise the default from az cli will be used
     # subscription_id: 00000000-0000-0000-0000-000000000000
 
@@ -61,33 +61,37 @@ auth:
 # Ray will auto-configure unspecified fields using example-full.yaml
 head_node:
     azure_arm_parameters:
-        vmSize: Standard_NC6s_v2
+        vmSize: Standard_NC12s_v2
+        # vmSize: Standard_NC6s_v2
+        # vmSize: Standard_A4_v2 # Temporary VM instance so to be cheaper while testing
         # List images https://docs.microsoft.com/en-us/azure/virtual-machines/linux/cli-ps-findimage
-        imagePublisher: Canonical
-        imageOffer: UbuntuServer
-        imageSku: 18.04-LTS
-        imageVersion: latest
+        imagePublisher: microsoft-dsvm
+        imageOffer: ubuntu-1804
+        imageSku: 1804-gen2
+        imageVersion: 20.02.01
 
 # Provider-specific config for worker nodes, e.g. instance type. By default
 # Ray will auto-configure unspecified fields using example-full.yaml
 worker_nodes:
     azure_arm_parameters:
         vmSize: Standard_NC6s_v2
+        # vmSize: Standard_A4_v2 # Temporary VM instance so to be cheaper while testing
         # List images https://docs.microsoft.com/en-us/azure/virtual-machines/linux/cli-ps-findimage
-        imagePublisher: Canonical
-        imageOffer: UbuntuServer
-        imageSku: 18.04-LTS
-        imageVersion: latest
+        imagePublisher: microsoft-dsvm
+        imageOffer: ubuntu-1804
+        imageSku: 1804-gen2
+        imageVersion: 20.02.01
         # [TODO] If these worker nodes aren't automatically being set as spot instances,
         # try to fix it with the properties.priority parameter
         # https://docs.microsoft.com/en-us/rest/api/compute/virtualmachines/createorupdate#virtualmachineprioritytypes
-        # priority: Spot
+        priority: Spot
+        maxPrice: -1
 
 # Files or directories to copy to the head and worker nodes. The format is a
 # dictionary from REMOTE_PATH: LOCAL_PATH, e.g.
 file_mounts: {
+    '/home/ubuntu/': '/Users/andreferreira/Documents_Offline/GitHub/eICU-mortality-prediction/scripts'
 #    "/path1/on/remote/machine": "/path1/on/local/machine",
-#    "/path2/on/remote/machine": "/path2/on/local/machine",
 }
 
 # List of commands that will be run before `setup_commands`. If docker is
@@ -99,14 +103,31 @@ initialization_commands:
 
 # List of shell commands to run to set up nodes.
 setup_commands:
-  # Consider uncommenting these if you also want to run apt-get commands during setup
-  # - sudo pkill -9 apt-get || true
-  # - sudo pkill -9 dpkg || true
-  # - sudo dpkg --configure -a
-  # [TODO] Figure out how to properly install and setup gsutil in the nodes
-  - gsutil -m cp gs://preprocessed-thesis-data/subset/* .
-  - gsutil -m cp gs://preprocessed-thesis-data/scripts/* .
-  - pip install -r requirements.txt
+    # Consider uncommenting these if you also want to run apt-get commands during setup
+    - sudo pkill -9 apt-get || true
+    - sudo pkill -9 dpkg || true
+    - sudo dpkg --configure -a
+    # Install and setup gsutil in the nodes
+    - echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+    - yes Y | sudo apt-get install apt-transport-https ca-certificates gnupg
+    - curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -
+    - yes Y | sudo apt-get update
+    - yes Y | sudo apt-get install google-cloud-sdk
+    - gcloud auth activate-service-account --key-file=/home/ubuntu/gcp-config.json
+    # Download the data
+    - gsutil -m cp gs://preprocessed-thesis-data/subset/* .
+    # - gsutil -m cp gs://preprocessed-thesis-data/scripts/* .
+    # Install the required packages
+    # - yes Y | pip install -U ray
+    # - ray || pip install -U https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-0.9.0.dev0-cp36-cp36m-manylinux1_x86_64.whl
+    - yes Y | pip install -r /home/ubuntu/requirements.txt
+    # - yes Y | pip install comet_ml
+    # - yes Y | pip install torch
+    # Disable Comet ML's auto logging so as to prevent issues when importing packages
+    - sudo touch /etc/profile.d/comet_auto_log.sh
+    - sudo bash -c 'echo "export COMET_DISABLE_AUTO_LOGGING=1" > /etc/profile.d/comet_auto_log.sh'
+    - sudo chmod +x /etc/profile.d/comet_auto_log.sh
+    - printenv COMET_DISABLE_AUTO_LOGGING
 
 # Custom commands that will be run on the head node after common setup.
 head_setup_commands: []
