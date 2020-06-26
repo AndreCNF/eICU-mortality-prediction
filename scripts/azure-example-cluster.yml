@@ -1,5 +1,5 @@
 # An unique identifier for the head node and workers of this cluster.
-cluster_name: default
+cluster_name: sgd-pytorch
 
 # The minimum number of workers nodes to launch in addition to the head
 # node. This number should be >= 0.
@@ -58,7 +58,12 @@ auth:
     ssh_public_key: ~/.ssh/id_rsa.pub
 
 # Provider-specific config for the head node, e.g. instance type. By default
-# Ray will auto-configure unspecified fields using example-full.yaml
+# Ray will auto-configure unspecified fields
+# The Azure Python SDK client expects slug_style property names
+# For more documentation on available fields, see:
+# https://docs.microsoft.com/en-us/python/api/overview/azure/virtualmachines?view=azure-python
+# Note: the Azure Python SDK expects all parameter keys to be in slug_style
+#       the styles of parameter values are not changed
 head_node:
     azure_arm_parameters:
         # vmSize: Standard_NC12s_v2
@@ -71,9 +76,14 @@ head_node:
         imageVersion: 20.02.01
 
 # Provider-specific config for worker nodes, e.g. instance type. By default
-# Ray will auto-configure unspecified fields using example-full.yaml
+# Ray will auto-configure unspecified fields
+# Documentation on fields used can be found here:
+# https://docs.microsoft.com/en-us/python/api/overview/azure/virtualmachines?view=azure-python
+# Note: the Azure Python SDK expects all parameter keys to be in slug_style
+#       the styles of parameter values are not changed
 worker_nodes:
     azure_arm_parameters:
+        # vmSize: Standard_NC12s_v2
         vmSize: Standard_NC6s_v2
         # vmSize: Standard_A4_v2 # Temporary VM instance so to be cheaper while testing
         # List images https://docs.microsoft.com/en-us/azure/virtual-machines/linux/cli-ps-findimage
@@ -89,10 +99,7 @@ worker_nodes:
 
 # Files or directories to copy to the head and worker nodes. The format is a
 # dictionary from REMOTE_PATH: LOCAL_PATH, e.g.
-file_mounts: {
-    '/home/ubuntu/': '/Users/andreferreira/Documents_Offline/GitHub/eICU-mortality-prediction/scripts'
-#    "/path1/on/remote/machine": "/path1/on/local/machine",
-}
+file_mounts: {}
 
 # List of commands that will be run before `setup_commands`. If docker is
 # enabled, these commands will run outside the container and before docker
@@ -103,28 +110,9 @@ initialization_commands:
 
 # List of shell commands to run to set up nodes.
 setup_commands:
-    # Consider uncommenting these if you also want to run apt-get commands during setup
-    - sudo pkill -9 apt-get || true
-    - sudo pkill -9 dpkg || true
-    - sudo dpkg --configure -a
-    # Install and setup gsutil in the nodes
-    - echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
-    - yes Y | sudo apt-get install apt-transport-https ca-certificates gnupg
-    - curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -
-    - yes Y | sudo apt-get update
-    - yes Y | sudo apt-get install google-cloud-sdk
-    - gcloud auth activate-service-account --key-file=/home/ubuntu/gcp-config.json
-    # Download the data
-    - gsutil -m cp gs://preprocessed-thesis-data/subset/* .
-    # Install the required packages
-    - yes Y | pip install -r /home/ubuntu/requirements.txt
     - yes Y | pip install -U https://ray-wheels.s3-us-west-2.amazonaws.com/master/ddb9368f2c57bf18536f72bcd636ed876fe2c0db/ray-0.9.0.dev0-cp37-cp37m-manylinux1_x86_64.whl
+    - yes Y | pip install -U torch torchvision
     - yes Y | pip install -U knack azure-cli-core
-    # Disable Comet ML's auto logging so as to prevent issues when importing packages
-    - sudo touch /etc/profile.d/comet_auto_log.sh
-    - sudo bash -c 'echo "export COMET_DISABLE_AUTO_LOGGING=1" > /etc/profile.d/comet_auto_log.sh'
-    - sudo chmod +x /etc/profile.d/comet_auto_log.sh
-    - printenv COMET_DISABLE_AUTO_LOGGING
 
 # Custom commands that will be run on the head node after common setup.
 head_setup_commands: []

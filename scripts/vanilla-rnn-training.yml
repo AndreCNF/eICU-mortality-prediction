@@ -1,5 +1,5 @@
 # Total number of workers
-num_workers: 1
+num_workers: 4
 # Model parameters:
 model: VanillaRNN                         # Model class
 n_inputs: 2090                            # Number of model inputs

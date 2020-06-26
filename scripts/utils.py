@@ -557,11 +557,12 @@ class eICU_Operator(TrainingOperator):
                 # Save the best performing model so far, along with additional information to implement it
                 checkpoint = self.hyper_params
                 checkpoint['state_dict'] = self.model.state_dict()
+                torch.save(checkpoint, model_filename)
                 # [TODO] Check if this really works locally or if it just saves in the temporary nodes
                 # self.save(checkpoint, f'{self.models_path}{model_filename}')
                 if self.log_comet_ml is True and self.comet_ml_save_model is True:
                     # Upload the model to Comet.ml
-                    self.experiment.log_model(name=model_filename, file_or_folder=checkpoint, overwrite=True)
+                    self.experiment.log_model(name=model_filename, file_or_folder=model_filename, overwrite=True)
         # except Exception as e:
         #     warnings.warn(f'There was a problem doing training epoch {epoch}. Ending current epoch. Original exception message: "{str(e)}"')
         # try:

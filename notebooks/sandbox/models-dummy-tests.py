@@ -15,6 +15,8 @@ import plotly.graph_objs as go             # Plotly for interactive and pretty p
 import data_utils as du                    # Data science and machine learning relevant methods
 from model_interpreter.model_interpreter import ModelInterpreter  # Model interpretability class
 import shap                                # Model-agnostic interpretability package inspired on Shapley values
+from datetime import datetime              # datetime to use proper date and time formats
+import pickle                              # Save and load Python objects
 
 du.random_seed
 
@@ -520,7 +522,7 @@ lr = 0.001                                      # Learning rate
 # Get the train and validation sets data loaders, which will allow loading batches
 train_dataloader, val_dataloader, _ = du.machine_learning.create_train_sets(dataset, test_train_ratio=0, 
                                                                             validation_ratio=0.25,
-                                                                            batch_size=4, get_indeces=False)
+                                                                            batch_size=4, get_indices=False)
 
 train_features, train_labels = next(iter(train_dataloader))
 train_features
@@ -870,6 +872,8 @@ _ = interpreter.interpret_model(test_data=all_features,
                                 test_labels=all_labels, instance_importance=True, 
                                 feature_importance='shap')
 
+interpreter.__dict__
+
 interpreter.feat_scores
 
 interpreter.feat_scores.shape
@@ -907,6 +911,10 @@ data_n_shap_columns
 [feature for feature in data_n_shap_columns if feature.endswith('_shap')]
 
 data_n_shap_df = pd.DataFrame(data=data_n_shap.reshape(-1, 19), columns=data_n_shap_columns)
+data_n_shap_df
+
+# Remove the padding values
+data_n_shap_df = data_n_shap_df[data_n_shap_df.subject_id != padding_value]
 data_n_shap_df
 
 data_n_shap_df.to_csv('notebooks/sandbox/dummy_data/data_n_shap_df.csv')
