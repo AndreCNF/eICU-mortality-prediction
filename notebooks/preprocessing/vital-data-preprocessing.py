@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.3.2
+#       jupytext_version: 1.4.1
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -24,7 +24,7 @@
 # * vitalAperiodic
 # * vitalPeriodic
 
-# + [markdown] {"colab_type": "text", "id": "KOdmFzXqF7nq", "toc-hr-collapsed": true, "Collapsed": "false"}
+# + [markdown] {"colab_type": "text", "id": "KOdmFzXqF7nq", "toc-hr-collapsed": true, "Collapsed": "false", "toc-nb-collapsed": true}
 # ## Importing the necessary packages
 
 # + {"colab": {}, "colab_type": "code", "id": "G5RrWE9R_Nkl", "Collapsed": "false", "persistent_id": "522745b5-b5bf-479f-b697-5c7e9e12fc33", "last_executed_text": "import os                                  # os handles directory/workspace changes\nimport numpy as np                         # NumPy to handle numeric and NaN operations\nimport yaml                                # Save and load YAML files", "execution_event_id": "deb57b39-6a79-4b3a-95ed-02f8089ff593", "execution": {"iopub.status.busy": "2020-02-24T00:04:03.471469Z", "iopub.execute_input": "2020-02-24T00:04:03.471742Z", "iopub.status.idle": "2020-02-24T00:04:03.494293Z", "shell.execute_reply.started": "2020-02-24T00:04:03.471700Z", "shell.execute_reply": "2020-02-24T00:04:03.493582Z"}}
@@ -68,7 +68,7 @@ pd.set_option('display.max_rows', 1000)
 # + {"Collapsed": "false", "persistent_id": "39b552cd-6948-4ec8-ac04-42f850c1e05a", "last_executed_text": "du.set_random_seed(42)", "execution_event_id": "29ab85ce-b7fd-4c5a-a110-5841e741c369", "execution": {"iopub.status.busy": "2020-02-24T00:04:18.851797Z", "iopub.execute_input": "2020-02-24T00:04:18.852355Z", "iopub.status.idle": "2020-02-24T00:04:18.865734Z", "shell.execute_reply.started": "2020-02-24T00:04:18.852253Z", "shell.execute_reply": "2020-02-24T00:04:18.864418Z"}}
 du.set_random_seed(42)
 
-# + [markdown] {"toc-hr-collapsed": true, "Collapsed": "false"}
+# + [markdown] {"toc-hr-collapsed": true, "Collapsed": "false", "toc-nb-collapsed": true}
 # ## Vital signs aperiodic data
 
 # + [markdown] {"Collapsed": "false"}
@@ -216,7 +216,7 @@ vital_aprdc_df.to_csv(f'{data_path}cleaned/unnormalized/ohe/vitalAperiodic.csv')
 vital_aprdc_df, mean, std = du.data_processing.normalize_data(vital_aprdc_df, get_stats=True, inplace=True)
 vital_aprdc_df.head(6)
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Save a dictionary with the mean and standard deviation values of each column that was normalized:
 
 # + {"Collapsed": "false"}
@@ -435,7 +435,7 @@ vital_prdc_df.head()
 vital_prdc_df, mean, std = du.data_processing.normalize_data(vital_prdc_df, get_stats=True, inplace=True)
 vital_prdc_df.head(6)
 
-# + {"Collapsed": "false", "cell_type": "markdown"}
+# + [markdown] {"Collapsed": "false"}
 # Save a dictionary with the mean and standard deviation values of each column that was normalized:
 
 # + {"Collapsed": "false"}
@@ -469,3 +469,4 @@ vital_prdc_df.info()
 vital_prdc_df.describe().transpose()
 
 # + {"Collapsed": "false"}
+

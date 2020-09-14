@@ -903,19 +903,43 @@ data_n_shap
 
 data_n_shap.shape
 
-data_n_shap.reshape(-1, 19)
+data_n_shap.reshape(-1, data_n_shap.shape[-1])
 
 data_n_shap_columns = ['subject_id', 'ts']+features_names+['label']+shap_column_names
 data_n_shap_columns
 
 [feature for feature in data_n_shap_columns if feature.endswith('_shap')]
 
-data_n_shap_df = pd.DataFrame(data=data_n_shap.reshape(-1, 19), columns=data_n_shap_columns)
+data_n_shap_df = pd.DataFrame(data=data_n_shap.reshape(-1, data_n_shap.shape[-1]), columns=data_n_shap_columns)
 data_n_shap_df
 
 # Remove the padding values
 data_n_shap_df = data_n_shap_df[data_n_shap_df.subject_id != padding_value]
 data_n_shap_df
+
+data_n_shap_df = data_n_shap_df.reset_index().drop(columns='index')
+data_n_shap_df
+
+
+def shap_values_df(interpreter):
+    # Join the original data and the features' SHAP values
+    data_n_shap = np.concatenate([interpreter.test_data.numpy(), interpreter.test_labels.unsqueeze(2).numpy(), interpreter.feat_scores], axis=2)
+    # Reshape into a 2D format
+    data_n_shap = data_n_shap.reshape(-1, data_n_shap.shape[-1])
+    # Remove padding samples
+    data_n_shap = data_n_shap[[interpreter.padding_value not in row for row in data_n_shap]]
+    # Define the column names list
+    shap_column_names = [f'{feature}_shap' for feature in interpreter.feat_names]
+    column_names = ([interpreter.id_column_name] + [interpreter.inst_column_name] + interpreter.feat_names
+                    + [interpreter.label_column_name] + shap_column_names)
+    # Create the dataframe
+    data_n_shap_df = pd.DataFrame(data=data_n_shap, columns=data_n_shap_columns)
+    return data_n_shap_df
+
+
+interpreter.shap_values_df()
+
+data_n_shap_df.equals(interpreter.shap_values_df())
 
 data_n_shap_df.to_csv('notebooks/sandbox/dummy_data/data_n_shap_df.csv')
 

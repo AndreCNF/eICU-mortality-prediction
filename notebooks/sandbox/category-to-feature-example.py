@@ -1,27 +1,10 @@
-# ---
-# jupyter:
-#   jupytext:
-#     formats: ipynb,py:light
-#     text_representation:
-#       extension: .py
-#       format_name: light
-#       format_version: '1.4'
-#       jupytext_version: 1.2.1
-#   kernelspec:
-#     display_name: eicu-mortality-prediction
-#     language: python
-#     name: eicu-mortality-prediction
-# ---
-
 # # Category to feature example
 # ---
 #
 # Applying a method of category to feature conversion, where new features are created based on the categories of one categorical column and the values of another column. Working fine on Pandas, failing to use with multiple categories on Dask.
 
-# + {"colab_type": "text", "id": "KOdmFzXqF7nq", "toc-hr-collapsed": true, "cell_type": "markdown"}
 # ## Importing the necessary packages
 
-# + {"colab": {}, "colab_type": "code", "id": "G5RrWE9R_Nkl"}
 import dask.dataframe as dd                # Dask to handle big data in dataframes
 import pandas as pd                        # Pandas to load the data initially
 from dask.distributed import Client        # Dask scheduler
@@ -29,7 +12,6 @@ import os                                  # os handles directory/workspace chan
 import numpy as np                         # NumPy to handle numeric and NaN operations
 from tqdm import tqdm_notebook             # tqdm allows to track code execution progress
 from IPython.display import display        # Display multiple outputs on the same cell
-# -
 
 # Debugging packages
 import pixiedust                           # Debugging in Jupyter Notebook cells

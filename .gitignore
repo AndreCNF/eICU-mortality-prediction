@@ -13,3 +13,4 @@ interpreters/
 .DS_Store
 *.dirlock
 .vscode/settings.json
+scripts/gcp-config.json

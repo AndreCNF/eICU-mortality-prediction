@@ -22,30 +22,46 @@ dmy_df = pd.DataFrame([[101, 0, np.nan],
                        [101, 1, 1],
                        [102, 0, np.nan],
                        [102, 1, np.nan],
-                       [103, 0, np.nan],
-                       [103, 1, 2],
+                       [103, 0, 2],
+                       [103, 1, np.nan],
                        [104, 0, np.nan],
                        [105, 0, np.nan],
                        [105, 1, np.nan],
                        [105, 2, 3],
                        [105, 3, np.nan],
                        [105, 4, 5],
-                       [105, 5, np.nan]], columns=['id', 'ts', 'Var0'])
+                       [105, 5, np.nan],
+                       [106, 0, 2],
+                       [106, 0, np.nan],
+                       [106, 0, np.nan],
+                       [106, 0, np.nan],
+                       [106, 0, 10]], columns=['id', 'ts', 'Var0'])
 dmy_df
+
+dmy_df.to_csv('imputation_test_dmy_df.csv')
 
 # ## Testing imputation methods
 
 # ### Zeros
 
-du.data_processing.missing_values_imputation(dmy_df, method='zero', id_column='id')
+zeros_df = du.data_processing.missing_values_imputation(dmy_df, method='zero', id_column='id')
+zeros_df
+
+zeros_df.to_csv('imputation_test_zeros_df.csv')
 
 # ### Zig Zag
 
-du.data_processing.missing_values_imputation(dmy_df, method='zigzag', id_column='id')
+zigzag_df = du.data_processing.missing_values_imputation(dmy_df, method='zigzag', id_column='id')
+zigzag_df
+
+zigzag_df.to_csv('imputation_test_zigzag_df.csv')
 
 # ### Interpolation
 
-du.data_processing.missing_values_imputation(dmy_df, method='interpolation', id_column='id')
+interpol_df = du.data_processing.missing_values_imputation(dmy_df, method='interpolation', id_column='id')
+interpol_df
+
+interpol_df.to_csv('imputation_test_interpol_df.csv')
 
 # ## Creating large dummy data
 

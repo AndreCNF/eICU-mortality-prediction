@@ -1,6 +1,5 @@
 from comet_ml import Experiment            # Comet.ml can log training metrics, parameters, do version control and parameter optimization
 import os                                  # os handles directory/workspace changes
-print(f'DEBUG: Comet ML environment variable:\n{os.environ["COMET_DISABLE_AUTO_LOGGING"]}')
 import pandas as pd                        # Pandas to load and handle the data
 import torch                               # PyTorch to create and apply deep learning models
 from torch.nn.functional import sigmoid, softmax
@@ -475,7 +474,7 @@ class eICU_Operator(TrainingOperator):
             # Do inference on the data
             if self.model_type.lower() == 'multivariate_rnn':
                 (pred, correct_pred,
-                 scores, labels, 
+                 scores, labels,
                  step_train_loss) = (du.deep_learning.inference_iter_multi_var_rnn(self.model, features, labels,
                                                                                    padding_value=self.padding_value,
                                                                                    cols_to_remove=self.cols_to_remove, is_train=True,
@@ -485,7 +484,7 @@ class eICU_Operator(TrainingOperator):
                                                                                    seq_lengths=seq_lengths,
                                                                                    distributed_train=(self.num_workers > 1)))
             elif self.model_type.lower() == 'mlp':
-                pred, correct_pred, scores, 
+                pred, correct_pred, scores,
                 step_train_loss = (du.deep_learning.inference_iter_mlp(self.model, features, labels,
                                                                        self.cols_to_remove, is_train=True,
                                                                        prob_output=True, optimizer=self.optimizer))
