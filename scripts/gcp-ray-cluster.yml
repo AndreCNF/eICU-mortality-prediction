@@ -45,7 +45,7 @@ provider:
     type: gcp
     region: europe-west2
     availability_zone: europe-west2-a
-    project_id: perseids-scholarship # Globally unique project id
+    project_id: ___ # Globally unique project id
 
 # How Ray will authenticate with newly launched nodes.
 auth:
